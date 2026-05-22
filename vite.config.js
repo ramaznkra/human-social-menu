@@ -13,6 +13,7 @@ export default defineConfig({
                 'resources/js/pages/kitchen.js',
                 'resources/js/pages/bar-screen.js',
                 'resources/js/pages/menu-spotted.js',
+                'resources/js/pages/menu-cart.js',
                 'resources/js/pages/live-orders.js',
             ],
             refresh: true,

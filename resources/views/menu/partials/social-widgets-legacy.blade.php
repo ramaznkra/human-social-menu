@@ -1,6 +1,6 @@
 {{-- ESKİ DÜZEN (dikey Spotify + Instagram şeridi). Geri almak için index.blade.php içinde include'u buna çevirin. --}}
 @if($spotifyUrl !== '' || $instagramUrl !== '')
-<footer class="menu-social-footer px-5 md:px-8" aria-label="Sosyal bağlantılar">
+<footer class="menu-social-footer px-5" aria-label="Sosyal bağlantılar">
     @if($spotifyUrl !== '')
     <div class="mt-12 flex items-center gap-4 rounded-2xl border border-white/5 bg-[#262220]/40 p-4 backdrop-blur-md md:mt-16">
         <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#1DB954]/25 bg-[#1DB954]/15" aria-hidden="true">

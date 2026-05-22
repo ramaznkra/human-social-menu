@@ -55,6 +55,9 @@ Tarayıcıda: http://127.0.0.1:8000
 
 Örnek dosyalar: `public/images/menu/` — istediğiniz zaman panelden değiştirin.
 
+Ürünlere örnek yüksek çözünürlüklü fotoğraf (1600×1200): `php artisan products:seed-sample-images`  
+(Yeniden yüklemek için: `--force`)
+
 Mevcut masalar için QR yenileme: `php artisan tables:regenerate-qr`
 
 > PNG için PHP `ext-gd` gerekir; yoksa otomatik SVG üretilir.

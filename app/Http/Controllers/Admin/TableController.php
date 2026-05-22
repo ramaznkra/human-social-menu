@@ -80,34 +80,23 @@ class TableController extends Controller
         return back()->with('success', 'QR kod yeniden oluşturuldu.');
     }
 
-    public function qrPng(Table $table): Response|RedirectResponse
+    public function qrPng(Table $table): Response
     {
-        $path = $this->qr->downloadPath($table, 'png');
-        if (! $path) {
-            $this->qr->generateFor($table);
-            $path = $this->qr->downloadPath($table, 'png');
-        }
-        if (! $path) {
-            return $this->qrSvg($table);
-        }
+        $filename = 'masa-'.$table->number.'-qr.png';
 
-        return response()->file($path, [
+        return response($this->qr->pngContents($table), 200, [
             'Content-Type' => 'image/png',
-            'Content-Disposition' => 'inline; filename="masa-'.$table->number.'-qr.png"',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
     }
 
     public function qrSvg(Table $table): Response
     {
-        $path = $this->qr->downloadPath($table, 'svg');
-        if (! $path) {
-            $this->qr->generateFor($table);
-            $path = $this->qr->downloadPath($table, 'svg');
-        }
+        $filename = 'masa-'.$table->number.'-qr.svg';
 
-        return response()->file($path, [
+        return response($this->qr->svgContents($table), 200, [
             'Content-Type' => 'image/svg+xml',
-            'Content-Disposition' => 'inline; filename="masa-'.$table->number.'-qr.svg"',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
     }
 }

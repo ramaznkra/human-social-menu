@@ -8,12 +8,13 @@
     $progressPercent = $progressStep > 0 ? ($progressStep / 4) * 100 : 0;
 @endphp
 
+<div class="menu-page">
 <div
     id="orderProgressSticky"
     class="order-progress-sticky"
     data-initial-step="{{ $progressStep }}"
 >
-    <div class="menu-shell px-4 py-3 md:px-6 lg:px-8">
+    <div class="menu-shell px-4 py-3">
         <div class="flex items-center justify-between gap-3">
             <p class="text-xs font-medium tracking-wide text-[#D4C5B9]">Siparişiniz</p>
             <p class="text-sm font-semibold text-[#E67E22]" id="progressOrderNo">#{{ $order->order_number }}</p>
@@ -35,7 +36,7 @@
 
 <div
     id="order-status-root"
-    class="menu-shell px-4 pb-8 pt-36 text-center md:px-6 lg:px-8 lg:pt-40 lg:pb-12"
+    class="menu-shell px-4 pb-8 pt-36 text-center"
     data-order-id="{{ $order->id }}"
     data-initial-status="{{ $order->status }}"
     data-initial-step="{{ $progressStep }}"
@@ -65,6 +66,7 @@
 
     <p id="pollHint" class="mt-6 text-sm font-light tracking-wide text-[#D4C5B9]">Durum otomatik güncellenir</p>
     <a href="{{ route('menu.index', $order->table?->qr_token) }}" class="mt-4 inline-block text-sm font-medium tracking-wide text-[#E67E22] transition hover:underline">← Menüye Dön</a>
+</div>
 </div>
 @endsection
 

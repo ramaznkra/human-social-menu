@@ -13,17 +13,18 @@
     @stack('styles')
 </head>
 <body class="min-h-dvh bg-[#121110] font-sans text-gray-100 antialiased">
-    <div class="menu-page menu-page--framed relative overflow-x-hidden">
-        <div class="menu-ambient pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
-            <div class="absolute -top-24 -right-16 h-72 w-72 rounded-full bg-[#E67E22]/10 blur-[120px]"></div>
-            <div class="absolute top-1/3 -left-20 h-80 w-80 rounded-full bg-[#E67E22]/6 blur-[120px]"></div>
-            <div class="absolute -bottom-32 right-1/4 h-96 w-96 rounded-full bg-[#3d2f28]/40 blur-[120px]"></div>
-            <div class="absolute bottom-1/4 left-1/3 h-64 w-64 rounded-full bg-[#262220]/50 blur-[120px]"></div>
-        </div>
-        <div class="relative z-[1]">
-            @yield('content')
-        </div>
+    <div class="menu-ambient pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
+        <div class="absolute -top-24 -right-16 h-72 w-72 rounded-full bg-[#E67E22]/10 blur-[120px]"></div>
+        <div class="absolute top-1/3 -left-20 h-80 w-80 rounded-full bg-[#E67E22]/6 blur-[120px]"></div>
+        <div class="absolute -bottom-32 right-1/4 h-96 w-96 rounded-full bg-[#3d2f28]/40 blur-[120px]"></div>
+        <div class="absolute bottom-1/4 left-1/3 h-64 w-64 rounded-full bg-[#262220]/50 blur-[120px]"></div>
     </div>
+
+    <div class="menu-device relative z-[1]">
+        @yield('content')
+    </div>
+
+    @stack('menu-overlays')
     @stack('scripts')
 </body>
 </html>

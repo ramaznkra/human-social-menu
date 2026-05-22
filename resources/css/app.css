@@ -17,9 +17,13 @@
 }
 
 @layer components {
-    /* ── QR Menü — responsive shell (mobil tam genişlik, PC geniş) ── */
+    /* ── QR Menü: mobil tam genişlik, md+ ortalanmış telefon sütunu ── */
+    .menu-device {
+        @apply relative mx-auto min-h-dvh w-full max-w-full md:max-w-md;
+    }
+
     .menu-page {
-        @apply relative min-h-dvh w-full bg-[#121110];
+        @apply relative min-h-dvh w-full bg-[#121110] md:shadow-2xl;
     }
 
     .menu-ambient {
@@ -27,14 +31,24 @@
     }
 
     .menu-shell {
-        @apply relative mx-auto w-full;
-        @apply max-w-lg sm:max-w-xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl;
+        @apply relative w-full;
     }
 
-    @media (min-width: 1024px) {
-        .menu-page--framed .menu-shell {
-            @apply border-x border-white/5 shadow-2xl shadow-black/50;
-        }
+    /* Sabit alt çubuk / modal — viewport’a sabit, içerik telefon genişliğinde */
+    .menu-fixed-dock {
+        @apply pointer-events-none fixed inset-x-0 z-50 flex justify-center;
+    }
+
+    .menu-fixed-panel {
+        @apply pointer-events-auto w-full max-w-full md:max-w-md;
+    }
+
+    .modal-overlay.menu-modal {
+        @apply fixed inset-0 z-[200] items-end justify-center bg-black/70 px-0;
+    }
+
+    .modal-overlay.menu-modal .menu-fixed-panel {
+        @apply max-h-[85vh] overflow-y-auto rounded-t-2xl border-t border-white/10 bg-[#262220];
     }
 
     .menu-section { @apply hidden px-4 pb-6; }
@@ -46,9 +60,20 @@
     }
     .cat-btn.active .cat-count { @apply text-brand-accent; }
 
-    .cart-bar { @apply hidden; }
+    .cart-bar {
+        @apply hidden pointer-events-auto;
+    }
+
     .cart-bar.visible {
         @apply flex items-center justify-between gap-3;
+    }
+
+    .menu-cart-dock {
+        @apply pointer-events-none;
+    }
+
+    .menu-cart-dock .cart-bar.visible {
+        @apply pointer-events-auto;
     }
 
     .modal-overlay { @apply hidden; }
@@ -88,6 +113,56 @@
         @apply mx-4 mt-3 rounded-2xl border border-[#E67E22]/25 bg-[#262220]/50 px-5 py-4 shadow-xl backdrop-blur-md md:mx-6 lg:mx-8;
     }
 
+    /* ── Motto + Wi-Fi bilgi şeridi (logo altı) ── */
+    .menu-info-strip__grid {
+        @apply grid gap-3;
+    }
+
+    .menu-info-strip__grid--dual {
+        @apply grid-cols-1;
+    }
+
+    .menu-info-card {
+        @apply flex items-start gap-3 rounded-2xl border border-white/5 bg-[#262220]/55 p-4 shadow-lg backdrop-blur-md;
+    }
+
+    .menu-info-card--motto {
+        @apply border-[#C9A962]/20 bg-gradient-to-br from-[#262220]/80 to-[#1a1816]/90;
+    }
+
+    .menu-info-card--wifi {
+        @apply flex-wrap border-[#E67E22]/20 sm:flex-nowrap;
+    }
+
+    .menu-info-card__icon {
+        @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#C9A962]/25 bg-[#C9A962]/10 text-sm text-[#C9A962];
+    }
+
+    .menu-info-card__icon--wifi {
+        @apply border-[#E67E22]/25 bg-[#E67E22]/10 text-[#E67E22];
+    }
+
+    .menu-info-card__label {
+        @apply text-[10px] font-semibold uppercase tracking-[0.14em] text-[#D4C5B9]/70;
+    }
+
+    .menu-info-card__motto {
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        @apply mt-1 text-base font-medium italic leading-snug tracking-wide text-[#D4C5B9];
+    }
+
+    .menu-info-card__wifi-value {
+        @apply mt-1 break-all font-mono text-sm font-semibold tracking-wide text-gray-100;
+    }
+
+    .menu-info-copy-btn {
+        @apply shrink-0 self-center rounded-full border border-[#E67E22]/35 bg-[#E67E22]/15 px-3 py-1.5 text-[11px] font-semibold text-[#E67E22] transition hover:bg-[#E67E22]/25;
+    }
+
+    .menu-info-copy-btn--done {
+        @apply border-[#1DB954]/35 bg-[#1DB954]/15 text-[#1DB954];
+    }
+
     /* ── HSP menü başlık ── */
     .menu-logo {
         font-family: 'Cormorant Garamond', Georgia, serif;
@@ -108,7 +183,7 @@
 
     /* ── Social Spotted (hero kart) ── */
     .spotted-section {
-        @apply px-5 md:px-8;
+        @apply px-5;
     }
 
     .spotted-hero {
@@ -159,11 +234,15 @@
     }
 
     .category-pill {
-        @apply shrink-0 rounded-full border border-white/10 bg-[#262220]/40 px-4 py-2 text-sm font-medium text-[#D4C5B9] backdrop-blur-md transition-all duration-300;
+        @apply shrink-0 transform rounded-full border border-white/10 bg-[#262220]/40 px-4 py-2 text-sm font-medium text-[#D4C5B9] backdrop-blur-md transition-all duration-300 ease-in-out;
+    }
+
+    .category-pill:active {
+        @apply scale-95;
     }
 
     .category-pill.is-active {
-        @apply border-[#E67E22] bg-[#E67E22] text-white shadow-lg shadow-[#E67E22]/25;
+        @apply border-[#E67E22] bg-[#E67E22]/10 text-[#E67E22] shadow-lg shadow-[#E67E22]/15;
     }
 
     /* ── Ürün listesi + glow ── */
@@ -229,17 +308,25 @@
         @apply z-40;
     }
 
-    /* Sticky garson/sepet çubuğu — içerik üstünde kalsın (pb-36 tabanı + safe area) */
+    .menu-action-bar .menu-fixed-panel {
+        @apply rounded-t-3xl border-t border-white/10 bg-[#262220]/80 p-4 backdrop-blur-md;
+    }
+
+    .menu-cart-dock .menu-fixed-panel {
+        @apply border-t border-white/10 bg-[#262220]/95 px-4 py-3 backdrop-blur-lg;
+    }
+
+    /* Sticky garson/sepet çubuğu — içerik üstünde kalsın (pb-40 tabanı + safe area) */
     .menu-scroll-pad {
-        padding-bottom: calc(9rem + env(safe-area-inset-bottom, 0px));
+        padding-bottom: calc(10rem + env(safe-area-inset-bottom, 0px));
     }
 
     .menu-scroll-pad--table {
-        padding-bottom: calc(16rem + env(safe-area-inset-bottom, 0px));
+        padding-bottom: calc(17rem + env(safe-area-inset-bottom, 0px));
     }
 
     .menu-scroll-pad--table-cart {
-        padding-bottom: calc(20rem + env(safe-area-inset-bottom, 0px));
+        padding-bottom: calc(21rem + env(safe-area-inset-bottom, 0px));
     }
 
     .menu-social-footer {
@@ -250,21 +337,22 @@
         @apply -mx-5 md:-mx-8;
     }
 
-    /* Sosyal widget: mobil = tam genişlik kare grid; lg+ (tarayıcı) = kompakt */
+    /* Sosyal widget — mobil kare kart estetiği (masaüstünde de aynı) */
     .menu-social-grid {
-        @apply mx-auto w-full max-w-none;
+        @apply mx-auto w-full;
     }
 
-    @media (min-width: 1024px) {
-        .menu-social-grid {
-            max-width: 22rem;
-        }
+    .menu-social-card__title {
+        @apply truncate text-sm;
+    }
 
-        .menu-social-card {
-            aspect-ratio: auto;
-            min-height: 9.5rem;
-            max-height: 10.5rem;
-        }
+    .menu-social-card__desc {
+        @apply line-clamp-2;
+    }
+
+    .menu-social-card__action,
+    .menu-social-card__handle {
+        @apply truncate;
     }
 
     .animate-fade-in-up {
@@ -307,7 +395,11 @@
     }
 
     .order-progress-sticky {
-        @apply fixed inset-x-0 top-0 z-50 border-b border-white/5 bg-[#121110]/90 backdrop-blur-lg;
+        @apply fixed inset-x-0 top-0 z-50 flex justify-center border-b border-white/5 bg-[#121110]/90 backdrop-blur-lg;
+    }
+
+    .order-progress-sticky .menu-shell {
+        @apply w-full max-w-full md:max-w-md;
     }
 
     .order-progress-step {
