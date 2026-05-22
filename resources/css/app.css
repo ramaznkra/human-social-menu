@@ -1,0 +1,143 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Outfit', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --color-brand-bg: #121110;
+    --color-brand-surface: #262220;
+    --color-brand-accent: #e67e22;
+    --color-brand-cream: #d4c5b9;
+    --color-brand-panel: #f8f9fa;
+}
+
+@layer components {
+    /* ── QR Menü — responsive shell (mobil tam genişlik, PC geniş) ── */
+    .menu-page {
+        @apply min-h-dvh w-full;
+    }
+
+    .menu-shell {
+        @apply relative mx-auto w-full;
+        @apply max-w-lg sm:max-w-xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl;
+    }
+
+    @media (min-width: 1024px) {
+        .menu-page--framed .menu-shell {
+            @apply border-x border-white/5 shadow-2xl shadow-black/50;
+        }
+    }
+
+    .menu-section { @apply hidden px-4 pb-6; }
+    .menu-section.active,
+    .menu-section.search-visible { @apply block; }
+
+    .cat-btn.active {
+        @apply border-brand-accent/40 bg-brand-surface text-gray-100;
+    }
+    .cat-btn.active .cat-count { @apply text-brand-accent; }
+
+    .cart-bar { @apply hidden; }
+    .cart-bar.visible {
+        @apply flex items-center justify-between gap-3;
+    }
+
+    .modal-overlay { @apply hidden; }
+    .modal-overlay.open { @apply flex; }
+
+    .search-clear { @apply hidden; }
+    .search-clear.visible { @apply flex; }
+
+    .no-results { @apply hidden; }
+    .no-results.visible { @apply block; }
+
+    /* ── Admin ── */
+    .sidebar-link {
+        @apply flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-brand-cream transition-colors;
+    }
+    .sidebar-link:hover {
+        @apply bg-white/5 text-gray-100;
+    }
+    .sidebar-link.active {
+        @apply bg-brand-accent/15 text-brand-accent;
+    }
+
+    .btn {
+        @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200;
+    }
+    .btn-primary {
+        @apply bg-brand-accent text-white hover:scale-[1.02] hover:bg-[#d35400];
+    }
+    .btn-secondary {
+        @apply border border-gray-200 bg-white text-gray-700 hover:bg-gray-50;
+    }
+    .btn-danger {
+        @apply bg-red-500 text-white hover:bg-red-600;
+    }
+    .btn-sm {
+        @apply px-3 py-1.5 text-xs;
+    }
+
+    .admin-card {
+        @apply rounded-xl border border-gray-100 bg-white p-6 shadow-sm;
+    }
+
+    .form-label {
+        @apply mb-1.5 block text-sm font-medium text-gray-700;
+    }
+    .form-input {
+        @apply w-full max-w-lg rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-800 outline-none transition focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20;
+    }
+
+    .admin-table th {
+        @apply border-b border-gray-100 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500;
+    }
+    .admin-table td {
+        @apply border-b border-gray-50 px-4 py-3 text-sm text-gray-700;
+    }
+    .admin-table tbody tr:hover {
+        @apply bg-gray-50/80;
+    }
+
+    .badge-status {
+        @apply inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold;
+    }
+    .badge-pending { @apply bg-amber-100 text-amber-800; }
+    .badge-preparing { @apply bg-sky-100 text-sky-800; }
+    .badge-ready { @apply bg-emerald-100 text-emerald-800; }
+    .badge-delivered { @apply bg-gray-100 text-gray-600; }
+    .badge-cancelled { @apply bg-red-100 text-red-800; }
+
+    .stat-card {
+        @apply rounded-xl border border-gray-100 bg-white p-5 shadow-sm;
+    }
+    .stat-card .value {
+        @apply text-3xl font-bold text-brand-accent;
+    }
+    .stat-card .label {
+        @apply mt-1 text-sm text-gray-500;
+    }
+
+    .alert {
+        @apply mb-4 rounded-lg px-4 py-3 text-sm font-medium;
+    }
+    .alert-success { @apply border border-emerald-200 bg-emerald-50 text-emerald-800; }
+    .alert-error { @apply border border-red-200 bg-red-50 text-red-800; }
+}
+
+/* Pagination */
+nav[role="navigation"] a,
+nav[role="navigation"] span {
+    @apply inline-flex items-center rounded-lg border border-gray-200 px-3 py-1.5 text-sm;
+}
+nav[role="navigation"] a {
+    @apply text-gray-600 hover:border-[#E67E22]/30 hover:text-[#E67E22];
+}
+nav[role="navigation"] span[aria-current="page"] span {
+    @apply border-[#E67E22]/30 bg-[#E67E22]/10 text-[#E67E22];
+}

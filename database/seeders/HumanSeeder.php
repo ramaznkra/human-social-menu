@@ -1,0 +1,149 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Category;
+use App\Models\Event;
+use App\Models\MenuSlide;
+use App\Models\Product;
+use App\Models\Setting;
+use App\Models\Table;
+use App\Models\User;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+
+class HumanSeeder extends Seeder
+{
+    public function run(): void
+    {
+        User::updateOrCreate(
+            ['email' => 'admin@human.com'],
+            [
+                'name' => 'Human Admin',
+                'password' => Hash::make('human2026'),
+            ]
+        );
+
+        $defaults = [
+            'venue_name' => 'Human',
+            'venue_slogan' => 'Social People',
+            'venue_phone' => '+90 555 000 00 00',
+            'venue_address' => 'İstanbul',
+            'currency' => '₺',
+            'order_enabled' => '1',
+            'display_interval' => '10',
+        ];
+        foreach ($defaults as $key => $value) {
+            Setting::set($key, $value);
+        }
+
+        $categories = [
+            ['name' => 'Yiyecek', 'slug' => 'yiyecek', 'image' => 'images/menu/categories/yiyecek.jpg', 'sort_order' => 1],
+            ['name' => 'İçecek', 'slug' => 'icecek', 'image' => 'images/menu/categories/icecek.jpg', 'sort_order' => 2],
+            ['name' => 'Nargile', 'slug' => 'nargile', 'image' => 'images/menu/categories/nargile.jpg', 'sort_order' => 3],
+            ['name' => 'Okey', 'slug' => 'okey', 'image' => 'images/menu/categories/okey.jpg', 'sort_order' => 4],
+        ];
+
+        foreach ($categories as $cat) {
+            Category::updateOrCreate(['slug' => $cat['slug']], $cat + ['is_active' => true, 'icon' => null]);
+        }
+
+        $menuSlides = [
+            [
+                'title' => 'Human Lounge',
+                'subtitle' => 'Social People',
+                'image' => 'images/menu/slider/mekan-1.jpg',
+                'type' => 'venue',
+                'duration' => 8,
+                'sort_order' => 1,
+            ],
+            [
+                'title' => 'Gece Atmosferi',
+                'subtitle' => 'Premium deneyim',
+                'image' => 'images/menu/slider/mekan-2.jpg',
+                'type' => 'venue',
+                'duration' => 8,
+                'sort_order' => 2,
+            ],
+            [
+                'title' => 'Özel Misafirlerimiz',
+                'subtitle' => 'Human ailesine hoş geldiniz',
+                'image' => 'images/menu/slider/misafir-1.jpg',
+                'type' => 'guest',
+                'duration' => 7,
+                'sort_order' => 3,
+            ],
+            [
+                'title' => 'Sosyal Buluşmalar',
+                'subtitle' => 'Unutulmaz anlar',
+                'image' => 'images/menu/slider/misafir-2.jpg',
+                'type' => 'guest',
+                'duration' => 7,
+                'sort_order' => 4,
+            ],
+        ];
+
+        foreach ($menuSlides as $slide) {
+            MenuSlide::updateOrCreate(
+                ['image' => $slide['image']],
+                $slide + ['is_active' => true]
+            );
+        }
+
+        $products = [
+            ['category' => 'yiyecek', 'name' => 'Human Burger', 'description' => 'Özel soslu, cheddar peynirli burger', 'price' => 320, 'badge' => 'Popüler'],
+            ['category' => 'yiyecek', 'name' => 'Sosyal Tabağı', 'description' => 'Paylaşımlık atıştırmalık tabağı', 'price' => 280],
+            ['category' => 'yiyecek', 'name' => 'Nachos', 'description' => 'Guacamole ve salsa ile', 'price' => 195],
+            ['category' => 'icecek', 'name' => 'Espresso', 'description' => 'Tek shot', 'price' => 75],
+            ['category' => 'icecek', 'name' => 'Latte', 'description' => 'Sütlü kahve', 'price' => 95],
+            ['category' => 'icecek', 'name' => 'Limonata', 'description' => 'Taze sıkılmış', 'price' => 85],
+            ['category' => 'icecek', 'name' => 'Mojito', 'description' => 'Alkolsüz ferah içecek', 'price' => 120, 'badge' => 'Yeni'],
+            ['category' => 'nargile', 'name' => 'Elma Nargile', 'description' => 'Klasik elma aroması', 'price' => 450],
+            ['category' => 'nargile', 'name' => 'Üzüm Nargile', 'description' => 'Yoğun üzüm aroması', 'price' => 450],
+            ['category' => 'nargile', 'name' => 'Karışık Nargile', 'description' => 'İki aroma seçeneği', 'price' => 500],
+            ['category' => 'okey', 'name' => 'Okey Masası (Saatlik)', 'description' => '4 kişilik masa kiralama', 'price' => 200],
+            ['category' => 'okey', 'name' => 'Okey + İçecek Paketi', 'description' => '2 saat okey + 4 içecek', 'price' => 550, 'badge' => 'Paket'],
+        ];
+
+        $sort = 0;
+        foreach ($products as $p) {
+            $cat = Category::where('slug', $p['category'])->first();
+            Product::updateOrCreate(
+                ['category_id' => $cat->id, 'name' => $p['name']],
+                [
+                    'description' => $p['description'],
+                    'price' => $p['price'],
+                    'badge' => $p['badge'] ?? null,
+                    'sort_order' => $sort++,
+                    'is_available' => true,
+                ]
+            );
+        }
+
+        for ($i = 1; $i <= 8; $i++) {
+            Table::updateOrCreate(
+                ['number' => (string) $i],
+                ['qr_token' => Str::random(16), 'is_active' => true]
+            );
+        }
+
+        Event::updateOrCreate(
+            ['title' => 'Canlı DJ Gecesi'],
+            [
+                'description' => 'Her Cuma gece 22:00\'de canlı DJ performansı',
+                'event_date' => now()->next('Friday')->setTime(22, 0),
+                'is_active' => true,
+            ]
+        );
+
+        Event::updateOrCreate(
+            ['title' => 'Okey Turnuvası'],
+            [
+                'description' => 'Haftalık okey turnuvası — kayıt masada',
+                'event_date' => now()->addDays(7)->setTime(19, 0),
+                'is_active' => true,
+            ]
+        );
+    }
+}
