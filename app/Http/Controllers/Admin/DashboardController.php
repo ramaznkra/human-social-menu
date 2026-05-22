@@ -21,7 +21,9 @@ class DashboardController extends Controller
             'pending_orders' => Order::where('status', 'pending')->count(),
         ];
 
-        $recentOrders = Order::with('table')
+        $recentOrders = Order::query()
+            ->select(['id', 'order_number', 'status', 'total', 'table_id', 'created_at'])
+            ->with(['table:id,number'])
             ->orderByDesc('created_at')
             ->take(10)
             ->get();

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Event;
+use App\Models\CafeGallery;
 use App\Models\MenuSlide;
 use App\Models\Product;
 use App\Models\Setting;
@@ -28,11 +29,17 @@ class HumanSeeder extends Seeder
         $defaults = [
             'venue_name' => 'Human',
             'venue_slogan' => 'Social People',
+            'brand_mark' => 'HSP',
+            'venue_tagline' => 'Human Social Person — Coffee, Community, Experiences.',
             'venue_phone' => '+90 555 000 00 00',
             'venue_address' => 'İstanbul',
             'currency' => '₺',
             'order_enabled' => '1',
             'display_interval' => '10',
+            'daily_motto' => 'İyi insanlar, iyi sohbetler.',
+            'wifi_password' => 'HumanSocial2026',
+            'show_motto_banner' => '1',
+            'show_wifi_banner' => '1',
         ];
         foreach ($defaults as $key => $value) {
             Setting::set($key, $value);
@@ -91,6 +98,37 @@ class HumanSeeder extends Seeder
             );
         }
 
+        $spottedCards = [
+            [
+                'image_path' => 'images/menu/slider/misafir-1.jpg',
+                'title' => 'Human Ailesi',
+                'description' => 'Sevgili Cem Yılmaz, imza kahvemizi deneyimlerken… #SocialMoments',
+                'badge_text' => 'Spotted at HSP ✨',
+                'sort_order' => 1,
+            ],
+            [
+                'image_path' => 'images/menu/slider/mekan-1.jpg',
+                'title' => 'Lounge Atmosferi',
+                'description' => 'Sosyal sohbetlerin ve iyi insanların buluşma noktası.',
+                'badge_text' => 'HSP Moments',
+                'sort_order' => 2,
+            ],
+            [
+                'image_path' => 'images/menu/slider/misafir-2.jpg',
+                'title' => null,
+                'description' => 'Bugün telefonları bir kenara bırakıp masadakiyle konuşanlara selam olsun.',
+                'badge_text' => 'Spotted at HSP ✨',
+                'sort_order' => 3,
+            ],
+        ];
+
+        foreach ($spottedCards as $card) {
+            CafeGallery::updateOrCreate(
+                ['image_path' => $card['image_path']],
+                $card + ['is_active' => true]
+            );
+        }
+
         $products = [
             ['category' => 'yiyecek', 'name' => 'Human Burger', 'description' => 'Özel soslu, cheddar peynirli burger', 'price' => 320, 'badge' => 'Popüler'],
             ['category' => 'yiyecek', 'name' => 'Sosyal Tabağı', 'description' => 'Paylaşımlık atıştırmalık tabağı', 'price' => 280],
@@ -112,6 +150,7 @@ class HumanSeeder extends Seeder
             Product::updateOrCreate(
                 ['category_id' => $cat->id, 'name' => $p['name']],
                 [
+                    'type' => $p['category'] === 'icecek' ? 'bar' : 'kitchen',
                     'description' => $p['description'],
                     'price' => $p['price'],
                     'badge' => $p['badge'] ?? null,

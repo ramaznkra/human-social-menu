@@ -37,6 +37,30 @@ class Order extends Model
         };
     }
 
+    /** Müşteri menüsü / sipariş takibi metinleri */
+    public function getCustomerStatusLabelAttribute(): string
+    {
+        return match ($this->status) {
+            'pending' => 'Beklemede',
+            'preparing' => 'Hazırlanıyor',
+            'ready' => 'Masaya Doğru',
+            'delivered' => 'Afiyet Olsun',
+            'cancelled' => 'İptal Edildi',
+            default => $this->status,
+        };
+    }
+
+    public function customerStatusStep(): int
+    {
+        return match ($this->status) {
+            'preparing' => 2,
+            'ready' => 3,
+            'delivered', 'completed' => 4,
+            'cancelled' => 0,
+            default => 1,
+        };
+    }
+
     public function getStatusColorAttribute(): string
     {
         return match ($this->status) {

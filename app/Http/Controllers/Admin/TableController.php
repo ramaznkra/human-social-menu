@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Table;
+use App\Services\TableQrCodeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
-
 class TableController extends Controller
 {
+    public function __construct(private TableQrCodeService $qr) {}
+
     public function index(): View
     {
         $tables = Table::orderBy('number')->get();
@@ -25,14 +28,16 @@ class TableController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'number' => 'required|string|max:20',
+            'number' => 'required|string|max:20|unique:tables,number',
             'is_active' => 'boolean',
         ]);
         $data['qr_token'] = Table::generateToken();
         $data['is_active'] = $request->boolean('is_active', true);
-        Table::create($data);
 
-        return redirect()->route('admin.tables.index')->with('success', 'Masa eklendi.');
+        $table = Table::create($data);
+        $this->qr->generateFor($table);
+
+        return redirect()->route('admin.tables.index')->with('success', 'Masa eklendi ve QR kod oluşturuldu.');
     }
 
     public function edit(Table $table): View
@@ -43,17 +48,25 @@ class TableController extends Controller
     public function update(Request $request, Table $table): RedirectResponse
     {
         $data = $request->validate([
-            'number' => 'required|string|max:20',
+            'number' => 'required|string|max:20|unique:tables,number,'.$table->id,
             'is_active' => 'boolean',
         ]);
         $data['is_active'] = $request->boolean('is_active');
+
+        $numberChanged = $table->number !== $data['number'];
         $table->update($data);
+
+        if ($numberChanged) {
+            $this->qr->deleteFor($table);
+            $this->qr->generateFor($table->fresh());
+        }
 
         return redirect()->route('admin.tables.index')->with('success', 'Masa güncellendi.');
     }
 
     public function destroy(Table $table): RedirectResponse
     {
+        $this->qr->deleteFor($table);
         $table->delete();
 
         return redirect()->route('admin.tables.index')->with('success', 'Masa silindi.');
@@ -62,7 +75,39 @@ class TableController extends Controller
     public function regenerate(Table $table): RedirectResponse
     {
         $table->update(['qr_token' => Table::generateToken()]);
+        $this->qr->generateFor($table->fresh());
 
-        return back()->with('success', 'QR kodu yenilendi.');
+        return back()->with('success', 'QR kod yeniden oluşturuldu.');
+    }
+
+    public function qrPng(Table $table): Response|RedirectResponse
+    {
+        $path = $this->qr->downloadPath($table, 'png');
+        if (! $path) {
+            $this->qr->generateFor($table);
+            $path = $this->qr->downloadPath($table, 'png');
+        }
+        if (! $path) {
+            return $this->qrSvg($table);
+        }
+
+        return response()->file($path, [
+            'Content-Type' => 'image/png',
+            'Content-Disposition' => 'inline; filename="masa-'.$table->number.'-qr.png"',
+        ]);
+    }
+
+    public function qrSvg(Table $table): Response
+    {
+        $path = $this->qr->downloadPath($table, 'svg');
+        if (! $path) {
+            $this->qr->generateFor($table);
+            $path = $this->qr->downloadPath($table, 'svg');
+        }
+
+        return response()->file($path, [
+            'Content-Type' => 'image/svg+xml',
+            'Content-Disposition' => 'inline; filename="masa-'.$table->number.'-qr.svg"',
+        ]);
     }
 }

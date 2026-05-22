@@ -6,8 +6,8 @@
 @source '../**/*.js';
 
 @theme {
-    --font-sans: 'Outfit', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Plus Jakarta Sans', 'Outfit', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
     --color-brand-bg: #121110;
     --color-brand-surface: #262220;
@@ -19,7 +19,11 @@
 @layer components {
     /* ── QR Menü — responsive shell (mobil tam genişlik, PC geniş) ── */
     .menu-page {
-        @apply min-h-dvh w-full;
+        @apply relative min-h-dvh w-full bg-[#121110];
+    }
+
+    .menu-ambient {
+        @apply bg-[#121110];
     }
 
     .menu-shell {
@@ -55,6 +59,256 @@
 
     .no-results { @apply hidden; }
     .no-results.visible { @apply block; }
+
+    .glass-card {
+        @apply rounded-2xl border border-white/5 bg-[#262220]/50 shadow-xl backdrop-blur-md;
+    }
+
+    .product-card {
+        @apply rounded-2xl border border-white/5 bg-[#262220]/50 p-4 shadow-xl backdrop-blur-md;
+    }
+
+    .menu-product-title {
+        @apply font-semibold tracking-wide text-gray-100;
+    }
+
+    .menu-product-desc {
+        @apply text-sm font-light leading-relaxed tracking-wide text-[#D4C5B9];
+    }
+
+    .product-badge {
+        @apply rounded-md bg-[#E67E22]/15 px-2 py-1 text-xs font-medium tracking-wide text-[#E67E22];
+    }
+
+    .social-proof-badge {
+        @apply mt-1.5 inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-0.5 text-[10px] font-medium tracking-wide text-[#D4C5B9];
+    }
+
+    .social-hero-banner {
+        @apply mx-4 mt-3 rounded-2xl border border-[#E67E22]/25 bg-[#262220]/50 px-5 py-4 shadow-xl backdrop-blur-md md:mx-6 lg:mx-8;
+    }
+
+    /* ── HSP menü başlık ── */
+    .menu-logo {
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        @apply text-5xl font-semibold tracking-[0.12em] text-[#C9A962];
+    }
+
+    .menu-tagline {
+        @apply mx-auto mt-2 max-w-xs text-[11px] font-light leading-relaxed tracking-wide text-[#D4C5B9]/90;
+    }
+
+    .menu-action-btn {
+        @apply rounded-full border border-white/10 bg-[#262220]/50 px-4 py-1.5 text-xs font-medium text-[#D4C5B9] backdrop-blur-md transition hover:border-[#E67E22]/30 hover:text-gray-100;
+    }
+
+    .menu-search-input {
+        @apply rounded-full border border-white/5 bg-[#262220]/40 py-2 pr-8 pl-9 text-sm text-gray-100 placeholder:text-[#D4C5B9]/35 outline-none backdrop-blur-md focus:border-[#E67E22]/40;
+    }
+
+    /* ── Social Spotted (hero kart) ── */
+    .spotted-section {
+        @apply px-5 md:px-8;
+    }
+
+    .spotted-hero-track {
+        @apply flex snap-x snap-mandatory overflow-x-auto scroll-smooth;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .spotted-hero-track::-webkit-scrollbar {
+        display: none;
+    }
+
+    .spotted-hero-slide {
+        @apply w-full shrink-0 snap-center;
+    }
+
+    .spotted-hero-card {
+        @apply relative aspect-[5/4] w-full overflow-hidden rounded-2xl border border-white/10 bg-[#262220]/70 shadow-2xl backdrop-blur-lg;
+    }
+
+    .spotted-hero-img {
+        @apply h-full w-full object-cover;
+    }
+
+    .spotted-hero-badge {
+        @apply absolute top-3 left-3 z-10 rounded-full bg-[#D4C5B9]/90 px-3 py-1 text-[11px] font-semibold tracking-wide text-[#262220] shadow-lg;
+    }
+
+    .spotted-hero-caption {
+        @apply absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-[#121110]/95 via-[#121110]/60 to-transparent px-4 pt-10 pb-4;
+    }
+
+    .spotted-hero-caption p {
+        @apply text-sm leading-relaxed font-normal italic text-gray-200;
+    }
+
+    /* ── Kategori pill'leri ── */
+    .category-pills-nav {
+        @apply pb-3;
+    }
+
+    .category-pills {
+        @apply flex gap-2 overflow-x-auto pb-1;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .category-pills::-webkit-scrollbar {
+        display: none;
+    }
+
+    .category-pill {
+        @apply shrink-0 rounded-full border border-white/10 bg-[#262220]/40 px-4 py-2 text-sm font-medium text-[#D4C5B9] backdrop-blur-md transition-all duration-300;
+    }
+
+    .category-pill.is-active {
+        @apply border-[#E67E22] bg-[#E67E22] text-white shadow-lg shadow-[#E67E22]/25;
+    }
+
+    /* ── Ürün listesi + glow ── */
+    .product-list-wrap {
+        @apply relative;
+    }
+
+    .product-list-wrap::before {
+        content: '';
+        @apply pointer-events-none absolute top-0 left-1/2 h-48 w-[85%] -translate-x-1/2 rounded-full bg-[#E67E22]/12 blur-3xl;
+    }
+
+    .product-row-card {
+        @apply relative flex gap-3 rounded-2xl border border-white/5 bg-[#262220]/50 p-3 shadow-lg backdrop-blur-md transition-all duration-300;
+    }
+
+    .product-row-thumb-wrap {
+        @apply shrink-0;
+    }
+
+    .product-row-thumb {
+        @apply h-[4.5rem] w-[4.5rem] rounded-xl object-cover ring-1 ring-white/10;
+    }
+
+    .product-row-thumb--placeholder {
+        @apply bg-[#1a1816];
+    }
+
+    .btn-siparis {
+        @apply shrink-0 rounded-full bg-[#E67E22] px-4 py-2 text-xs font-semibold text-white shadow-md shadow-[#E67E22]/30 transition hover:brightness-110 active:scale-95;
+    }
+
+    /* ── Birleşik canlı sipariş ekranı ── */
+    .live-ops-tab {
+        @apply shrink-0 rounded-full border border-white/10 bg-[#262220]/50 px-4 py-2 text-sm font-medium text-[#D4C5B9] backdrop-blur-md transition-all duration-200;
+    }
+
+    .live-ops-tab.is-active {
+        @apply border-[#E67E22] bg-[#E67E22] text-white shadow-lg shadow-[#E67E22]/20;
+    }
+
+    .live-ops-badge {
+        @apply absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#E67E22] px-1 text-[10px] font-bold text-white shadow-md;
+    }
+
+    .live-ops-order-card {
+        @apply transition-opacity duration-300;
+    }
+
+    .live-ops-btn-primary {
+        @apply rounded-lg bg-[#E67E22] px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-110;
+    }
+
+    .live-ops-btn-secondary {
+        @apply rounded-lg border border-white/10 px-3 py-1.5 text-xs text-[#D4C5B9] transition hover:border-[#E67E22]/40 hover:text-[#E67E22];
+    }
+
+    .animate-fade-in-up {
+        animation: fadeInUp 0.45s ease-out forwards;
+    }
+
+    .animate-cart-pop {
+        animation: cartPop 0.35s ease-out;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes cartPop {
+        0% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.08);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    .order-progress-track {
+        @apply h-1.5 overflow-hidden rounded-full bg-white/10;
+    }
+
+    .order-progress-fill {
+        @apply h-full rounded-full bg-gradient-to-r from-[#E67E22]/80 to-[#E67E22] transition-all duration-700 ease-out;
+    }
+
+    .order-progress-sticky {
+        @apply fixed inset-x-0 top-0 z-50 border-b border-white/5 bg-[#121110]/90 backdrop-blur-lg;
+    }
+
+    .order-progress-step {
+        @apply text-[10px] font-medium tracking-wide text-[#D4C5B9]/50 transition-colors duration-500;
+    }
+
+    .order-progress-step.is-active {
+        @apply text-[#E67E22];
+    }
+
+    .order-progress-step.is-done {
+        @apply text-[#D4C5B9];
+    }
+
+    .status-label-pulse {
+        animation: statusPulse 0.6s ease-out;
+    }
+
+    @keyframes statusPulse {
+        0% {
+            opacity: 0.6;
+            transform: scale(0.96);
+        }
+        100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    .status-pending {
+        @apply bg-[#E67E22]/15 text-[#E67E22];
+    }
+    .status-preparing {
+        @apply bg-[#D4C5B9]/15 text-[#D4C5B9];
+    }
+    .status-ready {
+        @apply bg-[#E67E22]/25 text-[#E67E22];
+    }
+    .status-delivered,
+    .status-completed {
+        @apply bg-white/10 text-gray-400;
+    }
+    .status-cancelled {
+        @apply bg-red-500/15 text-red-400;
+    }
 
     /* ── Admin ── */
     .sidebar-link {

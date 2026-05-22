@@ -20,8 +20,9 @@ class SettingController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $keys = [
-            'venue_name', 'venue_slogan', 'venue_phone', 'venue_address',
+            'venue_name', 'venue_slogan', 'brand_mark', 'venue_tagline', 'venue_phone', 'venue_address',
             'currency', 'order_enabled', 'display_interval',
+            'daily_motto', 'wifi_password', 'show_motto_banner', 'show_wifi_banner',
         ];
 
         foreach ($keys as $key) {

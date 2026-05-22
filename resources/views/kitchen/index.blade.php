@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Mutfak — {{ $settings['venue_name'] ?? 'Human' }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/pages/kitchen.js'])
 </head>
 <body class="min-h-screen bg-[#121110] font-sans text-gray-100 antialiased">
 <header class="flex items-center justify-between border-b border-white/5 px-5 py-5">
@@ -43,20 +43,8 @@
 function updateClock() {
     document.getElementById('clock').textContent = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 }
-updateClock(); setInterval(updateClock, 1000);
-
-async function setStatus(id, status) {
-    await fetch(`/api/mutfak/${id}/durum`, {
-        method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-        },
-        body: JSON.stringify({ status }),
-    });
-    location.reload();
-}
-setInterval(() => location.reload(), 15000);
+updateClock();
+setInterval(updateClock, 1000);
 </script>
 </body>
 </html>

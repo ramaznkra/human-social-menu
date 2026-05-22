@@ -24,7 +24,12 @@ class KitchenController extends Controller
 
     public function api(): JsonResponse
     {
-        $orders = Order::with(['items', 'table'])
+        $orders = Order::query()
+            ->select(['id', 'order_number', 'status', 'notes', 'total', 'table_id', 'created_at'])
+            ->with([
+                'table:id,number',
+                'items:id,order_id,product_name,quantity,notes',
+            ])
             ->whereIn('status', ['pending', 'preparing', 'ready'])
             ->orderByDesc('created_at')
             ->get()

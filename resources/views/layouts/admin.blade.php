@@ -7,7 +7,7 @@
     <title>@yield('title', 'Admin') — {{ $settings['venue_name'] ?? 'Human' }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen bg-[#F8F9FA] font-sans text-gray-800 antialiased">
@@ -21,9 +21,13 @@
             <a href="{{ route('admin.dashboard') }}" class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">📊 Panel</a>
             <a href="{{ route('admin.categories.index') }}" class="sidebar-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">📁 Kategoriler</a>
             <a href="{{ route('admin.menu-slides.index') }}" class="sidebar-link {{ request()->routeIs('admin.menu-slides.*') ? 'active' : '' }}">🖼️ Menü Slaytları</a>
+            <a href="{{ route('admin.cafe-galleries.index') }}" class="sidebar-link {{ request()->routeIs('admin.cafe-galleries.*') ? 'active' : '' }}">✨ Social Spotted</a>
             <a href="{{ route('admin.products.index') }}" class="sidebar-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">🍽️ Ürünler</a>
             <a href="{{ route('admin.tables.index') }}" class="sidebar-link {{ request()->routeIs('admin.tables.*') ? 'active' : '' }}">🪑 Masalar & QR</a>
             <a href="{{ route('admin.orders.index') }}" class="sidebar-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">📋 Siparişler</a>
+            <a href="{{ route('admin.live-orders.index') }}" class="sidebar-link {{ request()->routeIs('admin.live-orders.*') ? 'active' : '' }}">⚡ Canlı Siparişler</a>
+            <a href="{{ route('kitchen.index') }}" class="sidebar-link" target="_blank">🍳 Mutfak Ekranı</a>
+            <a href="{{ route('admin.bar.index') }}" class="sidebar-link {{ request()->routeIs('admin.bar.*') ? 'active' : '' }}">☕ Bar (yönlendirme)</a>
             <a href="{{ route('admin.slides.index') }}" class="sidebar-link {{ request()->routeIs('admin.slides.*') ? 'active' : '' }}">🖥️ Ekran Slaytları</a>
             <a href="{{ route('admin.events.index') }}" class="sidebar-link {{ request()->routeIs('admin.events.*') ? 'active' : '' }}">🎉 Etkinlikler</a>
             <a href="{{ route('admin.settings.edit') }}" class="sidebar-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">⚙️ Ayarlar</a>
@@ -39,7 +43,11 @@
             </form>
         </div>
     </aside>
-    <main class="flex-1 overflow-x-auto p-6 md:p-8 lg:p-10">
+    <main class="flex-1 overflow-x-auto bg-[#F8F9FA] p-6 md:p-8 lg:p-10">
+        <div class="mb-6 hidden border-b border-gray-200/80 pb-4 lg:block">
+            <p class="text-xs font-medium uppercase tracking-[0.2em] text-[#E67E22]">Operasyon</p>
+            <h2 class="mt-1 text-lg font-semibold text-gray-800">@yield('page_heading', 'Yönetim Paneli')</h2>
+        </div>
         @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
@@ -49,5 +57,6 @@
         @yield('content')
     </main>
 </div>
+@stack('scripts')
 </body>
 </html>

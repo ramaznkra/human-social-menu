@@ -45,8 +45,15 @@ Tarayıcıda: http://127.0.0.1:8000
 |--------------|--------------|
 | **Menü Slaytları** | QR menü üstündeki slider (mekan + özel misafir, 5–10 sn) |
 | **Kategoriler → Kapak görseli** | PIER tarzı büyük kategori kartları |
+| **Masalar & QR** | Yeni masa → otomatik QR (PNG/SVG), link: `/menu?masa=15` |
+| **Ayarlar** | Günün mottosu + Wi-Fi şifresi (menü banner) |
+| **Bar Ekranı** | Dokunmatik içecek hazırlık paneli |
 
 Örnek dosyalar: `public/images/menu/` — istediğiniz zaman panelden değiştirin.
+
+Mevcut masalar için QR yenileme: `php artisan tables:regenerate-qr`
+
+> PNG için PHP `ext-gd` gerekir; yoksa otomatik SVG üretilir.
 
 ---
 

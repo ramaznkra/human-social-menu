@@ -4,18 +4,27 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Event;
+use App\Models\CafeGallery;
 use App\Models\MenuSlide;
+use App\Models\OrderItem;
 use App\Models\Setting;
 use App\Models\Table;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class MenuController extends Controller
 {
-    public function index(?string $token = null): View
+    public function index(Request $request, ?string $token = null): View
     {
         $table = null;
-        if ($token) {
+
+        if ($request->filled('masa')) {
+            $table = Table::query()
+                ->where('number', $request->query('masa'))
+                ->where('is_active', true)
+                ->first();
+        } elseif ($token) {
             $table = Table::where('qr_token', $token)->where('is_active', true)->first();
         }
 
@@ -32,7 +41,24 @@ class MenuController extends Controller
         $settings = Setting::allCached();
 
         $menuSlides = MenuSlide::active()->get();
+        $spottedSliders = CafeGallery::active()->get();
 
-        return view('menu.index', compact('categories', 'table', 'events', 'settings', 'menuSlides'));
+        $productPopularity = OrderItem::query()
+            ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->whereDate('orders.created_at', today())
+            ->whereNotNull('order_items.product_id')
+            ->select('order_items.product_id', DB::raw('SUM(order_items.quantity) as total_qty'))
+            ->groupBy('order_items.product_id')
+            ->pluck('total_qty', 'product_id');
+
+        return view('menu.index', compact(
+            'categories',
+            'table',
+            'events',
+            'settings',
+            'menuSlides',
+            'spottedSliders',
+            'productPopularity',
+        ));
     }
 }

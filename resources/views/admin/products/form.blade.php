@@ -7,6 +7,13 @@
         @csrf
         @if($product->exists) @method('PUT') @endif
         <div>
+            <label class="form-label">Departman *</label>
+            <select name="type" required class="form-input">
+                <option value="kitchen" {{ old('type', $product->type ?? 'kitchen') === 'kitchen' ? 'selected' : '' }}>Mutfak / Yemek</option>
+                <option value="bar" {{ old('type', $product->type) === 'bar' ? 'selected' : '' }}>Bar / İçecek</option>
+            </select>
+        </div>
+        <div>
             <label class="form-label">Kategori *</label>
             <select name="category_id" required class="form-input">
                 @foreach($categories as $c)

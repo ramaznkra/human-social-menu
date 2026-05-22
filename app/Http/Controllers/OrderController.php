@@ -13,6 +13,8 @@ use Illuminate\View\View;
 
 class OrderController extends Controller
 {
+    private const FINAL_STATUSES = ['delivered', 'cancelled', 'completed'];
+
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -72,7 +74,14 @@ class OrderController extends Controller
 
     public function status(Order $order): View
     {
-        $order->load(['items', 'table']);
+        $order = Order::query()
+            ->select(['id', 'order_number', 'status', 'total', 'table_id', 'updated_at'])
+            ->with([
+                'items:id,order_id,product_name,quantity,unit_price',
+                'table:id,number,qr_token',
+            ])
+            ->findOrFail($order->id);
+
         $settings = \App\Models\Setting::allCached();
 
         return view('menu.status', compact('order', 'settings'));
@@ -80,13 +89,22 @@ class OrderController extends Controller
 
     public function statusApi(Order $order): JsonResponse
     {
+        $order = Order::query()
+            ->select(['id', 'order_number', 'status', 'total', 'updated_at', 'table_id'])
+            ->with(['table:id,number'])
+            ->findOrFail($order->id);
+
         return response()->json([
+            'id' => $order->id,
             'order_number' => $order->order_number,
             'status' => $order->status,
             'status_label' => $order->status_label,
+            'customer_status_label' => $order->customer_status_label,
+            'status_step' => $order->customerStatusStep(),
             'total' => $order->total,
             'table' => $order->table?->number,
             'updated_at' => $order->updated_at->toIso8601String(),
+            'is_final' => in_array($order->status, self::FINAL_STATUSES, true),
         ]);
     }
 }
