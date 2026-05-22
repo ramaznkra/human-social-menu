@@ -14,4 +14,3 @@ php artisan serve
 - TV Ekran: http://127.0.0.1:8000/ekran
 - Mutfak: http://127.0.0.1:8000/mutfak
 
-Detaylı hosting kurulumu için **KURULUM.md** dosyasına bakın.
