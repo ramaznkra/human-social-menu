@@ -16,11 +16,12 @@
         <input type="date" name="date" value="{{ request('date') }}" onchange="this.form.submit()" class="form-input max-w-[180px]">
     </form>
     <table class="admin-table w-full">
-        <thead><tr><th>No</th><th>Masa</th><th>Tutar</th><th>Durum</th><th>Tarih</th><th></th></tr></thead>
+        <thead><tr><th>No</th><th>Kaynak</th><th>Masa</th><th>Tutar</th><th>Durum</th><th>Tarih</th><th></th></tr></thead>
         <tbody>
         @foreach($orders as $order)
-        <tr>
+        <tr class="{{ $order->isWaiterOrder() ? 'order-row--waiter' : '' }}">
             <td class="font-medium">#{{ $order->order_number }}</td>
+            <td>@include('admin.partials.waiter-order-badge', ['order' => $order])</td>
             <td>{{ $order->table?->number ?? '—' }}</td>
             <td class="font-semibold text-[#E67E22]">{{ number_format($order->total, 0) }} ₺</td>
             <td><span class="badge-status badge-{{ $order->status }}">{{ $order->status_label }}</span></td>

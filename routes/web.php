@@ -7,9 +7,9 @@ use App\Http\Controllers\Admin\DisplaySlideController;
 use App\Http\Controllers\Admin\CafeGalleryController;
 use App\Http\Controllers\Admin\BarScreenController;
 use App\Http\Controllers\Admin\LiveOrdersController;
+use App\Http\Controllers\Admin\ManualOrderController;
 use App\Http\Controllers\Admin\OperationsController;
 use App\Http\Controllers\TableCallController;
-use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\Admin\OrderAdminController;
 use App\Http\Controllers\Admin\OrderArchiveController;
 use App\Http\Controllers\Admin\ProductController;
@@ -49,10 +49,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/api/operasyon', [OperationsController::class, 'live'])->name('operations.live');
         Route::get('live-orders', [LiveOrdersController::class, 'index'])->name('live-orders.index');
+        Route::get('api/admin/manual-order/bootstrap', [ManualOrderController::class, 'bootstrap'])->name('manual-order.bootstrap');
+        Route::get('api/admin/manual-order/products', [ManualOrderController::class, 'searchProducts'])->name('manual-order.products');
+        Route::post('api/admin/manual-order', [ManualOrderController::class, 'store'])->name('manual-order.store');
         Route::patch('/api/cagri/{call}/onayla', [OperationsController::class, 'acknowledgeCall'])->name('operations.acknowledge');
 
         Route::resource('categories', CategoryController::class)->except(['show']);
         Route::resource('products', ProductController::class)->except(['show']);
+        Route::patch('api/admin/products/{product}/toggle-availability', [ProductController::class, 'toggleAvailability'])
+            ->name('products.toggle-availability');
         Route::resource('tables', TableController::class)->except(['show']);
         Route::post('tables/{table}/regenerate', [TableController::class, 'regenerate'])->name('tables.regenerate');
         Route::get('tables/{table}/qr.png', [TableController::class, 'qrPng'])->name('tables.qr.png');
@@ -63,6 +68,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::patch('api/bar/siparis/{order}/hazir', [BarScreenController::class, 'markReady'])->name('bar.ready');
 
         Route::get('orders/archive', [OrderArchiveController::class, 'index'])->name('orders.archive');
+        Route::get('orders/archive/export/{mode}', [OrderArchiveController::class, 'export'])
+            ->name('orders.archive.export')
+            ->where('mode', 'daily|report');
         Route::post('orders/archive/purge', [OrderArchiveController::class, 'purge'])->name('orders.archive.purge');
         Route::delete('orders/{order}', [OrderArchiveController::class, 'destroy'])->name('orders.destroy');
         Route::get('orders', [OrderAdminController::class, 'index'])->name('orders.index');
@@ -71,8 +79,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::resource('slides', DisplaySlideController::class)->except(['show']);
         Route::resource('cafe-galleries', CafeGalleryController::class)->except(['show']);
-        Route::resource('events', EventController::class)->except(['show']);
-
         Route::get('settings', [SettingController::class, 'edit'])->name('settings.edit');
         Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
     });

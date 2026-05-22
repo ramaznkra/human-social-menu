@@ -39,6 +39,10 @@
             </nav>
         </header>
 
+        @isset($tables)
+            @include('admin.live-orders._table-map', ['tables' => $tables, 'busyTableIds' => $busyTableIds])
+        @endisset
+
         <main id="liveOrdersGrid" class="flex-1 space-y-3 overflow-y-auto p-4 md:p-6">
             <p class="py-16 text-center text-[#D4C5B9]">Siparişler yükleniyor…</p>
         </main>

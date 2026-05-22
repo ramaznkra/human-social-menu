@@ -165,7 +165,9 @@ RewriteBase /human-qr-menu/public/
 
 - Mutfak tableti: `https://domain.com/mutfak` (otomatik yenileme 15 sn)
 - Admin sipariş listesi: `/admin/orders`
-- Geçmiş adisyon arşivi: `/admin/orders/archive` (sayfalı liste, arama + tarih filtresi)
+- Geçmiş adisyon arşivi: `/admin/orders/archive` (sayfalı liste, arama + tarih filtresi, net ciro özeti)
+- Arşiv PDF: **Günlük PDF** (seçili/tekil gün) · **Özet & Liste PDF** (filtreye göre net ciro + nakit/kart + adisyon tablosu). Paket: `barryvdh/laravel-dompdf`
+- Admin silme onayları tarayıcı `confirm` yerine canlı sipariş bildirimi stilinde toast/onay kartı kullanır
 - Canlı ekranda yalnızca **beklemede / hazırlanıyor / masada** siparişler görünür; **tamamlandı** veya **iptal** olanlar anında kaybolur
 
 ### Otomatik arşiv (sunucu)
@@ -178,7 +180,11 @@ RewriteBase /human-qr-menu/public/
 
 Manuel test: `php artisan orders:archive-stale`
 
-Ödeme dağılımı için canlı panelde teslimde **Tamam (Nakit)** veya **Tamam (Kart)** seçin.
+Canlı panel (Kasa) akışı: yeni sipariş bildirimi → **Kabul Et · Hazırlanıyor** → **Afiyet Olsun** (masaya gitti) → **Nakit/Kart · Kapat** (sipariş kapanır, canlı listeden düşer). Müşteri ekranı: Sipariş Alındı → Hazırlanıyor → Afiyet Olsun; ardından menüye döner, ödemeyi **Hesap İste** ile kendisi talep eder.
+
+**Menü dilleri:** Müşteri menüsünde sağ üstten **TR / EN / RU** seçilir. Ürün ve kategori adları adminde TR (zorunlu) + EN/RU (isteğe bağlı) girilir; boşsa Türkçe gösterilir.
+
+**Garson / manuel sipariş:** Admin panelinde sağ üstte **➕ Yeni Sipariş Ekle** → masa seç → ürün ara/ekle → **Siparişi Onayla**. Canlı ekranda **🤵 Garson Siparişi** rozeti görünür; kartta yalnızca **Nakit** ve **Kart** (Hazırlanıyor / Afiyet Olsun yok). Panelde **Sipariş Kaynağı** kartında QR / garson yüzdesi raporlanır.
 
 ---
 

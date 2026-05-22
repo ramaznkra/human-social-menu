@@ -9,6 +9,17 @@ function initMenuCart() {
     let callStatusTimer = null;
 
     const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+    const t = cfg.i18n || {};
+    const cartItemsLabel = (count) =>
+        (t.cartItems || ':count items').replace(':count', String(count));
+
+    function callQueryParams() {
+        const params = new URLSearchParams();
+        if (cfg.tableToken) params.set('table_token', cfg.tableToken);
+        if (cfg.tableMasa) params.set('masa', cfg.tableMasa);
+        if (cfg.locale) params.set('lang', cfg.locale);
+        return params;
+    }
 
     /* ── Garson / hesap ── */
     const callStatusUrl = document.getElementById('menuActionBar')?.dataset.callStatusUrl;
@@ -26,7 +37,7 @@ function initMenuCart() {
         document.getElementById('callActionButtons')?.classList.add('hidden');
         const msg = document.getElementById('callSuccessMsg');
         if (msg) {
-            msg.textContent = message || 'Garsonumuz masanıza yönlendirildi…';
+            msg.textContent = message || t.callWaiterSent || '';
             msg.classList.remove('hidden');
             msg.classList.add('animate-fade-in-up');
         }
@@ -42,11 +53,8 @@ function initMenuCart() {
 
     async function checkCallStatus() {
         if (!callStatusUrl || (!cfg.tableToken && !cfg.tableMasa)) return;
-        const params = new URLSearchParams();
-        if (cfg.tableToken) params.set('table_token', cfg.tableToken);
-        if (cfg.tableMasa) params.set('masa', cfg.tableMasa);
         try {
-            const res = await fetch(`${callStatusUrl}?${params}`, { headers: { Accept: 'application/json' } });
+            const res = await fetch(`${callStatusUrl}?${callQueryParams()}`, { headers: { Accept: 'application/json' } });
             if (!res.ok) return;
             const data = await res.json();
             if (!data.active) {
@@ -54,8 +62,7 @@ function initMenuCart() {
                 resetCallButtons();
                 const msg = document.getElementById('callSuccessMsg');
                 if (msg) {
-                    msg.textContent =
-                        'Garsonunuz masanıza yönlendirildi. İhtiyacınız olursa tekrar çağırabilirsiniz.';
+                    msg.textContent = t.callWaiterActive || '';
                     msg.classList.remove('hidden');
                     setTimeout(() => msg.classList.add('hidden'), 5000);
                 }
@@ -76,6 +83,7 @@ function initMenuCart() {
         const payload = { type };
         if (cfg.tableToken) payload.table_token = cfg.tableToken;
         if (cfg.tableMasa) payload.masa = cfg.tableMasa;
+        if (cfg.locale) payload.lang = cfg.locale;
         try {
             const res = await fetch(cfg.callApiUrl, {
                 method: 'POST',
@@ -91,29 +99,26 @@ function initMenuCart() {
                 showCallSent(data.message);
                 return true;
             }
-            alert(data.message || 'İstek gönderilemedi.');
+            alert(data.message || t.callFail || '');
         } catch {
-            alert('Bağlantı hatası, tekrar deneyin.');
+            alert(t.connection || '');
         }
         return false;
     }
 
     async function syncCallBarOnLoad() {
         if (!callStatusUrl || (!cfg.tableToken && !cfg.tableMasa)) return;
-        const params = new URLSearchParams();
-        if (cfg.tableToken) params.set('table_token', cfg.tableToken);
-        if (cfg.tableMasa) params.set('masa', cfg.tableMasa);
         try {
-            const res = await fetch(`${callStatusUrl}?${params}`, { headers: { Accept: 'application/json' } });
+            const res = await fetch(`${callStatusUrl}?${callQueryParams()}`, { headers: { Accept: 'application/json' } });
             if (!res.ok) return;
             const data = await res.json();
             if (data.active) {
                 const waiting = {
-                    waiter: 'Garsonumuz masanıza yönlendirildi…',
-                    bill_cash: 'Nakit hesap talebiniz iletildi. Garsonumuz geliyor…',
-                    bill_card: 'Kart ile ödeme talebiniz iletildi. Pos getiriliyor…',
+                    waiter: t.callWaiterSent,
+                    bill_cash: t.callBillCash,
+                    bill_card: t.callBillCard,
                 };
-                showCallSent(waiting[data.type] || 'Talebiniz iletildi…');
+                showCallSent(waiting[data.type] || '');
             }
         } catch {
             /* sessiz */
@@ -215,6 +220,10 @@ function initMenuCart() {
         const countEl = document.getElementById('cartCount');
         const totalEl = document.getElementById('cartTotal');
         if (countEl) countEl.textContent = count;
+        const labelEl = document.getElementById('cartCountLabel');
+        if (labelEl) {
+            labelEl.textContent = ` ${cartItemsLabel(count)} · `;
+        }
         if (totalEl) totalEl.textContent = `${total.toFixed(0)} ${cfg.currency}`;
         bar.classList.toggle('visible', count > 0);
     }
@@ -242,10 +251,11 @@ function initMenuCart() {
             bar?.classList.remove('animate-cart-pop');
             void bar?.offsetWidth;
             bar?.classList.add('animate-cart-pop');
-            const label = btn.getAttribute('aria-label') || 'Sipariş';
-            btn.textContent = 'Eklendi ✓';
+            const label = btn.getAttribute('aria-label') || t.orderBtn || 'Order';
+            const orderBtnText = btn.dataset.orderLabel || label;
+            btn.textContent = '✓';
             setTimeout(() => {
-                btn.textContent = label.includes('Sipariş') ? 'Sipariş Et' : label;
+                btn.textContent = orderBtnText;
             }, 1200);
         });
     });
@@ -283,7 +293,7 @@ function initMenuCart() {
         const btn = document.getElementById('submitOrder');
         const modal = document.getElementById('cartModal');
         btn.disabled = true;
-        btn.textContent = 'Gönderiliyor...';
+        btn.textContent = t.sending || '...';
 
         try {
             const res = await fetch(cfg.orderStoreUrl, {
@@ -319,11 +329,11 @@ function initMenuCart() {
                 `Sipariş gönderilemedi (${res.status}).`;
             alert(msg);
         } catch {
-            alert('Bağlantı hatası, tekrar deneyin.');
+            alert(t.connection || '');
         }
 
         btn.disabled = false;
-        btn.textContent = 'Gönder';
+        btn.textContent = t.send || 'Send';
     });
 }
 

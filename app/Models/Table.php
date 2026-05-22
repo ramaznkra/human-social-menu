@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class Table extends Model
@@ -28,6 +29,19 @@ class Table extends Model
     public static function generateToken(): string
     {
         return Str::random(16);
+    }
+
+    /** Canlı sipariş veya aktif çağrısı olan masa id'leri. */
+    public static function busyTableIds(): Collection
+    {
+        $orderTables = Order::query()
+            ->whereNotNull('table_id')
+            ->live()
+            ->pluck('table_id');
+
+        $callTables = TableCall::query()->active()->pluck('table_id');
+
+        return $orderTables->merge($callTables)->unique()->values();
     }
 
     public function getMenuUrlAttribute(): string

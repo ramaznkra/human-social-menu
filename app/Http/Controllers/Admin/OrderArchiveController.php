@@ -5,29 +5,47 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Table;
-use Illuminate\Database\Eloquent\Builder;
+use App\Services\OrderArchiveExportService;
+use App\Support\OrderArchiveFilter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Illuminate\Http\Response;
 
 class OrderArchiveController extends Controller
 {
+    public function __construct(
+        private OrderArchiveExportService $exportService,
+    ) {}
+
     public function index(Request $request): View
     {
-        $query = $this->filteredArchiveQuery($request);
+        $query = OrderArchiveFilter::apply($request);
         $orders = (clone $query)->paginate(20)->withQueryString();
         $filteredTotal = (clone $query)->count();
+        $summary = $this->exportService->summarize($query);
+        $exportDay = $this->exportService->resolveExportDay($request);
 
         return view('admin.orders.archive', [
             'orders' => $orders,
             'filteredTotal' => $filteredTotal,
+            'summary' => $summary,
+            'exportDay' => $exportDay,
+            'exportDayLabel' => $exportDay->format('d.m.Y'),
             'tables' => Table::orderBy('number')->get(['id', 'number']),
         ]);
     }
 
+    public function export(Request $request, string $mode): Response
+    {
+        abort_unless(in_array($mode, ['daily', 'report'], true), 404);
+
+        return $this->exportService->export($request, $mode);
+    }
+
     public function purge(Request $request): RedirectResponse
     {
-        $query = $this->filteredArchiveQuery($request);
+        $query = OrderArchiveFilter::apply($request);
         $count = (clone $query)->count();
 
         if ($count === 0) {
@@ -54,35 +72,5 @@ class OrderArchiveController extends Controller
         return redirect()
             ->route('admin.orders.archive', request()->only(['q', 'status', 'date_from', 'date_to', 'page']))
             ->with('success', "#{$number} adisyonu silindi.");
-    }
-
-    private function filteredArchiveQuery(Request $request): Builder
-    {
-        $query = Order::query()
-            ->archived()
-            ->with(['table:id,number'])
-            ->orderByDesc('created_at');
-
-        if ($request->filled('status') && in_array($request->status, Order::archivedStatuses(), true)) {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->filled('date_from')) {
-            $query->whereDate('created_at', '>=', $request->date_from);
-        }
-
-        if ($request->filled('date_to')) {
-            $query->whereDate('created_at', '<=', $request->date_to);
-        }
-
-        if ($request->filled('q')) {
-            $term = '%'.trim($request->q).'%';
-            $query->where(function ($q) use ($term) {
-                $q->where('order_number', 'like', $term)
-                    ->orWhereHas('table', fn ($t) => $t->where('number', 'like', $term));
-            });
-        }
-
-        return $query;
     }
 }

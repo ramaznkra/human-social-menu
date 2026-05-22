@@ -10,7 +10,7 @@
         <article class="menu-info-card menu-info-card--motto">
             <div class="menu-info-card__icon" aria-hidden="true">✦</div>
             <div class="min-w-0 flex-1">
-                <p class="menu-info-card__label">Günün Sosyal Mottosu</p>
+                <p class="menu-info-card__label">{{ __('menu.motto_label') }}</p>
                 <p class="menu-info-card__motto">{{ $settings['daily_motto'] }}</p>
             </div>
         </article>
@@ -24,15 +24,16 @@
                 </svg>
             </div>
             <div class="min-w-0 flex-1">
-                <p class="menu-info-card__label">Wi-Fi Şifresi</p>
+                <p class="menu-info-card__label">{{ __('menu.wifi_label') }}</p>
                 <p class="menu-info-card__wifi-value" id="menuWifiPassword">{{ $settings['wifi_password'] }}</p>
             </div>
             <button
                 type="button"
                 class="menu-info-copy-btn"
                 data-copy-target="menuWifiPassword"
-                aria-label="Wi-Fi şifresini kopyala"
-            >Kopyala</button>
+                data-copy-done="{{ __('menu.wifi_copied') }}"
+                aria-label="{{ __('menu.wifi_copy') }}"
+            >{{ __('menu.wifi_copy') }}</button>
         </article>
         @endif
     </div>
@@ -47,11 +48,12 @@ document.querySelectorAll('[data-copy-target]').forEach((btn) => {
         const el = document.getElementById(btn.dataset.copyTarget);
         const text = el?.textContent?.trim();
         if (!text) return;
+        const doneLabel = btn.dataset.copyDone || 'OK';
 
         try {
             await navigator.clipboard.writeText(text);
             const prev = btn.textContent;
-            btn.textContent = 'Kopyalandı ✓';
+            btn.textContent = doneLabel;
             btn.classList.add('menu-info-copy-btn--done');
             setTimeout(() => {
                 btn.textContent = prev;
@@ -64,8 +66,8 @@ document.querySelectorAll('[data-copy-target]').forEach((btn) => {
             window.getSelection()?.addRange(range);
             document.execCommand('copy');
             window.getSelection()?.removeAllRanges();
-            btn.textContent = 'Kopyalandı ✓';
-            setTimeout(() => { btn.textContent = 'Kopyala'; }, 2000);
+            btn.textContent = doneLabel;
+            setTimeout(() => { btn.textContent = btn.dataset.copyDefault || prev; }, 2000);
         }
     });
 });

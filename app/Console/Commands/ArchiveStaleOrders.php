@@ -17,7 +17,7 @@ class ArchiveStaleOrders extends Command
         $cutoff = now()->subHours($hours);
 
         $count = Order::query()
-            ->whereIn('status', Order::liveStatuses())
+            ->live()
             ->where('created_at', '<', $cutoff)
             ->update(['status' => Order::STATUS_CANCELLED]);
 

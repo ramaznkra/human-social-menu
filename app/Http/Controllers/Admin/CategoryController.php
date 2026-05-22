@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
-use App\Services\MenuImageOptimizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -12,10 +11,6 @@ use Illuminate\View\View;
 
 class CategoryController extends Controller
 {
-    public function __construct(
-        private readonly MenuImageOptimizer $images,
-    ) {}
-
     public function index(): View
     {
         $categories = Category::orderBy('sort_order')->get();
@@ -30,11 +25,7 @@ class CategoryController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $data = $this->validated($request);
-        if ($request->hasFile('image')) {
-            $data['image'] = $this->images->storeCategory($request->file('image'));
-        }
-        Category::create($data);
+        Category::create($this->validated($request));
 
         return redirect()->route('admin.categories.index')->with('success', 'Kategori eklendi.');
     }
@@ -46,13 +37,7 @@ class CategoryController extends Controller
 
     public function update(Request $request, Category $category): RedirectResponse
     {
-        $data = $this->validated($request, $category);
-        if ($request->hasFile('image')) {
-            $data['image'] = $this->images->storeCategory($request->file('image'));
-        } else {
-            unset($data['image']);
-        }
-        $category->update($data);
+        $category->update($this->validated($request, $category));
 
         return redirect()->route('admin.categories.index')->with('success', 'Kategori güncellendi.');
     }
@@ -68,11 +53,12 @@ class CategoryController extends Controller
     {
         $data = $request->validate([
             'name' => 'required|string|max:100',
+            'name_en' => 'nullable|string|max:100',
+            'name_ru' => 'nullable|string|max:100',
             'slug' => 'nullable|string|max:100',
             'icon' => 'nullable|string|max:50',
             'sort_order' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
-            'image' => 'nullable|image|max:5120',
         ]);
 
         $data['slug'] = $data['slug'] ?? Str::slug($data['name']);

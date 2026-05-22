@@ -21,8 +21,12 @@
                 @endforeach
             </select>
         </div>
-        <div><label class="form-label">Ad *</label><input type="text" name="name" value="{{ old('name', $product->name) }}" required class="form-input"></div>
-        <div><label class="form-label">Açıklama</label><textarea name="description" class="form-input min-h-[100px]">{{ old('description', $product->description) }}</textarea></div>
+        <div><label class="form-label">Ad (Türkçe) *</label><input type="text" name="name" value="{{ old('name', $product->name) }}" required class="form-input"></div>
+        <div><label class="form-label">Ad (English)</label><input type="text" name="name_en" value="{{ old('name_en', $product->name_en) }}" class="form-input"></div>
+        <div><label class="form-label">Ad (Русский)</label><input type="text" name="name_ru" value="{{ old('name_ru', $product->name_ru) }}" class="form-input"></div>
+        <div><label class="form-label">Açıklama (Türkçe)</label><textarea name="description" class="form-input min-h-[80px]">{{ old('description', $product->description) }}</textarea></div>
+        <div><label class="form-label">Açıklama (English)</label><textarea name="description_en" class="form-input min-h-[60px]">{{ old('description_en', $product->description_en) }}</textarea></div>
+        <div><label class="form-label">Açıklama (Русский)</label><textarea name="description_ru" class="form-input min-h-[60px]">{{ old('description_ru', $product->description_ru) }}</textarea></div>
         <div><label class="form-label">Fiyat (₺) *</label><input type="number" step="0.01" name="price" value="{{ old('price', $product->price) }}" required class="form-input"></div>
         <div><label class="form-label">Rozet (Popüler, Yeni...)</label><input type="text" name="badge" value="{{ old('badge', $product->badge) }}" class="form-input"></div>
         <div>

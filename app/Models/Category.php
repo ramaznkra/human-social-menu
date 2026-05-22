@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasMenuTranslations;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Category extends Model
 {
-    protected $fillable = ['name', 'slug', 'icon', 'image', 'sort_order', 'is_active'];
+    use HasMenuTranslations;
+
+    protected $fillable = ['name', 'name_en', 'name_ru', 'slug', 'icon', 'sort_order', 'is_active'];
 
     protected function casts(): array
     {
@@ -24,20 +27,4 @@ class Category extends Model
         return $query->where('is_active', true)->orderBy('sort_order');
     }
 
-    public function getImageUrlAttribute(): ?string
-    {
-        if (! $this->image) {
-            return null;
-        }
-
-        if (str_starts_with($this->image, 'http')) {
-            return $this->image;
-        }
-
-        if (str_starts_with($this->image, 'images/')) {
-            return asset($this->image);
-        }
-
-        return asset('storage/'.$this->image);
-    }
 }

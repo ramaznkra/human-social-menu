@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\MenuImageOptimizer;
 use App\Models\Category;
 use App\Models\Product;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -71,13 +72,29 @@ class ProductController extends Controller
         return redirect()->route('admin.products.index')->with('success', 'Ürün silindi.');
     }
 
+    public function toggleAvailability(Product $product): JsonResponse
+    {
+        $product->update(['is_available' => ! $product->is_available]);
+
+        return response()->json([
+            'success' => true,
+            'product_id' => $product->id,
+            'is_available' => $product->is_available,
+            'label' => $product->is_available ? 'Menüde' : 'Gizli',
+        ]);
+    }
+
     private function validated(Request $request): array
     {
         $data = $request->validate([
             'category_id' => 'required|exists:categories,id',
             'type' => 'required|in:kitchen,bar',
             'name' => 'required|string|max:150',
+            'name_en' => 'nullable|string|max:150',
+            'name_ru' => 'nullable|string|max:150',
             'description' => 'nullable|string',
+            'description_en' => 'nullable|string',
+            'description_ru' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'badge' => 'nullable|string|max:30',
             'sort_order' => 'nullable|integer|min:0',

@@ -164,6 +164,18 @@
     }
 
     /* ── HSP menü başlık ── */
+    .menu-lang-switcher {
+        @apply inline-flex gap-1 rounded-full border border-white/10 bg-[#121110]/80 p-0.5 backdrop-blur-md;
+    }
+
+    .menu-lang-btn {
+        @apply rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide text-[#D4C5B9] transition hover:text-gray-100;
+    }
+
+    .menu-lang-btn.is-active {
+        @apply bg-[#E67E22] text-white shadow-sm;
+    }
+
     .menu-logo {
         font-family: 'Cormorant Garamond', Georgia, serif;
         @apply text-5xl font-semibold tracking-[0.12em] text-[#C9A962];
@@ -290,6 +302,14 @@
 
     .live-ops-order-card {
         @apply transition-opacity duration-300;
+    }
+
+    .live-ops-order-card--waiter {
+        @apply border-violet-400/40 ring-1 ring-violet-400/25;
+    }
+
+    .live-ops-waiter-badge {
+        @apply mt-1 inline-flex rounded-full bg-violet-500/25 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-200;
     }
 
     .live-ops-btn-primary {
@@ -446,15 +466,82 @@
         @apply bg-red-500/15 text-red-400;
     }
 
-    /* ── Admin ── */
-    .sidebar-link {
-        @apply flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-brand-cream transition-colors;
+    /* ── Admin sidebar ── */
+    .admin-sidebar__nav {
+        @apply flex flex-col;
     }
+
+    .admin-sidebar__group {
+        @apply flex flex-col gap-0.5;
+    }
+
+    .admin-sidebar__divider {
+        @apply my-3 h-px shrink-0 border-0 bg-white/10;
+    }
+
+    .sidebar-link {
+        @apply flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-brand-cream/90 transition-colors;
+    }
+
+    .sidebar-link__main {
+        @apply flex min-w-0 items-center gap-2.5;
+    }
+
+    .sidebar-link__icon {
+        @apply h-[18px] w-[18px] shrink-0;
+    }
+
+    .sidebar-link__icon--live {
+        @apply text-[#E67E22];
+    }
+
+    .sidebar-link--live {
+        @apply font-semibold text-gray-100;
+    }
+
+    .sidebar-link--live:hover .sidebar-link__icon--live,
+    .sidebar-link--live.active .sidebar-link__icon--live {
+        @apply text-[#ffb347];
+    }
+
+    .sidebar-link--live.active {
+        @apply bg-[#E67E22]/25 text-[#ffb347];
+    }
+
     .sidebar-link:hover {
         @apply bg-white/5 text-gray-100;
     }
+
     .sidebar-link.active {
-        @apply bg-brand-accent/15 text-brand-accent;
+        @apply bg-[#E67E22]/20 font-semibold text-[#E67E22];
+    }
+
+    .sidebar-link--panel {
+        @apply text-[15px] font-semibold tracking-wide text-gray-100;
+    }
+
+    .sidebar-link--panel.active {
+        @apply bg-white/10 text-[#E67E22];
+    }
+
+    .sidebar-link--external {
+        @apply text-brand-cream/75;
+    }
+
+    .sidebar-link__ext {
+        @apply text-[10px] opacity-60;
+    }
+
+    .sidebar-link--logout {
+        @apply cursor-pointer border-0 bg-transparent text-brand-cream/75 hover:bg-red-500/10 hover:text-red-300;
+    }
+
+    .admin-main {
+        @apply min-w-0;
+    }
+
+    .admin-page-header {
+        @apply border-b border-gray-200/80 pb-4;
     }
 
     .btn {
@@ -494,6 +581,56 @@
         @apply bg-gray-50/80;
     }
 
+    /* Geçmiş adisyonlar */
+    .orders-archive__filters {
+        @apply border-b border-gray-100 pb-6;
+    }
+
+    .orders-archive__filter-grid {
+        @apply grid gap-4 md:grid-cols-2 lg:grid-cols-4;
+    }
+
+    .orders-archive__filter-actions {
+        @apply mt-4 flex flex-col gap-3 border-t border-gray-50 pt-4 sm:flex-row sm:items-center sm:justify-between;
+    }
+
+    .orders-archive__filter-hint {
+        @apply min-w-0;
+    }
+
+    .orders-archive__filter-buttons {
+        @apply shrink-0 justify-end;
+    }
+
+    .orders-archive__purge {
+        @apply mb-6 flex flex-col gap-3 rounded-lg border border-red-100 bg-red-50/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between;
+    }
+
+    .orders-archive__purge-text {
+        @apply min-w-0;
+    }
+
+    .orders-archive__table-wrap {
+        @apply -mx-1 px-1;
+    }
+
+    .orders-archive__th-actions,
+    .orders-archive__td-actions {
+        @apply w-[1%] whitespace-nowrap text-right;
+    }
+
+    .orders-archive__row-actions {
+        @apply inline-flex items-center justify-end gap-1.5;
+    }
+
+    .orders-archive__delete-form {
+        @apply inline-flex m-0 p-0;
+    }
+
+    .orders-archive__pagination nav {
+        @apply flex flex-wrap justify-center gap-1;
+    }
+
     .badge-status {
         @apply inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold;
     }
@@ -525,8 +662,344 @@
         @apply mt-2 text-2xl font-bold text-gray-900;
     }
 
+    .table-map-card--busy {
+        animation: tableMapPulse 2s ease-in-out infinite;
+    }
+
+    .live-table-chip--busy {
+        animation: tableMapPulse 2s ease-in-out infinite;
+    }
+
+    .live-table-chip--flash {
+        animation: tableChipFlash 0.6s ease-out;
+    }
+
+    @keyframes tableChipFlash {
+        0% {
+            transform: scale(1);
+        }
+        40% {
+            transform: scale(1.06);
+            box-shadow: 0 0 0 4px rgb(230 126 34 / 0.35);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @keyframes tableMapPulse {
+        0%,
+        100% {
+            box-shadow: 0 0 0 0 rgb(230 126 34 / 0.25);
+        }
+        50% {
+            box-shadow: 0 0 0 6px rgb(230 126 34 / 0.08);
+        }
+    }
+
     .dashboard-finance-hint {
         @apply mt-1 text-xs text-gray-400;
+    }
+
+    /* Garson hızlı sipariş (admin) */
+    .manual-order-fab {
+        @apply fixed right-5 top-5 z-[90] rounded-full bg-[#E67E22] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-[#E67E22]/40 transition hover:brightness-110 active:scale-95;
+    }
+
+    body.manual-order-open {
+        @apply overflow-hidden;
+    }
+
+    .manual-order-modal {
+        @apply pointer-events-none fixed inset-0 z-[100] flex items-end justify-center opacity-0 transition-opacity duration-200 sm:items-center sm:p-4;
+    }
+
+    .manual-order-modal.is-open {
+        @apply pointer-events-auto opacity-100;
+    }
+
+    .manual-order-modal__backdrop {
+        @apply absolute inset-0 bg-black/50;
+    }
+
+    .manual-order-modal__panel {
+        @apply relative z-10 flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:max-h-[90vh] sm:rounded-2xl;
+    }
+
+    .manual-order-modal__header {
+        @apply flex items-start justify-between gap-3 border-b border-gray-100 px-4 py-4;
+    }
+
+    .manual-order-modal__close {
+        @apply rounded-lg px-2 py-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700;
+    }
+
+    .manual-order-modal__body {
+        @apply flex-1 overflow-y-auto px-4 py-4;
+    }
+
+    .manual-order-modal__footer {
+        @apply border-t border-gray-100 px-4 py-4;
+    }
+
+    .manual-order-label {
+        @apply mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500;
+    }
+
+    .manual-order-input {
+        @apply w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none transition focus:border-[#E67E22] focus:ring-2 focus:ring-[#E67E22]/20;
+    }
+
+    .manual-order-tables {
+        @apply flex flex-wrap gap-2;
+    }
+
+    .manual-order-table-btn {
+        @apply rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-700 transition hover:border-[#E67E22]/40;
+    }
+
+    .manual-order-table-btn.is-selected {
+        @apply border-[#E67E22] bg-[#E67E22]/10 text-[#E67E22];
+    }
+
+    .manual-order-products {
+        @apply mt-2 max-h-40 overflow-y-auto rounded-xl border border-gray-100;
+    }
+
+    .manual-order-product-row {
+        @apply flex items-center gap-2 border-b border-gray-50 px-3 py-2 last:border-0;
+    }
+
+    .manual-order-add-btn {
+        @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#E67E22] text-lg font-bold text-white transition hover:brightness-110;
+    }
+
+    .manual-order-cart {
+        @apply mt-2 max-h-36 space-y-2 overflow-y-auto rounded-xl border border-gray-100 bg-gray-50/80 p-2;
+    }
+
+    .manual-order-cart-line {
+        @apply flex items-center gap-2 rounded-lg bg-white px-2 py-2;
+    }
+
+    .manual-order-qty-btn {
+        @apply flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 text-sm font-bold text-gray-700 hover:border-[#E67E22]/40;
+    }
+
+    .manual-order-submit {
+        @apply w-full rounded-xl bg-[#E67E22] py-3.5 text-sm font-bold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50;
+    }
+
+    .manual-order-error {
+        @apply mb-2 text-center text-xs font-medium text-red-600;
+    }
+
+    .manual-order-modal__panel--success .manual-order-modal__header,
+    .manual-order-modal__panel--success .manual-order-modal__body,
+    .manual-order-modal__panel--success .manual-order-modal__footer {
+        @apply invisible;
+    }
+
+    .manual-order-success {
+        @apply absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl bg-white px-6 text-center;
+    }
+
+    .manual-order-success__ring {
+        @apply mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 ring-4 ring-emerald-100;
+        animation: manualSuccessPop 0.45s ease-out;
+    }
+
+    .manual-order-success__icon {
+        @apply text-4xl;
+    }
+
+    .manual-order-success__title {
+        @apply text-xl font-bold text-gray-900;
+    }
+
+    .manual-order-success__message {
+        @apply mt-2 text-sm font-medium text-[#E67E22];
+    }
+
+    .manual-order-success__hint {
+        @apply mt-1 text-xs text-gray-500;
+    }
+
+    @keyframes manualSuccessPop {
+        0% {
+            transform: scale(0.6);
+            opacity: 0;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    .admin-waiter-badge {
+        @apply inline-flex rounded-full bg-violet-100 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-violet-800;
+    }
+
+    .admin-source-badge {
+        @apply inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-medium text-gray-500;
+    }
+
+    .admin-source-badge--qr {
+        @apply bg-gray-100 text-gray-600;
+    }
+
+    .order-row--waiter {
+        @apply bg-violet-50/40;
+    }
+
+    .admin-toast-host {
+        @apply pointer-events-none fixed right-4 top-4 z-[200] flex w-full max-w-sm flex-col gap-3 p-4 sm:right-6 sm:top-6;
+    }
+
+    .admin-toast {
+        @apply pointer-events-auto flex items-start gap-3 rounded-2xl border bg-white p-4 shadow-xl transition-all duration-300;
+        transform: translateX(110%);
+        opacity: 0;
+    }
+
+    .admin-toast--in {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    .admin-toast--out {
+        transform: translateX(110%);
+        opacity: 0;
+    }
+
+    .admin-toast--success {
+        @apply border-emerald-200/80 bg-gradient-to-br from-white to-emerald-50/80;
+    }
+
+    .admin-toast--info {
+        @apply border-[#E67E22]/25 bg-gradient-to-br from-white to-orange-50/60;
+    }
+
+    .admin-toast--error {
+        @apply border-red-200 bg-red-50/90;
+    }
+
+    .admin-toast__icon {
+        @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-2xl shadow-sm;
+    }
+
+    .admin-toast__title {
+        @apply text-sm font-bold text-gray-900;
+    }
+
+    .admin-toast__message {
+        @apply mt-0.5 text-sm text-gray-700;
+    }
+
+    .admin-toast__hint {
+        @apply mt-1 text-xs text-gray-500;
+    }
+
+    .admin-toast__close {
+        @apply ml-auto shrink-0 rounded-lg px-1.5 py-0.5 text-xs text-gray-400 hover:bg-gray-100 hover:text-gray-600;
+    }
+
+    .admin-confirm-host {
+        @apply fixed inset-0 z-[210] flex items-start justify-end p-4 sm:p-6;
+        pointer-events: none;
+    }
+
+    .admin-confirm-backdrop {
+        @apply absolute inset-0 border-0 bg-black/30 opacity-0 transition-opacity duration-200;
+        pointer-events: auto;
+    }
+
+    .admin-confirm-backdrop--in {
+        @apply opacity-100;
+    }
+
+    .admin-confirm-backdrop--out {
+        @apply opacity-0;
+    }
+
+    .admin-confirm {
+        @apply pointer-events-auto relative z-10 flex w-full max-w-sm flex-col gap-3 rounded-2xl border bg-white p-4 shadow-2xl transition-all duration-300 sm:max-w-md;
+        transform: translateX(110%);
+        opacity: 0;
+    }
+
+    .admin-confirm__top {
+        @apply flex items-start gap-3;
+    }
+
+    .admin-confirm--in {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    .admin-confirm--out {
+        transform: translateX(110%);
+        opacity: 0;
+    }
+
+    .admin-confirm--warning {
+        @apply border-amber-200/80 bg-gradient-to-br from-white to-amber-50/80;
+    }
+
+    .admin-confirm--danger {
+        @apply border-red-200 bg-gradient-to-br from-white to-red-50/90;
+    }
+
+    .admin-confirm--info {
+        @apply border-[#E67E22]/25 bg-gradient-to-br from-white to-orange-50/60;
+    }
+
+    .admin-confirm__icon {
+        @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-2xl shadow-sm;
+    }
+
+    .admin-confirm__body {
+        @apply min-w-0 flex-1;
+    }
+
+    .admin-confirm__title {
+        @apply text-sm font-bold text-gray-900;
+    }
+
+    .admin-confirm__message {
+        @apply mt-1 text-sm text-gray-700;
+    }
+
+    .admin-confirm__hint {
+        @apply mt-1 text-xs text-gray-500;
+    }
+
+    .admin-confirm__actions {
+        @apply flex flex-wrap justify-end gap-2 border-t border-gray-100 pt-3;
+    }
+
+    .orders-archive__summary {
+        @apply mb-6 grid gap-3 rounded-lg border border-[#E67E22]/15 bg-orange-50/40 p-4 sm:grid-cols-3;
+    }
+
+    .orders-archive__summary-item {
+        @apply min-w-0;
+    }
+
+    .orders-archive__summary-label {
+        @apply text-xs font-medium uppercase tracking-wide text-gray-500;
+    }
+
+    .orders-archive__summary-value {
+        @apply mt-0.5 text-lg font-bold text-gray-900;
+    }
+
+    .orders-archive__summary-value--accent {
+        @apply text-[#E67E22];
+    }
+
+    .orders-archive__downloads {
+        @apply flex flex-wrap gap-2;
     }
 
     .alert {

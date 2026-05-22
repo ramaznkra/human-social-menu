@@ -8,6 +8,10 @@
     @vite(['resources/css/app.css', 'resources/js/pages/live-orders.js'])
 </head>
 <body class="min-h-dvh bg-[#121110] font-sans text-gray-100 antialiased">
-    @include('admin.live-orders._app', ['fullscreen' => true])
+    @include('admin.live-orders._app', [
+        'fullscreen' => true,
+        'tables' => $tables,
+        'busyTableIds' => $busyTableIds,
+    ])
 </body>
 </html>

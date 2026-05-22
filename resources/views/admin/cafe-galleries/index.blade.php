@@ -24,7 +24,17 @@
             <td>{{ $g->is_active ? 'Aktif' : 'Pasif' }}</td>
             <td class="space-x-1 whitespace-nowrap">
                 <a href="{{ route('admin.cafe-galleries.edit', $g) }}" class="btn btn-sm btn-secondary">Düzenle</a>
-                <form action="{{ route('admin.cafe-galleries.destroy', $g) }}" method="POST" class="inline" onsubmit="return confirm('Silinsin mi?')">
+                <form
+                    action="{{ route('admin.cafe-galleries.destroy', $g) }}"
+                    method="POST"
+                    class="inline"
+                    @include('admin.partials.confirm-form', [
+                        'title' => 'Kaydı sil',
+                        'message' => 'Social Spotted kaydı kalıcı olarak silinecek.',
+                        'type' => 'danger',
+                        'confirmLabel' => 'Sil',
+                    ])
+                >
                     @csrf @method('DELETE')<button class="btn btn-sm btn-danger">Sil</button>
                 </form>
             </td>

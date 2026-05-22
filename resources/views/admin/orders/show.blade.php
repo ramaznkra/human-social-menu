@@ -2,7 +2,10 @@
 @section('title', 'Sipariş #' . $order->order_number)
 @section('content')
 <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
-    <h2 class="text-2xl font-semibold text-gray-800">Sipariş #{{ $order->order_number }}</h2>
+    <div class="flex flex-wrap items-center gap-3">
+        <h2 class="text-2xl font-semibold text-gray-800">Sipariş #{{ $order->order_number }}</h2>
+        @include('admin.partials.waiter-order-badge', ['order' => $order])
+    </div>
     <a href="{{ url()->previous() !== url()->current() ? url()->previous() : route('admin.orders.archive') }}" class="btn btn-secondary">← Geri</a>
 </div>
 <div class="admin-card max-w-2xl">
@@ -54,7 +57,13 @@
         method="POST"
         action="{{ route('admin.orders.destroy', $order) }}"
         class="mt-4 border-t border-gray-100 pt-6"
-        onsubmit="return confirm('#{{ $order->order_number }} adisyonu kalıcı olarak silinsin mi?')"
+        @include('admin.partials.confirm-form', [
+            'title' => 'Adisyonu sil',
+            'message' => "#{$order->order_number} kalıcı olarak silinecek.",
+            'hint' => 'Bu işlem geri alınamaz.',
+            'type' => 'danger',
+            'confirmLabel' => 'Sil',
+        ])
     >
         @csrf
         @method('DELETE')

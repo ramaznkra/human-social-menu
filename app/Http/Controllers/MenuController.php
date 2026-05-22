@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
-use App\Models\Event;
 use App\Models\CafeGallery;
 use App\Models\OrderItem;
 use App\Models\Setting;
 use App\Models\Table;
+use App\Support\MenuLocale;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -16,6 +16,9 @@ class MenuController extends Controller
 {
     public function index(Request $request, ?string $token = null): View
     {
+        $locale = MenuLocale::resolve($request);
+        MenuLocale::apply($request, $locale);
+
         $table = null;
 
         if ($request->filled('masa')) {
@@ -32,11 +35,6 @@ class MenuController extends Controller
             ->get()
             ->filter(fn ($c) => $c->products->isNotEmpty());
 
-        $events = Event::active()
-            ->where('event_date', '>=', now()->subDay())
-            ->take(5)
-            ->get();
-
         $settings = Setting::allCached();
 
         $spottedSliders = CafeGallery::active()->get();
@@ -52,10 +50,10 @@ class MenuController extends Controller
         return view('menu.index', compact(
             'categories',
             'table',
-            'events',
             'settings',
             'spottedSliders',
             'productPopularity',
+            'locale',
         ));
     }
 }

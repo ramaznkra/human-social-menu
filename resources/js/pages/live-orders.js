@@ -1,6 +1,14 @@
+import { showAdminToast } from '../admin-toast.js';
+
 /**
  * Birleşik sipariş + masa çağrıları (tek API, istemci filtreleme).
  */
+function escapeHtml(text) {
+    const el = document.createElement('div');
+    el.textContent = text;
+    return el.innerHTML;
+}
+
 function playOrderDing() {
     try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -66,25 +74,56 @@ function itemBorderClass(type) {
         : 'border-l-4 border-[#D4C5B9]/60';
 }
 
-function statusActions(status) {
+function statusActions(status, paymentMethod = null, isWaiterOrder = false) {
     const buttons = [];
+
+    if (isWaiterOrder) {
+        if (!paymentMethod) {
+            buttons.push({
+                status: 'delivered',
+                payment_method: 'cash',
+                payment_only: true,
+                label: '💵 Nakit',
+                cls: 'live-ops-btn-secondary',
+            });
+            buttons.push({
+                status: 'delivered',
+                payment_method: 'card',
+                payment_only: true,
+                label: '💳 Kart',
+                cls: 'live-ops-btn-secondary',
+            });
+        }
+        return buttons;
+    }
+
     if (status === 'pending') {
-        buttons.push({ status: 'preparing', label: 'Hazırlanıyor', cls: 'live-ops-btn-secondary' });
+        buttons.push({
+            status: 'preparing',
+            label: 'Kabul Et · Hazırlanıyor',
+            cls: 'live-ops-btn-primary',
+        });
     }
-    if (status === 'pending' || status === 'preparing') {
-        buttons.push({ status: 'ready', label: 'Masada', cls: 'live-ops-btn-secondary' });
+    if (status === 'preparing' || status === 'ready') {
+        buttons.push({
+            status: 'delivered',
+            label: 'Afiyet Olsun ✓',
+            cls: 'live-ops-btn-primary',
+        });
     }
-    if (status === 'ready' || status === 'preparing') {
+    if (status === 'delivered' && !paymentMethod) {
         buttons.push({
             status: 'delivered',
             payment_method: 'cash',
-            label: 'Tamam (Nakit)',
-            cls: 'live-ops-btn-primary',
+            payment_only: true,
+            label: '💵 Nakit · Kapat',
+            cls: 'live-ops-btn-secondary',
         });
         buttons.push({
             status: 'delivered',
             payment_method: 'card',
-            label: 'Tamam (Kart)',
+            payment_only: true,
+            label: '💳 Kart · Kapat',
             cls: 'live-ops-btn-secondary',
         });
     }
@@ -148,19 +187,24 @@ function renderOrderCard(order, tab) {
         )
         .join('');
 
-    const actions = statusActions(order.status)
+    const actions = statusActions(order.status, order.payment_method, order.is_waiter_order)
         .map(
             (a) =>
-                `<button type="button" class="live-ops-status-btn ${a.cls}" data-order-id="${order.id}" data-status="${a.status}"${a.payment_method ? ` data-payment-method="${a.payment_method}"` : ''}>${a.label}</button>`,
+                `<button type="button" class="live-ops-status-btn ${a.cls}" data-order-id="${order.id}" data-status="${a.status}"${a.payment_method ? ` data-payment-method="${a.payment_method}"` : ''}${a.payment_only ? ' data-payment-only="1"' : ''}>${a.label}</button>`,
         )
         .join('');
 
+    const waiterBadge = order.is_waiter_order
+        ? '<span class="live-ops-waiter-badge">🤵 Garson Siparişi</span>'
+        : '';
+
     return `
-    <article class="live-ops-order-card rounded-2xl border border-white/5 bg-[#262220]/80 p-4 backdrop-blur-md" data-order-id="${order.id}">
+    <article class="live-ops-order-card rounded-2xl border border-white/5 bg-[#262220]/80 p-4 backdrop-blur-md ${order.is_waiter_order ? 'live-ops-order-card--waiter' : ''}" data-order-id="${order.id}">
         <div class="mb-3 flex items-start justify-between gap-2">
             <div>
                 <span class="text-xl font-bold text-[#E67E22]">#${order.order_number}</span>
                 ${order.table ? `<span class="ml-2 rounded-full bg-[#E67E22]/15 px-2.5 py-0.5 text-xs font-semibold text-[#E67E22]">Masa ${order.table}</span>` : ''}
+                ${waiterBadge}
             </div>
             <div class="text-right">
                 <span class="block text-xs text-[#D4C5B9]">${order.created_at}</span>
@@ -247,6 +291,7 @@ if (root) {
     const csrf = root.dataset.csrf;
     const baseTitle = root.dataset.pageTitle || document.title;
     const grid = document.getElementById('liveOrdersGrid');
+    const tableMapGrid = document.getElementById('liveTableMapGrid');
     const statusEl = document.getElementById('liveOrdersStatus');
     const clockEl = document.getElementById('liveOrdersClock');
     const tabs = document.querySelectorAll('.live-ops-tab');
@@ -262,6 +307,10 @@ if (root) {
     let dataFingerprint = '';
     let knownOrderIds = new Set();
     let knownCallIds = new Set();
+    /** @type {Map<number, { kitchen: boolean, bar: boolean, kitchenDismissed: boolean, barDismissed: boolean }>} */
+    const orderNotifications = new Map();
+    /** @type {Set<number>} */
+    const callNotifications = new Set();
     let tabBadges = { kitchen: 0, bar: 0, calls: 0 };
     let titleAlertCount = 0;
     let initialized = false;
@@ -271,6 +320,70 @@ if (root) {
     const maxIntervalMs = 30000;
     let currentInterval = intervalMs;
     let lastStatusLine = '';
+    let tablesState = [];
+    let tablesFingerprint = '';
+    let knownBusyTableIds = new Set();
+
+    if (tableMapGrid) {
+        tableMapGrid.querySelectorAll('[data-table-id]').forEach((chip) => {
+            if (chip.dataset.tableBusy === '1') {
+                knownBusyTableIds.add(Number(chip.dataset.tableId));
+            }
+        });
+    }
+
+    function tableChipClass(table) {
+        if (!table.is_active) {
+            return 'border-white/10 bg-white/5 text-[#D4C5B9]/40';
+        }
+        if (table.is_busy) {
+            return 'live-table-chip--busy border-[#E67E22]/60 bg-[#E67E22]/20 text-[#E67E22]';
+        }
+        return 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300';
+    }
+
+    function renderTableMap(tables) {
+        if (!tableMapGrid || !tables?.length) return;
+
+        tableMapGrid.innerHTML = tables
+            .map(
+                (t) => `
+            <div
+                class="live-table-chip flex flex-col items-center justify-center rounded-xl border px-1 py-2 text-center transition ${tableChipClass(t)}"
+                data-table-id="${t.id}"
+                data-table-busy="${t.is_busy ? '1' : '0'}"
+                data-table-active="${t.is_active ? '1' : '0'}"
+            >
+                <span class="text-[10px] font-medium uppercase tracking-wide opacity-70">Masa</span>
+                <span class="text-lg font-bold leading-none">${escapeHtml(String(t.number))}</span>
+            </div>`,
+            )
+            .join('');
+    }
+
+    function paintTableMap(tables, flashNewBusy = false) {
+        if (!tableMapGrid) return;
+
+        const fp = JSON.stringify(tables.map((t) => [t.id, t.is_busy, t.is_active]));
+        if (fp === tablesFingerprint && !flashNewBusy) return;
+
+        const newBusy = tables.filter((t) => t.is_busy).map((t) => t.id);
+        const newlyBusy = flashNewBusy
+            ? newBusy.filter((id) => !knownBusyTableIds.has(id))
+            : [];
+
+        renderTableMap(tables);
+        tablesFingerprint = fp;
+        knownBusyTableIds = new Set(newBusy);
+
+        if (newlyBusy.length > 0) {
+            newlyBusy.forEach((id) => {
+                const chip = tableMapGrid.querySelector(`[data-table-id="${id}"]`);
+                chip?.classList.add('live-table-chip--flash');
+                setTimeout(() => chip?.classList.remove('live-table-chip--flash'), 700);
+            });
+        }
+    }
 
     function refreshDocumentTitle() {
         if (document.hidden && titleAlertCount > 0) {
@@ -312,25 +425,84 @@ if (root) {
         });
     }
 
-    function clearBadgeForTab(tab) {
-        if (tabBadges[tab] !== undefined) {
-            tabBadges[tab] = 0;
-            updateBadgesUI();
+    function dismissNotificationsForTab(tab) {
+        if (tab === 'kitchen') {
+            for (const entry of orderNotifications.values()) {
+                entry.kitchenDismissed = true;
+            }
+        } else if (tab === 'bar') {
+            for (const entry of orderNotifications.values()) {
+                entry.barDismissed = true;
+            }
+        } else if (tab === 'calls') {
+            callNotifications.clear();
+        }
+        syncNotificationBadges();
+    }
+
+    function syncNotificationBadges() {
+        let kitchen = 0;
+        let bar = 0;
+        let calls = 0;
+
+        for (const entry of orderNotifications.values()) {
+            if (entry.kitchen && !entry.kitchenDismissed) {
+                kitchen += 1;
+            }
+            if (entry.bar && !entry.barDismissed) {
+                bar += 1;
+            }
+        }
+
+        if (activeTab !== 'calls') {
+            calls = callNotifications.size;
+        }
+
+        tabBadges = { kitchen, bar, calls };
+        updateBadgesUI();
+
+        if (document.hidden) {
+            titleAlertCount = kitchen + bar + calls;
+            refreshDocumentTitle();
+        } else if (titleAlertCount > 0) {
+            titleAlertCount = 0;
+            refreshDocumentTitle();
         }
     }
 
     function processUpdates(orders, calls) {
+        const currentOrderIds = new Set(orders.map((o) => o.id));
+        const currentCallIds = new Set(calls.map((c) => c.id));
+
+        for (const id of orderNotifications.keys()) {
+            if (!currentOrderIds.has(id)) {
+                orderNotifications.delete(id);
+            }
+        }
+
+        for (const id of callNotifications) {
+            if (!currentCallIds.has(id)) {
+                callNotifications.delete(id);
+            }
+        }
+
         let newOrders = 0;
         let newCalls = 0;
 
         for (const order of orders) {
             if (!knownOrderIds.has(order.id)) {
                 newOrders += 1;
-                if (order.has_kitchen && activeTab !== 'kitchen') {
-                    tabBadges.kitchen += 1;
-                }
-                if (order.has_bar && activeTab !== 'bar') {
-                    tabBadges.bar += 1;
+                orderNotifications.set(order.id, {
+                    kitchen: !!order.has_kitchen,
+                    bar: !!order.has_bar,
+                    kitchenDismissed: activeTab === 'kitchen',
+                    barDismissed: activeTab === 'bar',
+                });
+            } else {
+                const entry = orderNotifications.get(order.id);
+                if (entry) {
+                    entry.kitchen = !!order.has_kitchen;
+                    entry.bar = !!order.has_bar;
                 }
             }
         }
@@ -338,36 +510,27 @@ if (root) {
         for (const call of calls) {
             if (!knownCallIds.has(call.id)) {
                 newCalls += 1;
-                if (activeTab !== 'calls') {
-                    tabBadges.calls += 1;
-                }
+                callNotifications.add(call.id);
             }
         }
 
         if (initialized) {
             if (newCalls > 0) {
                 playCallAlert();
-                if (document.hidden) {
-                    titleAlertCount += newCalls;
-                    refreshDocumentTitle();
-                }
             } else if (newOrders > 0) {
                 playOrderDing();
-                if (document.hidden) {
-                    titleAlertCount += newOrders;
-                    refreshDocumentTitle();
-                }
             }
         }
 
-        knownOrderIds = new Set(orders.map((o) => o.id));
-        knownCallIds = new Set(calls.map((c) => c.id));
+        knownOrderIds = currentOrderIds;
+        knownCallIds = currentCallIds;
         initialized = true;
-        updateBadgesUI();
+        syncNotificationBadges();
     }
 
     function updateStatusLine() {
-        const line = `${ordersState.length} sipariş · ${callsState.length} çağrı · ${new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`;
+        const busyCount = tablesState.filter((t) => t.is_busy).length;
+        const line = `${busyCount} aktif masa · ${ordersState.length} sipariş · ${callsState.length} çağrı · ${new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`;
         if (line === lastStatusLine || !statusEl) return;
         lastStatusLine = line;
         statusEl.textContent = line;
@@ -394,6 +557,9 @@ if (root) {
                 if (btn.dataset.paymentMethod) {
                     payload.payment_method = btn.dataset.paymentMethod;
                 }
+                if (btn.dataset.paymentOnly === '1') {
+                    payload.payment_only = true;
+                }
                 btn.disabled = true;
                 try {
                     const res = await fetch(`${statusUrlBase}/${orderId}/status`, {
@@ -405,8 +571,43 @@ if (root) {
                         },
                         body: JSON.stringify(payload),
                     });
-                    if (res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    if (res.ok && data.success !== false) {
+                        const order = ordersState.find((o) => String(o.id) === String(orderId));
+                        if (payload.payment_only) {
+                            orderNotifications.delete(Number(orderId));
+                            syncNotificationBadges();
+                            showAdminToast({
+                                title: 'Sipariş kapandı',
+                                message: order
+                                    ? `#${order.order_number} · ${payload.payment_method === 'card' ? 'Kart' : 'Nakit'}`
+                                    : data.message || 'Ödeme kaydedildi',
+                                type: 'info',
+                            });
+                        } else if (status === 'preparing') {
+                            showAdminToast({
+                                title: 'Hazırlanıyor',
+                                message: order
+                                    ? `#${order.order_number}${order.table ? ` · Masa ${order.table}` : ''}`
+                                    : 'Sipariş mutfağa iletildi',
+                                hint: 'Mutfak ve bar ekranında bildirim düşer',
+                                type: 'success',
+                            });
+                        } else if (status === 'delivered') {
+                            showAdminToast({
+                                title: 'Afiyet Olsun',
+                                message: order ? `#${order.order_number} masaya gitti` : 'Teslim edildi',
+                                hint: 'Ödeme için Nakit veya Kart seçin',
+                                type: 'success',
+                            });
+                        }
                         await poll(true);
+                    } else {
+                        showAdminToast({
+                            title: 'İşlem yapılamadı',
+                            message: data.message || 'Tekrar deneyin',
+                            type: 'error',
+                        });
                     }
                 } finally {
                     btn.disabled = false;
@@ -440,7 +641,7 @@ if (root) {
         tab.addEventListener('click', () => {
             activeTab = tab.dataset.tab;
             tabs.forEach((t) => t.classList.toggle('is-active', t === tab));
-            clearBadgeForTab(activeTab);
+            dismissNotificationsForTab(activeTab);
             dataFingerprint = '';
             paint();
         });
@@ -456,12 +657,15 @@ if (root) {
             const data = await res.json();
             ordersState = data.orders || [];
             callsState = data.calls || [];
+            tablesState = data.tables || tablesState;
+            const wasInitialized = initialized;
             processUpdates(ordersState, callsState);
 
             if (forcePaint) {
                 dataFingerprint = '';
             }
             paint();
+            paintTableMap(tablesState, wasInitialized);
             updateStatusLine();
 
             failCount = 0;

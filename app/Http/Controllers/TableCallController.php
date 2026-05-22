@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Table;
 use App\Models\TableCall;
+use App\Support\MenuLocale;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -11,6 +12,8 @@ class TableCallController extends Controller
 {
     public function store(Request $request): JsonResponse
     {
+        MenuLocale::apply($request, MenuLocale::resolve($request));
+
         $validated = $request->validate([
             'table_token' => 'nullable|string',
             'masa' => 'nullable|string',
@@ -23,7 +26,7 @@ class TableCallController extends Controller
 
         $table = $this->resolveTable($validated);
         if (! $table) {
-            return response()->json(['success' => false, 'message' => 'Masa bulunamadı.'], 404);
+            return response()->json(['success' => false, 'message' => __('menu.table_call.table_not_found')], 404);
         }
 
         $hasActive = TableCall::query()
@@ -36,7 +39,7 @@ class TableCallController extends Controller
                 'success' => true,
                 'already_active' => true,
                 'active' => true,
-                'message' => 'Çağrınız zaten iletildi. Garsonumuz masanıza yönlendirildi.',
+                'message' => __('menu.table_call.already'),
             ]);
         }
 
@@ -47,10 +50,10 @@ class TableCallController extends Controller
         ]);
 
         $message = match ($validated['type']) {
-            'waiter' => 'Garsonumuz masanıza yönlendirildi.',
-            'bill_cash' => 'Nakit hesap talebiniz alındı. Garsonumuz masanıza geliyor.',
-            'bill_card' => 'Kart ile ödeme talebiniz alındı. Pos cihazı masanıza getirilecek.',
-            default => 'Talebiniz alındı.',
+            'waiter' => __('menu.table_call.waiter'),
+            'bill_cash' => __('menu.table_call.bill_cash'),
+            'bill_card' => __('menu.table_call.bill_card'),
+            default => __('menu.table_call.default'),
         };
 
         return response()->json([

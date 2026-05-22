@@ -23,13 +23,18 @@ class Order extends Model
 
     public const PAYMENT_CARD = 'card';
 
-    /** Canlı ekran: beklemede, hazırlanıyor, masada */
+    public const SOURCE_QR = 'qr';
+
+    public const SOURCE_WAITER = 'waiter';
+
+    /** Durumlar: mutfak/bar hazır, kasa teslim + ödeme bekliyor */
     public static function liveStatuses(): array
     {
         return [
             self::STATUS_PENDING,
             self::STATUS_PREPARING,
             self::STATUS_READY,
+            self::STATUS_DELIVERED,
         ];
     }
 
@@ -49,6 +54,7 @@ class Order extends Model
         'notes',
         'total',
         'payment_method',
+        'source',
     ];
 
     protected function casts(): array
@@ -66,9 +72,24 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    /** Canlı panel: ödeme alınmamış teslimler dahil */
     public function scopeLive(Builder $query): Builder
     {
-        return $query->whereIn('status', self::liveStatuses());
+        return $query->where(function (Builder $q) {
+            $q->whereIn('status', [
+                self::STATUS_PENDING,
+                self::STATUS_PREPARING,
+                self::STATUS_READY,
+            ])->orWhere(function (Builder $q2) {
+                $q2->where('status', self::STATUS_DELIVERED)
+                    ->whereNull('payment_method');
+            });
+        });
+    }
+
+    public function isClosed(): bool
+    {
+        return $this->status === self::STATUS_DELIVERED && $this->payment_method !== null;
     }
 
     public function scopeArchived(Builder $query): Builder
@@ -82,7 +103,7 @@ class Order extends Model
             self::STATUS_PENDING => 'Beklemede',
             self::STATUS_PREPARING => 'Hazırlanıyor',
             self::STATUS_READY => 'Masada',
-            self::STATUS_DELIVERED => 'Tamamlandı',
+            self::STATUS_DELIVERED => $this->payment_method ? 'Kapandı' : 'Afiyet Olsun',
             self::STATUS_CANCELLED => 'İptal',
             default => $this->status,
         };
@@ -101,11 +122,11 @@ class Order extends Model
     public function getCustomerStatusLabelAttribute(): string
     {
         return match ($this->status) {
-            self::STATUS_PENDING => 'Beklemede',
-            self::STATUS_PREPARING => 'Hazırlanıyor',
-            self::STATUS_READY => 'Masaya Doğru',
-            self::STATUS_DELIVERED => 'Afiyet Olsun',
-            self::STATUS_CANCELLED => 'İptal Edildi',
+            self::STATUS_PENDING => __('menu.order_label.pending'),
+            self::STATUS_PREPARING => __('menu.order_label.preparing'),
+            self::STATUS_READY => __('menu.order_label.ready'),
+            self::STATUS_DELIVERED => __('menu.order_label.delivered'),
+            self::STATUS_CANCELLED => __('menu.order_label.cancelled'),
             default => $this->status,
         };
     }
@@ -114,10 +135,53 @@ class Order extends Model
     {
         return match ($this->status) {
             self::STATUS_PREPARING => 2,
-            self::STATUS_READY => 3,
-            self::STATUS_DELIVERED => 4,
+            self::STATUS_READY, self::STATUS_DELIVERED => 3,
             self::STATUS_CANCELLED => 0,
             default => 1,
+        };
+    }
+
+    public function getSourceLabelAttribute(): string
+    {
+        return match ($this->source) {
+            self::SOURCE_WAITER => 'Garson',
+            default => 'QR Menü',
+        };
+    }
+
+    public function isWaiterOrder(): bool
+    {
+        return $this->source === self::SOURCE_WAITER;
+    }
+
+    /** Müşteri ekranı için kısa açıklama */
+    public function getCustomerStatusMessageAttribute(): string
+    {
+        return match ($this->status) {
+            self::STATUS_PENDING => __('menu.order_msg.pending'),
+            self::STATUS_PREPARING => __('menu.order_msg.preparing'),
+            self::STATUS_READY => __('menu.order_msg.ready'),
+            self::STATUS_DELIVERED => $this->payment_method
+                ? __('menu.order_msg.delivered_paid', ['method' => $this->payment_method_label])
+                : __('menu.order_msg.delivered'),
+            self::STATUS_CANCELLED => __('menu.order_msg.cancelled'),
+            default => '',
+        };
+    }
+
+    public function canTransitionTo(string $nextStatus): bool
+    {
+        if ($this->status === $nextStatus) {
+            return false;
+        }
+
+        return match ($this->status) {
+            self::STATUS_PENDING => in_array($nextStatus, [self::STATUS_PREPARING, self::STATUS_CANCELLED], true),
+            self::STATUS_PREPARING => in_array($nextStatus, [self::STATUS_READY, self::STATUS_DELIVERED, self::STATUS_CANCELLED], true),
+            self::STATUS_READY => in_array($nextStatus, [self::STATUS_DELIVERED, self::STATUS_CANCELLED], true),
+            self::STATUS_DELIVERED => false,
+            self::STATUS_CANCELLED => false,
+            default => false,
         };
     }
 

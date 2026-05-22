@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Category;
-use App\Models\Event;
 use App\Models\CafeGallery;
 use App\Models\Product;
 use App\Models\Setting;
@@ -128,22 +127,5 @@ class HumanSeeder extends Seeder
             );
         }
 
-        Event::updateOrCreate(
-            ['title' => 'Canlı DJ Gecesi'],
-            [
-                'description' => 'Her Cuma gece 22:00\'de canlı DJ performansı',
-                'event_date' => now()->next('Friday')->setTime(22, 0),
-                'is_active' => true,
-            ]
-        );
-
-        Event::updateOrCreate(
-            ['title' => 'Okey Turnuvası'],
-            [
-                'description' => 'Haftalık okey turnuvası — kayıt masada',
-                'event_date' => now()->addDays(7)->setTime(19, 0),
-                'is_active' => true,
-            ]
-        );
     }
 }

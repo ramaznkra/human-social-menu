@@ -22,7 +22,17 @@
             <td>{{ $s->is_active ? 'Aktif' : 'Pasif' }}</td>
             <td class="space-x-1 whitespace-nowrap">
                 <a href="{{ route('admin.slides.edit', $s) }}" class="btn btn-sm btn-secondary">Düzenle</a>
-                <form action="{{ route('admin.slides.destroy', $s) }}" method="POST" class="inline" onsubmit="return confirm('Silinsin mi?')">
+                <form
+                    action="{{ route('admin.slides.destroy', $s) }}"
+                    method="POST"
+                    class="inline"
+                    @include('admin.partials.confirm-form', [
+                        'title' => 'Slaytı sil',
+                        'message' => 'Bu slayt kalıcı olarak silinecek.',
+                        'type' => 'danger',
+                        'confirmLabel' => 'Sil',
+                    ])
+                >
                     @csrf @method('DELETE')<button class="btn btn-sm btn-danger">Sil</button>
                 </form>
             </td>

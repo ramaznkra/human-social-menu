@@ -51,6 +51,25 @@ class DashboardFinanceStats
             $paymentSplit = 'Kayıt bekleniyor';
         }
 
+        $sourceRows = Order::query()
+            ->whereDate('created_at', $day)
+            ->where('status', Order::STATUS_DELIVERED)
+            ->select('source', DB::raw('count(*) as total'))
+            ->groupBy('source')
+            ->pluck('total', 'source');
+
+        $qrCount = (int) ($sourceRows[Order::SOURCE_QR] ?? 0);
+        $waiterCount = (int) ($sourceRows[Order::SOURCE_WAITER] ?? 0);
+        $sourceTotal = $qrCount + $waiterCount;
+
+        if ($sourceTotal > 0) {
+            $qrPct = (int) round(($qrCount / $sourceTotal) * 100);
+            $waiterPct = 100 - $qrPct;
+            $orderSourceSplit = "%{$qrPct} QR · %{$waiterPct} Garson";
+        } else {
+            $orderSourceSplit = 'Kayıt bekleniyor';
+        }
+
         return [
             'daily_revenue' => $dailyRevenue,
             'daily_revenue_formatted' => number_format($dailyRevenue, 0, ',', '.').' ₺',
@@ -59,6 +78,9 @@ class DashboardFinanceStats
             'payment_split' => $paymentSplit,
             'payment_cash_count' => $cashCount,
             'payment_card_count' => $cardCount,
+            'order_source_split' => $orderSourceSplit,
+            'order_qr_count' => $qrCount,
+            'order_waiter_count' => $waiterCount,
         ];
     }
 }
