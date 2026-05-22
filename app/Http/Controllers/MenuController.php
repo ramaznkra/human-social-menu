@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Event;
 use App\Models\CafeGallery;
-use App\Models\MenuSlide;
 use App\Models\OrderItem;
 use App\Models\Setting;
 use App\Models\Table;
@@ -21,7 +20,7 @@ class MenuController extends Controller
 
         if ($request->filled('masa')) {
             $table = Table::query()
-                ->where('number', $request->query('masa'))
+                ->where('number', (string) $request->query('masa'))
                 ->where('is_active', true)
                 ->first();
         } elseif ($token) {
@@ -40,7 +39,6 @@ class MenuController extends Controller
 
         $settings = Setting::allCached();
 
-        $menuSlides = MenuSlide::active()->get();
         $spottedSliders = CafeGallery::active()->get();
 
         $productPopularity = OrderItem::query()
@@ -56,7 +54,6 @@ class MenuController extends Controller
             'table',
             'events',
             'settings',
-            'menuSlides',
             'spottedSliders',
             'productPopularity',
         ));

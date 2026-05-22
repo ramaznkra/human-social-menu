@@ -1,6 +1,8 @@
 /**
- * Social Spotted — tam genişlik dokunmatik carousel
+ * Social Spotted — otomatik slider (kaydırma yok; dokununca duraklar)
  */
+const AUTO_MS = 10000;
+
 export function initSpottedCarousel(root) {
     if (!root) return;
 
@@ -11,6 +13,8 @@ export function initSpottedCarousel(root) {
     if (!track || slides.length === 0) return;
 
     let activeIndex = 0;
+    let autoTimer = null;
+    let isHolding = false;
 
     function setActive(index) {
         activeIndex = Math.max(0, Math.min(index, slides.length - 1));
@@ -22,46 +26,67 @@ export function initSpottedCarousel(root) {
         });
     }
 
-    function scrollToIndex(index) {
-        const slide = slides[index];
-        if (!slide) return;
-        track.scrollTo({ left: slide.offsetLeft, behavior: 'smooth' });
-        setActive(index);
+    function applyTransform(animate = true) {
+        const offset = activeIndex * root.clientWidth;
+        track.style.transition = animate ? 'transform 0.55s ease-out' : 'none';
+        track.style.transform = `translate3d(-${offset}px, 0, 0)`;
+        setActive(activeIndex);
     }
 
-    function indexFromScroll() {
-        const center = track.scrollLeft + track.clientWidth / 2;
-        let closest = 0;
-        let minDist = Infinity;
-        slides.forEach((slide, i) => {
-            const slideCenter = slide.offsetLeft + slide.clientWidth / 2;
-            const dist = Math.abs(center - slideCenter);
-            if (dist < minDist) {
-                minDist = dist;
-                closest = i;
-            }
-        });
-        return closest;
+    function goTo(index, animate = true) {
+        if (slides.length === 0) return;
+        activeIndex = ((index % slides.length) + slides.length) % slides.length;
+        applyTransform(animate);
     }
 
-    let scrollRaf = null;
-    track.addEventListener(
-        'scroll',
-        () => {
-            if (scrollRaf) cancelAnimationFrame(scrollRaf);
-            scrollRaf = requestAnimationFrame(() => {
-                const idx = indexFromScroll();
-                if (idx !== activeIndex) setActive(idx);
-            });
-        },
-        { passive: true },
-    );
+    function next() {
+        goTo(activeIndex + 1);
+    }
+
+    function stopAuto() {
+        if (autoTimer) {
+            clearInterval(autoTimer);
+            autoTimer = null;
+        }
+    }
+
+    function startAuto() {
+        stopAuto();
+        if (slides.length <= 1 || isHolding) return;
+        autoTimer = setInterval(() => {
+            if (!isHolding) next();
+        }, AUTO_MS);
+    }
+
+    function onHoldStart() {
+        isHolding = true;
+        stopAuto();
+    }
+
+    function onHoldEnd() {
+        if (!isHolding) return;
+        isHolding = false;
+        startAuto();
+    }
 
     dots.forEach((dot) => {
-        dot.addEventListener('click', () => scrollToIndex(parseInt(dot.dataset.index, 10)));
+        dot.addEventListener('click', () => {
+            goTo(parseInt(dot.dataset.index, 10));
+            startAuto();
+        });
     });
 
-    setActive(0);
+    root.addEventListener('pointerdown', onHoldStart);
+    root.addEventListener('pointerup', onHoldEnd);
+    root.addEventListener('pointercancel', onHoldEnd);
+    root.addEventListener('pointerleave', (e) => {
+        if (e.pointerType === 'mouse' && isHolding) onHoldEnd();
+    });
+
+    window.addEventListener('resize', () => applyTransform(false));
+
+    goTo(0, false);
+    if (slides.length > 1) startAuto();
 }
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -5,13 +5,13 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DisplaySlideController;
 use App\Http\Controllers\Admin\CafeGalleryController;
-use App\Http\Controllers\Admin\MenuSlideController;
 use App\Http\Controllers\Admin\BarScreenController;
 use App\Http\Controllers\Admin\LiveOrdersController;
 use App\Http\Controllers\Admin\OperationsController;
 use App\Http\Controllers\TableCallController;
 use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\Admin\OrderAdminController;
+use App\Http\Controllers\Admin\OrderArchiveController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\TableController;
@@ -28,6 +28,8 @@ Route::get('/menu/{token?}', [MenuController::class, 'index'])->name('menu.index
 Route::post('/siparis', [OrderController::class, 'store'])->name('order.store');
 Route::get('/siparis/{order}/durum', [OrderController::class, 'status'])->name('order.status');
 Route::get('/api/siparis/{order}/durum', [OrderController::class, 'statusApi'])->name('order.status.api');
+Route::post('/api/table/call', [TableCallController::class, 'store'])->name('table.call.api');
+Route::get('/api/table/call/status', [TableCallController::class, 'status'])->name('table.call.status');
 Route::post('/api/masa/cagri', [TableCallController::class, 'store'])->name('table.call.store');
 
 Route::get('/ekran', [DisplayController::class, 'index'])->name('display.index');
@@ -36,6 +38,7 @@ Route::get('/api/ekran', [DisplayController::class, 'api'])->name('display.api')
 Route::get('/mutfak', [LiveOrdersController::class, 'screen'])->name('kitchen.index');
 Route::get('/api/admin/live-orders', [LiveOrdersController::class, 'liveOrders'])->name('live-orders.api');
 Route::patch('/api/admin/live-orders/{order}/status', [LiveOrdersController::class, 'updateStatus'])->name('live-orders.status');
+Route::patch('/api/admin/call/{call}/resolve', [LiveOrdersController::class, 'resolveCall'])->name('admin.call.resolve');
 
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/giris', [AuthController::class, 'showLogin'])->name('login');
@@ -59,12 +62,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('api/bar/siparisler', [BarScreenController::class, 'orders'])->name('bar.orders');
         Route::patch('api/bar/siparis/{order}/hazir', [BarScreenController::class, 'markReady'])->name('bar.ready');
 
+        Route::get('orders/archive', [OrderArchiveController::class, 'index'])->name('orders.archive');
+        Route::post('orders/archive/purge', [OrderArchiveController::class, 'purge'])->name('orders.archive.purge');
+        Route::delete('orders/{order}', [OrderArchiveController::class, 'destroy'])->name('orders.destroy');
         Route::get('orders', [OrderAdminController::class, 'index'])->name('orders.index');
         Route::get('orders/{order}', [OrderAdminController::class, 'show'])->name('orders.show');
         Route::patch('orders/{order}/status', [OrderAdminController::class, 'updateStatus'])->name('orders.status');
 
         Route::resource('slides', DisplaySlideController::class)->except(['show']);
-        Route::resource('menu-slides', MenuSlideController::class)->except(['show']);
         Route::resource('cafe-galleries', CafeGalleryController::class)->except(['show']);
         Route::resource('events', EventController::class)->except(['show']);
 

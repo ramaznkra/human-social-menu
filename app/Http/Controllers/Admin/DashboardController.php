@@ -7,18 +7,21 @@ use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Table;
+use App\Services\DashboardFinanceStats;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(): View
+    public function index(DashboardFinanceStats $financeStats): View
     {
+        $finance = $financeStats->forToday();
+
         $stats = [
             'categories' => Category::count(),
             'products' => Product::count(),
             'tables' => Table::count(),
             'orders_today' => Order::whereDate('created_at', today())->count(),
-            'pending_orders' => Order::where('status', 'pending')->count(),
+            'pending_orders' => Order::where('status', Order::STATUS_PENDING)->count(),
         ];
 
         $recentOrders = Order::query()
@@ -28,6 +31,6 @@ class DashboardController extends Controller
             ->take(10)
             ->get();
 
-        return view('admin.dashboard', compact('stats', 'recentOrders'));
+        return view('admin.dashboard', compact('stats', 'recentOrders', 'finance'));
     }
 }

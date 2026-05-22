@@ -3,7 +3,7 @@
 @section('content')
 <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
     <h2 class="text-2xl font-semibold text-gray-800">Sipariş #{{ $order->order_number }}</h2>
-    <a href="{{ route('admin.orders.index') }}" class="btn btn-secondary">← Liste</a>
+    <a href="{{ url()->previous() !== url()->current() ? url()->previous() : route('admin.orders.archive') }}" class="btn btn-secondary">← Geri</a>
 </div>
 <div class="admin-card max-w-2xl">
     <div class="mb-6 grid gap-2 text-sm text-gray-600">
@@ -11,6 +11,9 @@
         <p><strong class="text-gray-800">Tarih:</strong> {{ $order->created_at->format('d.m.Y H:i') }}</p>
         <p><strong class="text-gray-800">Not:</strong> {{ $order->notes ?? '—' }}</p>
         <p><span class="badge-status badge-{{ $order->status }}">{{ $order->status_label }}</span></p>
+        @if($order->payment_method_label)
+        <p><strong class="text-gray-800">Ödeme:</strong> {{ $order->payment_method_label }}</p>
+        @endif
     </div>
     <table class="admin-table w-full">
         <thead><tr><th>Ürün</th><th>Adet</th><th>Fiyat</th><th>Toplam</th></tr></thead>
@@ -45,5 +48,18 @@
         </select>
         <button type="submit" class="btn btn-primary">Güncelle</button>
     </form>
+
+    @if(in_array($order->status, \App\Models\Order::archivedStatuses(), true))
+    <form
+        method="POST"
+        action="{{ route('admin.orders.destroy', $order) }}"
+        class="mt-4 border-t border-gray-100 pt-6"
+        onsubmit="return confirm('#{{ $order->order_number }} adisyonu kalıcı olarak silinsin mi?')"
+    >
+        @csrf
+        @method('DELETE')
+        <button type="submit" class="btn btn-danger">Adisyonu Sil</button>
+    </form>
+    @endif
 </div>
 @endsection

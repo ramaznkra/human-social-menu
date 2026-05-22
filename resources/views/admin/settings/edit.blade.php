@@ -49,5 +49,32 @@
         </form>
         <p class="mt-4 text-xs text-gray-500">Banner menünün üst kısmında (slider altında) canlı güncellenir.</p>
     </div>
+    <div class="admin-card lg:col-span-2">
+        <h3 class="mb-4 font-semibold text-gray-800">QR Menü — Sosyal & Müzik</h3>
+        <form method="POST" action="{{ route('admin.settings.update') }}" class="grid gap-4 sm:grid-cols-2">
+            @csrf @method('PUT')
+            <div class="sm:col-span-2">
+                <label class="form-label">Spotify Playlist URL</label>
+                <input type="url" name="spotify_url" value="{{ $settings['spotify_url'] ?? '' }}" class="form-input" placeholder="https://open.spotify.com/playlist/...">
+                <p class="mt-1 text-xs text-gray-500">Boş bırakırsanız Spotify kartı menüde görünmez.</p>
+            </div>
+            <div>
+                <label class="form-label">Spotify Kart Başlığı</label>
+                <input type="text" name="spotify_title" value="{{ $settings['spotify_title'] ?? 'HSP Vibes' }}" class="form-input">
+            </div>
+            <div>
+                <label class="form-label">Instagram Profil URL</label>
+                <input type="url" name="instagram_url" value="{{ $settings['instagram_url'] ?? '' }}" class="form-input" placeholder="https://www.instagram.com/...">
+            </div>
+            <div>
+                <label class="form-label">Menüde Görünen Etiket</label>
+                <input type="text" name="instagram_handle" value="{{ $settings['instagram_handle'] ?? '@ramaznkra' }}" class="form-input" placeholder="@ramaznkra">
+            </div>
+            <div class="sm:col-span-2">
+                <button type="submit" class="btn btn-primary">Sosyal Ayarları Kaydet</button>
+            </div>
+        </form>
+        <p class="mt-4 text-xs text-gray-500">Kartlar menünün altında, garson çağır çubuğunun üstünde listelenir.</p>
+    </div>
 </div>
 @endsection

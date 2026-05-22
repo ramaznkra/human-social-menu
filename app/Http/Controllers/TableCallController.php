@@ -14,52 +14,91 @@ class TableCallController extends Controller
         $validated = $request->validate([
             'table_token' => 'nullable|string',
             'masa' => 'nullable|string',
-            'type' => 'required|in:waiter,bill',
+            'type' => 'required|in:waiter,bill_cash,bill_card,bill',
         ]);
 
-        $table = null;
-        if (! empty($validated['table_token'])) {
-            $table = Table::query()
-                ->select(['id', 'number', 'qr_token', 'is_active'])
-                ->where('qr_token', $validated['table_token'])
-                ->where('is_active', true)
-                ->first();
-        } elseif (! empty($validated['masa'])) {
-            $table = Table::query()
-                ->select(['id', 'number', 'qr_token', 'is_active'])
-                ->where('number', $validated['masa'])
-                ->where('is_active', true)
-                ->first();
+        if ($validated['type'] === 'bill') {
+            $validated['type'] = 'bill_cash';
         }
 
+        $table = $this->resolveTable($validated);
         if (! $table) {
             return response()->json(['success' => false, 'message' => 'Masa bulunamadı.'], 404);
         }
 
-        $recent = TableCall::query()
+        $hasActive = TableCall::query()
             ->where('table_id', $table->id)
-            ->where('type', $validated['type'])
-            ->where('status', 'pending')
-            ->where('created_at', '>=', now()->subMinutes(2))
+            ->active()
             ->exists();
 
-        if ($recent) {
+        if ($hasActive) {
             return response()->json([
                 'success' => true,
-                'message' => 'Çağrınız zaten iletildi, kısa süre içinde yanınızda olacağız.',
+                'already_active' => true,
+                'active' => true,
+                'message' => 'Çağrınız zaten iletildi. Garsonumuz masanıza yönlendirildi.',
             ]);
         }
 
         TableCall::create([
             'table_id' => $table->id,
             'type' => $validated['type'],
-            'status' => 'pending',
+            'status' => TableCall::STATUS_ACTIVE,
         ]);
 
-        $message = $validated['type'] === 'bill'
-            ? 'Hesap talebiniz alındı.'
-            : 'Garson çağrınız alındı.';
+        $message = match ($validated['type']) {
+            'waiter' => 'Garsonumuz masanıza yönlendirildi.',
+            'bill_cash' => 'Nakit hesap talebiniz alındı. Garsonumuz masanıza geliyor.',
+            'bill_card' => 'Kart ile ödeme talebiniz alındı. Pos cihazı masanıza getirilecek.',
+            default => 'Talebiniz alındı.',
+        };
 
-        return response()->json(['success' => true, 'message' => $message]);
+        return response()->json([
+            'success' => true,
+            'active' => true,
+            'message' => $message,
+        ]);
+    }
+
+    /** Müşteri menüsü: aktif çağrı hâlâ bekliyor mu? (personel kapattıysa butonlar geri gelir) */
+    public function status(Request $request): JsonResponse
+    {
+        $table = $this->resolveTable([
+            'table_token' => $request->query('table_token'),
+            'masa' => $request->query('masa'),
+        ]);
+
+        if (! $table) {
+            return response()->json(['active' => false]);
+        }
+
+        $call = TableCall::query()
+            ->where('table_id', $table->id)
+            ->active()
+            ->first();
+
+        return response()->json([
+            'active' => $call !== null,
+            'type' => $call?->type,
+        ]);
+    }
+
+    private function resolveTable(array $validated): ?Table
+    {
+        if (! empty($validated['table_token'])) {
+            return Table::query()
+                ->where('qr_token', $validated['table_token'])
+                ->where('is_active', true)
+                ->first();
+        }
+
+        if (! empty($validated['masa'])) {
+            return Table::query()
+                ->where('number', (string) $validated['masa'])
+                ->where('is_active', true)
+                ->first();
+        }
+
+        return null;
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\MenuImageOptimizer;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
@@ -11,6 +12,10 @@ use Illuminate\View\View;
 
 class ProductController extends Controller
 {
+    public function __construct(
+        private readonly MenuImageOptimizer $images,
+    ) {}
+
     public function index(Request $request): View
     {
         $query = Product::with('category')->orderBy('sort_order');
@@ -34,7 +39,7 @@ class ProductController extends Controller
     {
         $data = $this->validated($request);
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('products', 'public');
+            $data['image'] = $this->images->storeProduct($request->file('image'));
         }
         Product::create($data);
 
@@ -52,7 +57,7 @@ class ProductController extends Controller
     {
         $data = $this->validated($request);
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('products', 'public');
+            $data['image'] = $this->images->storeProduct($request->file('image'));
         }
         $product->update($data);
 

@@ -9,11 +9,13 @@ Laravel tabanlı QR menü, sipariş ve TV ekran sistemi.
 
 | Sayfa | URL | Açıklama |
 |-------|-----|----------|
-| QR Menü | `/menu` veya `/menu/{masa-token}` | Üst slayt + fotoğraflı kategoriler + sipariş |
+| QR Menü | `/menu` veya `/menu/{masa-token}` | Social Spotted + kategoriler + sipariş |
 | Sipariş Durumu | `/siparis/{id}/durum` | Müşteri takip |
 | TV Ekranı | `/ekran` | 10 sn geçişli tam ekran slider |
 | Mutfak | `/mutfak` | Sipariş takip paneli |
 | Admin | `/admin` | Tüm yönetim |
+| Canlı Siparişler | `/admin/live-orders` | Beklemede / hazırlanıyor / masada |
+| Geçmiş Adisyonlar | `/admin/orders/archive` | Tamamlanan ve iptal kayıtlar |
 
 ---
 
@@ -31,6 +33,8 @@ php artisan serve
 
 Tarayıcıda: http://127.0.0.1:8000
 
+**Her turda yapılan değişiklikleri localde görmek için** (iki terminal açık kalsın): `php artisan serve` · `npm run dev` — ardından tarayıcıda http://127.0.0.1:8000 ve gerekirse **Ctrl+F5**. Sadece PHP/veritabanı değiştiyse: `php artisan migrate` (yeni migration varsa). `npm run dev` kullanmıyorsanız her CSS/JS değişikliğinden sonra bir kez: `npm run build`.
+
 ### Varsayılan Admin
 
 - **URL:** http://127.0.0.1:8000/admin/giris
@@ -43,7 +47,7 @@ Tarayıcıda: http://127.0.0.1:8000
 
 | Admin bölümü | Ne işe yarar |
 |--------------|--------------|
-| **Menü Slaytları** | QR menü üstündeki slider (mekan + özel misafir, 5–10 sn) |
+| **Social Spotted** | QR menü üstündeki fotoğraf carousel (admin: Social Spotted) |
 | **Kategoriler → Kapak görseli** | PIER tarzı büyük kategori kartları |
 | **Masalar & QR** | Yeni masa → otomatik QR (PNG/SVG), link: `/menu?masa=15` |
 | **Ayarlar** | Günün mottosu + Wi-Fi şifresi (menü banner) |
@@ -158,6 +162,20 @@ RewriteBase /human-qr-menu/public/
 
 - Mutfak tableti: `https://domain.com/mutfak` (otomatik yenileme 15 sn)
 - Admin sipariş listesi: `/admin/orders`
+- Geçmiş adisyon arşivi: `/admin/orders/archive` (sayfalı liste, arama + tarih filtresi)
+- Canlı ekranda yalnızca **beklemede / hazırlanıyor / masada** siparişler görünür; **tamamlandı** veya **iptal** olanlar anında kaybolur
+
+### Otomatik arşiv (sunucu)
+
+3 saatten eski açık siparişleri saatlik iptal eder (`orders:archive-stale`). Production’da cron:
+
+```bash
+* * * * * cd /path/to/human-qr-menu && php artisan schedule:run >> /dev/null 2>&1
+```
+
+Manuel test: `php artisan orders:archive-stale`
+
+Ödeme dağılımı için canlı panelde teslimde **Tamam (Nakit)** veya **Tamam (Kart)** seçin.
 
 ---
 

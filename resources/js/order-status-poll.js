@@ -34,6 +34,7 @@ export function initOrderStatusPoll(config) {
 
     let currentStatus = initialStatus;
     let currentStep = initialStep;
+    let lastUpdatedAt = null;
     let pollTimer = null;
     let failCount = 0;
     let currentInterval = intervalMs;
@@ -87,10 +88,16 @@ export function initOrderStatusPoll(config) {
     }
 
     function applyStatus(data) {
+        if (data.updated_at !== undefined) {
+            lastUpdatedAt = data.updated_at;
+        }
+
         const statusChanged = data.status !== currentStatus;
         const stepChanged = data.status_step !== undefined && data.status_step !== currentStep;
 
-        if (!statusChanged && !stepChanged) return false;
+        if (!statusChanged && !stepChanged) {
+            return false;
+        }
 
         currentStatus = data.status;
         if (data.status_step !== undefined) {

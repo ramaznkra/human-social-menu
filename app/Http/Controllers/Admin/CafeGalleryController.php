@@ -4,12 +4,16 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\CafeGallery;
+use App\Services\MenuImageOptimizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class CafeGalleryController extends Controller
 {
+    public function __construct(
+        private readonly MenuImageOptimizer $images,
+    ) {}
     public function index(): View
     {
         $galleries = CafeGallery::orderBy('sort_order')->get();
@@ -26,7 +30,7 @@ class CafeGalleryController extends Controller
     {
         $request->validate(['image' => 'required|image|max:5120']);
         $data = $this->validated($request);
-        $data['image_path'] = $request->file('image')->store('cafe-galleries', 'public');
+        $data['image_path'] = $this->images->storeGallery($request->file('image'));
         CafeGallery::create($data);
 
         return redirect()->route('admin.cafe-galleries.index')->with('success', 'Social Spotted kartı eklendi.');
@@ -41,7 +45,7 @@ class CafeGalleryController extends Controller
     {
         $data = $this->validated($request);
         if ($request->hasFile('image')) {
-            $data['image_path'] = $request->file('image')->store('cafe-galleries', 'public');
+            $data['image_path'] = $this->images->storeGallery($request->file('image'));
         } else {
             unset($data['image_path']);
         }

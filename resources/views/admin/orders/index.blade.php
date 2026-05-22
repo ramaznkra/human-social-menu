@@ -3,14 +3,14 @@
 @section('content')
 <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
     <h2 class="text-2xl font-semibold text-gray-800">Siparişler</h2>
-    <a href="{{ route('kitchen.index') }}" target="_blank" class="btn btn-secondary">Mutfak Paneli</a>
+    <a href="{{ route('admin.live-orders.index') }}" class="btn btn-primary">⚡ Canlı Siparişler</a>
 </div>
 <div class="admin-card overflow-x-auto">
     <form method="GET" class="mb-4 flex flex-wrap gap-3">
         <select name="status" onchange="this.form.submit()" class="form-input max-w-[200px]">
             <option value="">Tüm Durumlar</option>
-            @foreach(['pending','preparing','ready','delivered','cancelled'] as $s)
-            <option value="{{ $s }}" {{ request('status')==$s?'selected':'' }}>{{ ucfirst($s) }}</option>
+            @foreach(['pending' => 'Beklemede', 'preparing' => 'Hazırlanıyor', 'ready' => 'Masada', 'delivered' => 'Tamamlandı', 'cancelled' => 'İptal'] as $s => $label)
+            <option value="{{ $s }}" {{ request('status')==$s?'selected':'' }}>{{ $label }}</option>
             @endforeach
         </select>
         <input type="date" name="date" value="{{ request('date') }}" onchange="this.form.submit()" class="form-input max-w-[180px]">

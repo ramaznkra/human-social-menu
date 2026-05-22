@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\TableCall;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -33,7 +34,7 @@ class LiveOrdersController extends Controller
                 'items' => fn ($q) => $q->select(['id', 'order_id', 'product_id', 'product_name', 'quantity', 'notes']),
                 'items.product:id,type,category_id',
             ])
-            ->whereIn('status', ['pending', 'preparing', 'ready'])
+            ->live()
             ->orderByDesc('created_at')
             ->limit(80)
             ->get()
@@ -68,19 +69,56 @@ class LiveOrdersController extends Controller
                 ];
             });
 
+        $calls = TableCall::query()
+            ->with(['linkedTable'])
+            ->active()
+            ->orderByDesc('created_at')
+            ->limit(50)
+            ->get()
+            ->map(fn (TableCall $call) => [
+                'id' => $call->id,
+                'kind' => 'call',
+                'type' => $call->type,
+                'type_label' => $call->type_label,
+                'headline' => $call->headline,
+                'table' => $call->tableNumber(),
+                'status' => $call->status,
+                'created_at' => $call->created_at->format('H:i'),
+                'updated_at' => $call->updated_at->toIso8601String(),
+                'sort_at' => $call->created_at->toIso8601String(),
+            ]);
+
         return response()->json([
             'orders' => $orders,
+            'calls' => $calls,
             'timestamp' => now()->toIso8601String(),
         ]);
+    }
+
+    public function resolveCall(TableCall $call): JsonResponse
+    {
+        if ($call->status === TableCall::STATUS_RESOLVED) {
+            return response()->json(['success' => true, 'message' => 'Çağrı zaten kapatılmış.']);
+        }
+
+        $call->update(['status' => TableCall::STATUS_RESOLVED]);
+
+        return response()->json(['success' => true, 'message' => 'Çağrı tamamlandı.']);
     }
 
     public function updateStatus(Request $request, Order $order): JsonResponse
     {
         $request->validate([
             'status' => 'required|in:pending,preparing,ready,delivered,cancelled',
+            'payment_method' => 'nullable|in:cash,card',
         ]);
 
-        $order->update(['status' => $request->status]);
+        $payload = ['status' => $request->status];
+        if ($request->status === Order::STATUS_DELIVERED && $request->filled('payment_method')) {
+            $payload['payment_method'] = $request->payment_method;
+        }
+
+        $order->update($payload);
 
         return response()->json([
             'success' => true,

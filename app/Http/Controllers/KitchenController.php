@@ -13,7 +13,7 @@ class KitchenController extends Controller
     public function index(): View
     {
         $orders = Order::with(['items', 'table'])
-            ->whereIn('status', ['pending', 'preparing', 'ready'])
+            ->live()
             ->orderByDesc('created_at')
             ->get();
 
@@ -30,7 +30,7 @@ class KitchenController extends Controller
                 'table:id,number',
                 'items:id,order_id,product_name,quantity,notes',
             ])
-            ->whereIn('status', ['pending', 'preparing', 'ready'])
+            ->live()
             ->orderByDesc('created_at')
             ->get()
             ->map(fn ($o) => [

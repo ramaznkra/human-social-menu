@@ -15,7 +15,7 @@ class OperationsController extends Controller
         $orders = Order::query()
             ->select(['id', 'order_number', 'status', 'total', 'table_id', 'created_at', 'updated_at'])
             ->with(['table:id,number'])
-            ->whereIn('status', ['pending', 'preparing', 'ready'])
+            ->live()
             ->orderByDesc('created_at')
             ->limit(30)
             ->get()
@@ -31,9 +31,8 @@ class OperationsController extends Controller
             ]);
 
         $calls = TableCall::query()
-            ->select(['id', 'table_id', 'type', 'status', 'created_at'])
-            ->with(['table:id,number'])
-            ->pending()
+            ->with(['linkedTable'])
+            ->active()
             ->orderByDesc('created_at')
             ->limit(20)
             ->get()
@@ -41,7 +40,8 @@ class OperationsController extends Controller
                 'id' => $c->id,
                 'type' => $c->type,
                 'type_label' => $c->type_label,
-                'table' => $c->table?->number,
+                'headline' => $c->headline,
+                'table' => $c->tableNumber(),
                 'created_at' => $c->created_at->format('H:i'),
             ]);
 
@@ -54,7 +54,7 @@ class OperationsController extends Controller
 
     public function acknowledgeCall(TableCall $call): JsonResponse
     {
-        $call->update(['status' => 'acknowledged']);
+        $call->update(['status' => TableCall::STATUS_RESOLVED]);
 
         return response()->json(['success' => true]);
     }

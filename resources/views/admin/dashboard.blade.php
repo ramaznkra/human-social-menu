@@ -4,40 +4,34 @@
 @section('page_heading', 'Kontrol Paneli')
 
 @section('content')
-<div class="mb-8 flex flex-wrap items-center justify-between gap-4">
+<div class="mb-6">
     <h2 class="text-2xl font-semibold text-gray-800">Hoş geldiniz{{ session('admin_name') ? ', ' . session('admin_name') : '' }}</h2>
-    <p id="liveOpsStatus" class="text-sm text-gray-500">Canlı bağlanıyor…</p>
 </div>
 
-{{-- Canlı operasyon --}}
-<div
-    id="admin-live-ops"
-    class="mb-8"
-    data-api-url="{{ route('admin.operations.live') }}"
-    data-acknowledge-url="{{ str_replace('/0/', '/__ID__/', route('admin.operations.acknowledge', ['call' => 0])) }}"
->
-    <div class="admin-card border-[#E67E22]/20">
-        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div class="flex items-center gap-3">
-                <h3 class="text-lg font-semibold text-gray-800">Canlı Operasyon</h3>
-                <span id="liveOpsBadge" class="hidden min-w-[1.5rem] rounded-full bg-[#E67E22] px-2 py-0.5 text-center text-xs font-bold text-white">0</span>
-            </div>
-            <span class="text-xs text-gray-500">Siparişler ve masa çağrıları anlık güncellenir</span>
-        </div>
-        <div class="grid gap-6 lg:grid-cols-2">
-            <div>
-                <h4 class="mb-2 text-xs font-semibold tracking-wider text-gray-500 uppercase">Yeni / Aktif Siparişler</h4>
-                <div id="liveOrdersList" class="max-h-72 space-y-2 overflow-y-auto transition-all duration-500 ease-in-out">
-                    <p class="py-4 text-center text-sm text-gray-500">Yükleniyor…</p>
-                </div>
-            </div>
-            <div>
-                <h4 class="mb-2 text-xs font-semibold tracking-wider text-[#E67E22] uppercase">Garson & Hesap Çağrıları</h4>
-                <div id="liveCallsList" class="max-h-72 space-y-2 overflow-y-auto transition-all duration-500 ease-in-out">
-                    <p class="py-4 text-center text-sm text-gray-500">Yükleniyor…</p>
-                </div>
-            </div>
-        </div>
+<div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="dashboard-finance-card">
+        <p class="dashboard-finance-label">Günlük Toplam Ciro</p>
+        <p class="dashboard-finance-value">{{ $finance['daily_revenue_formatted'] }}</p>
+        <p class="dashboard-finance-hint">Bugün tamamlanan adisyonlar</p>
+    </div>
+    <div class="dashboard-finance-card">
+        <p class="dashboard-finance-label">Aktif Masa Sayısı</p>
+        <p class="dashboard-finance-value">{{ $finance['active_tables'] }} <span class="text-lg font-semibold text-gray-500">Masa</span></p>
+        <p class="dashboard-finance-hint">Canlı sipariş veya çağrı</p>
+    </div>
+    <div class="dashboard-finance-card">
+        <p class="dashboard-finance-label">Tamamlanan Siparişler</p>
+        <p class="dashboard-finance-value">{{ $finance['completed_orders'] }}</p>
+        <p class="dashboard-finance-hint">Bugün kasadan geçen</p>
+    </div>
+    <div class="dashboard-finance-card">
+        <p class="dashboard-finance-label">Ödeme Türü Dağılımı</p>
+        <p class="dashboard-finance-value text-xl">{{ $finance['payment_split'] }}</p>
+        @if(($finance['payment_cash_count'] + $finance['payment_card_count']) > 0)
+        <p class="dashboard-finance-hint">{{ $finance['payment_card_count'] }} kart · {{ $finance['payment_cash_count'] }} nakit</p>
+        @else
+        <p class="dashboard-finance-hint">Teslimde ödeme türü seçin</p>
+        @endif
     </div>
 </div>
 
@@ -50,9 +44,9 @@
 </div>
 
 <div class="mb-6 flex flex-wrap gap-3">
+    <a href="{{ route('admin.live-orders.index') }}" class="text-sm font-medium text-[#E67E22] hover:underline">⚡ Canlı Siparişler</a>
     <a href="{{ route('menu.index') }}" target="_blank" class="text-sm font-medium text-[#E67E22] hover:underline">📱 Genel Menü</a>
     <a href="{{ route('display.index') }}" target="_blank" class="text-sm font-medium text-[#E67E22] hover:underline">📺 TV Ekranı</a>
-    <a href="{{ route('kitchen.index') }}" target="_blank" class="text-sm font-medium text-[#E67E22] hover:underline">👨‍🍳 Mutfak Paneli</a>
 </div>
 
 <div class="admin-card">
@@ -77,7 +71,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-@vite('resources/js/pages/admin-dashboard.js')
-@endpush

@@ -9,7 +9,21 @@
     $firstCategoryId = $categories->first()?->id;
 @endphp
 
-<div class="menu-shell pb-28 lg:pb-32" id="menuApp">
+@php
+    $spotifyUrl = trim($settings['spotify_url'] ?? '');
+    $instagramUrl = trim($settings['instagram_url'] ?? '');
+    $instagramHandle = $settings['instagram_handle'] ?? '@ramaznkra';
+    $orderOn = ($settings['order_enabled'] ?? '1') === '1';
+    /** Sosyal widget düzeni: true = 2'li grid kartlar (v2), false = eski dikey düzen */
+    $socialWidgetsGrid = true;
+    $scrollPad = 'menu-scroll-pad pb-36';
+    if ($table && $orderOn) {
+        $scrollPad .= ' menu-scroll-pad--table-cart';
+    } elseif ($table) {
+        $scrollPad .= ' menu-scroll-pad--table';
+    }
+@endphp
+<main class="menu-shell {{ $scrollPad }}" id="menuApp">
     {{-- Header / Logo --}}
     <header class="menu-header relative px-5 pt-6 pb-2 text-center md:px-8">
         @if($table)
@@ -20,13 +34,6 @@
         <h1 class="menu-logo">{{ $brandMark }}</h1>
         <p class="menu-tagline">{{ $tagline }}</p>
 
-        @if($table)
-        <div class="mt-4 flex justify-center gap-2">
-            <button type="button" id="callWaiter" class="menu-action-btn">Garson</button>
-            <button type="button" id="callBill" class="menu-action-btn">Hesap</button>
-        </div>
-        <div id="callToast" class="mx-auto mt-2 hidden max-w-xs rounded-lg border border-[#E67E22]/30 bg-[#E67E22]/10 px-3 py-1.5 text-center text-[10px] text-[#E67E22]"></div>
-        @endif
     </header>
 
     {{-- Social Spotted --}}
@@ -100,7 +107,7 @@
     @endif
 
     {{-- Ürün listesi --}}
-    <div class="product-list-wrap px-5 py-4 md:px-8" id="menuSections">
+    <div class="product-list-wrap px-5 py-4 pb-6 md:px-8" id="menuSections">
         @foreach($categories as $cat)
         <div
             class="menu-category-panel space-y-3 {{ $cat->id !== $firstCategoryId ? 'hidden' : '' }}"
@@ -153,11 +160,55 @@
     <div class="no-results px-6 py-16 text-center text-sm text-[#D4C5B9]" id="noResults">
         Aramanızla eşleşen ürün bulunamadı.
     </div>
+
+    @if($socialWidgetsGrid)
+        @include('menu.partials.social-widgets-grid', compact('spotifyUrl', 'instagramUrl', 'instagramHandle', 'settings'))
+    @else
+        @include('menu.partials.social-widgets-legacy', compact('spotifyUrl', 'instagramUrl', 'instagramHandle', 'settings'))
+    @endif
+</main>
+
+@if($table)
+<div
+    id="menuActionBar"
+    class="menu-action-bar menu-shell pointer-events-auto fixed inset-x-0 bottom-0 z-40 flex justify-center"
+    data-call-status-url="{{ route('table.call.status') }}"
+>
+    <div class="w-full rounded-t-3xl border-t border-white/10 bg-[#262220]/80 p-4 backdrop-blur-md md:px-8" style="padding-bottom: calc(12px + env(safe-area-inset-bottom))">
+        <div id="callActionButtons" class="grid grid-cols-2 gap-3">
+            <button type="button" id="callWaiter" class="menu-call-waiter rounded-xl border border-[#E67E22] px-3 py-3 text-sm font-semibold text-[#E67E22] transition hover:bg-[#E67E22]/10">
+                🛎️ Garson Çağır
+            </button>
+            <button type="button" id="callBillOpen" class="menu-call-bill rounded-xl bg-[#E67E22] px-3 py-3 text-sm font-semibold text-white shadow-lg shadow-[#E67E22]/25 transition hover:brightness-110">
+                💳 Hesap İste
+            </button>
+        </div>
+        <p id="callSuccessMsg" class="call-success-msg hidden text-center text-sm font-light text-[#D4C5B9]"></p>
+    </div>
 </div>
 
+<div class="modal-overlay fixed inset-0 z-[210] items-end justify-center bg-black/60" id="billSheet">
+    <div class="menu-shell w-full rounded-t-3xl border-t border-white/10 bg-[#262220] p-6 md:px-8">
+        <h3 class="mb-1 text-lg font-bold text-gray-100">Hesap İste</h3>
+        <p class="mb-4 text-sm text-[#D4C5B9]">Garsonumuz hazırlıklı gelsin</p>
+        <div class="space-y-3">
+            <button type="button" data-bill-type="bill_cash" class="bill-type-btn w-full rounded-xl border border-white/10 bg-white/5 py-4 text-left px-4 text-gray-100 transition hover:border-[#E67E22]/40">
+                <span class="block font-semibold">Nakit Ödeyeceğim</span>
+                <span class="text-xs text-[#D4C5B9]">Hesabı nakit olarak getirelim</span>
+            </button>
+            <button type="button" data-bill-type="bill_card" class="bill-type-btn w-full rounded-xl border border-white/10 bg-white/5 py-4 text-left px-4 text-gray-100 transition hover:border-[#E67E22]/40">
+                <span class="block font-semibold">Kredi Kartı / Pos Cihazı</span>
+                <span class="text-xs text-[#D4C5B9]">Pos cihazı masanıza getirilsin</span>
+            </button>
+        </div>
+        <button type="button" id="billSheetClose" class="mt-4 w-full rounded-xl border border-white/10 py-3 text-sm text-[#D4C5B9]">İptal</button>
+    </div>
+</div>
+@endif
+
 @if(($settings['order_enabled'] ?? '1') === '1')
-<div class="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center">
-<div class="cart-bar menu-shell pointer-events-auto w-full border-t border-white/10 bg-[#262220]/95 px-4 py-3 backdrop-blur-lg md:px-8" id="cartBar" style="padding-bottom: calc(12px + env(safe-area-inset-bottom))">
+<div class="pointer-events-none fixed inset-x-0 z-50 flex justify-center {{ $table ? 'bottom-[5.5rem]' : 'bottom-0' }}">
+<div class="cart-bar menu-shell pointer-events-auto w-full border-t border-white/10 bg-[#262220]/95 px-4 py-3 backdrop-blur-lg md:px-8" id="cartBar" style="padding-bottom: calc(8px + env(safe-area-inset-bottom))">
     <div class="flex-1 text-sm text-[#D4C5B9]">
         <span id="cartCount" class="font-semibold text-gray-100">0</span> ürün ·
         <span class="font-bold text-[#E67E22]" id="cartTotal">0 {{ $settings['currency'] ?? '₺' }}</span>
@@ -185,14 +236,72 @@ const tableMasa = @json($table?->number);
 const currency = @json($settings['currency'] ?? '₺');
 const cart = {};
 
+let callStatusTimer = null;
+const callStatusUrl = document.getElementById('menuActionBar')?.dataset.callStatusUrl;
+
+function resetCallButtons() {
+    const buttons = document.getElementById('callActionButtons');
+    const msg = document.getElementById('callSuccessMsg');
+    buttons?.classList.remove('hidden');
+    msg?.classList.add('hidden');
+    document.getElementById('callWaiter') && (document.getElementById('callWaiter').disabled = false);
+    document.getElementById('callBillOpen') && (document.getElementById('callBillOpen').disabled = false);
+}
+
+function showCallSent(message) {
+    const buttons = document.getElementById('callActionButtons');
+    const msg = document.getElementById('callSuccessMsg');
+    if (buttons) buttons.classList.add('hidden');
+    if (msg) {
+        msg.textContent = message || 'Garsonumuz masanıza yönlendirildi…';
+        msg.classList.remove('hidden');
+        msg.classList.add('animate-fade-in-up');
+    }
+    startCallStatusPoll();
+}
+
+function stopCallStatusPoll() {
+    if (callStatusTimer) {
+        clearInterval(callStatusTimer);
+        callStatusTimer = null;
+    }
+}
+
+async function checkCallStatus() {
+    if (!callStatusUrl || (!tableToken && !tableMasa)) return;
+    const params = new URLSearchParams();
+    if (tableToken) params.set('table_token', tableToken);
+    if (tableMasa) params.set('masa', tableMasa);
+    try {
+        const res = await fetch(`${callStatusUrl}?${params}`, { headers: { Accept: 'application/json' } });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.active) {
+            stopCallStatusPoll();
+            resetCallButtons();
+            const msg = document.getElementById('callSuccessMsg');
+            if (msg) {
+                msg.textContent = 'Garsonunuz masanıza yönlendirildi. İhtiyacınız olursa tekrar çağırabilirsiniz.';
+                msg.classList.remove('hidden');
+                setTimeout(() => msg.classList.add('hidden'), 5000);
+            }
+        }
+    } catch { /* sessiz */ }
+}
+
+function startCallStatusPoll() {
+    stopCallStatusPoll();
+    checkCallStatus();
+    callStatusTimer = setInterval(checkCallStatus, 4000);
+}
+
 async function sendTableCall(type) {
-    if (!tableToken && !tableMasa) return;
-    const toast = document.getElementById('callToast');
+    if (!tableToken && !tableMasa) return false;
     const payload = { type };
     if (tableToken) payload.table_token = tableToken;
     if (tableMasa) payload.masa = tableMasa;
     try {
-        const res = await fetch('{{ route("table.call.store") }}', {
+        const res = await fetch('{{ route("table.call.api") }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -202,17 +311,56 @@ async function sendTableCall(type) {
             body: JSON.stringify(payload),
         });
         const data = await res.json();
-        if (toast && data.message) {
-            toast.textContent = data.message;
-            toast.classList.remove('hidden');
-            setTimeout(() => toast.classList.add('hidden'), 4000);
+        if (data.success) {
+            showCallSent(data.message);
+            return true;
         }
+        alert(data.message || 'İstek gönderilemedi.');
     } catch {
-        if (toast) { toast.textContent = 'Bağlantı hatası, tekrar deneyin.'; toast.classList.remove('hidden'); }
+        alert('Bağlantı hatası, tekrar deneyin.');
     }
+    return false;
 }
-document.getElementById('callWaiter')?.addEventListener('click', () => sendTableCall('waiter'));
-document.getElementById('callBill')?.addEventListener('click', () => sendTableCall('bill'));
+
+async function syncCallBarOnLoad() {
+    if (!callStatusUrl || (!tableToken && !tableMasa)) return;
+    const params = new URLSearchParams();
+    if (tableToken) params.set('table_token', tableToken);
+    if (tableMasa) params.set('masa', tableMasa);
+    try {
+        const res = await fetch(`${callStatusUrl}?${params}`, { headers: { Accept: 'application/json' } });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.active) {
+            const waiting = {
+                waiter: 'Garsonumuz masanıza yönlendirildi…',
+                bill_cash: 'Nakit hesap talebiniz iletildi. Garsonumuz geliyor…',
+                bill_card: 'Kart ile ödeme talebiniz iletildi. Pos getiriliyor…',
+            };
+            showCallSent(waiting[data.type] || 'Talebiniz iletildi…');
+        }
+    } catch { /* sessiz */ }
+}
+if (callStatusUrl) syncCallBarOnLoad();
+
+document.getElementById('callWaiter')?.addEventListener('click', async () => {
+    const btn = document.getElementById('callWaiter');
+    btn.disabled = true;
+    await sendTableCall('waiter');
+});
+
+const billSheet = document.getElementById('billSheet');
+document.getElementById('callBillOpen')?.addEventListener('click', () => billSheet?.classList.add('open'));
+document.getElementById('billSheetClose')?.addEventListener('click', () => billSheet?.classList.remove('open'));
+billSheet?.addEventListener('click', (e) => { if (e.target === billSheet) billSheet.classList.remove('open'); });
+document.querySelectorAll('.bill-type-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        const ok = await sendTableCall(btn.dataset.billType);
+        if (ok) billSheet?.classList.remove('open');
+        else btn.disabled = false;
+    });
+});
 
 /* Kategori pill geçişi */
 const categoryPills = document.querySelectorAll('.category-pill');

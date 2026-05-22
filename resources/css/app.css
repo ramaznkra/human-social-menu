@@ -111,18 +111,16 @@
         @apply px-5 md:px-8;
     }
 
-    .spotted-hero-track {
-        @apply flex snap-x snap-mandatory overflow-x-auto scroll-smooth;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
+    .spotted-hero {
+        @apply overflow-hidden;
     }
 
-    .spotted-hero-track::-webkit-scrollbar {
-        display: none;
+    .spotted-hero-track {
+        @apply flex will-change-transform;
     }
 
     .spotted-hero-slide {
-        @apply w-full shrink-0 snap-center;
+        @apply w-full shrink-0;
     }
 
     .spotted-hero-card {
@@ -221,6 +219,52 @@
 
     .live-ops-btn-secondary {
         @apply rounded-lg border border-white/10 px-3 py-1.5 text-xs text-[#D4C5B9] transition hover:border-[#E67E22]/40 hover:text-[#E67E22];
+    }
+
+    .call-success-msg {
+        @apply py-3 leading-relaxed;
+    }
+
+    .menu-action-bar {
+        @apply z-40;
+    }
+
+    /* Sticky garson/sepet çubuğu — içerik üstünde kalsın (pb-36 tabanı + safe area) */
+    .menu-scroll-pad {
+        padding-bottom: calc(9rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    .menu-scroll-pad--table {
+        padding-bottom: calc(16rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    .menu-scroll-pad--table-cart {
+        padding-bottom: calc(20rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    .menu-social-footer {
+        @apply pb-2;
+    }
+
+    .menu-instagram-strip {
+        @apply -mx-5 md:-mx-8;
+    }
+
+    /* Sosyal widget: mobil = tam genişlik kare grid; lg+ (tarayıcı) = kompakt */
+    .menu-social-grid {
+        @apply mx-auto w-full max-w-none;
+    }
+
+    @media (min-width: 1024px) {
+        .menu-social-grid {
+            max-width: 22rem;
+        }
+
+        .menu-social-card {
+            aspect-ratio: auto;
+            min-height: 9.5rem;
+            max-height: 10.5rem;
+        }
     }
 
     .animate-fade-in-up {
@@ -375,6 +419,22 @@
     }
     .stat-card .label {
         @apply mt-1 text-sm text-gray-500;
+    }
+
+    .dashboard-finance-card {
+        @apply rounded-xl border border-gray-100 bg-white p-6 shadow-sm;
+    }
+
+    .dashboard-finance-label {
+        @apply text-xs font-semibold tracking-wide text-gray-500 uppercase;
+    }
+
+    .dashboard-finance-value {
+        @apply mt-2 text-2xl font-bold text-gray-900;
+    }
+
+    .dashboard-finance-hint {
+        @apply mt-1 text-xs text-gray-400;
     }
 
     .alert {

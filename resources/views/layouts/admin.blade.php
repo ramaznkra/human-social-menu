@@ -20,21 +20,18 @@
         <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-4">
             <a href="{{ route('admin.dashboard') }}" class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">📊 Panel</a>
             <a href="{{ route('admin.categories.index') }}" class="sidebar-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">📁 Kategoriler</a>
-            <a href="{{ route('admin.menu-slides.index') }}" class="sidebar-link {{ request()->routeIs('admin.menu-slides.*') ? 'active' : '' }}">🖼️ Menü Slaytları</a>
             <a href="{{ route('admin.cafe-galleries.index') }}" class="sidebar-link {{ request()->routeIs('admin.cafe-galleries.*') ? 'active' : '' }}">✨ Social Spotted</a>
             <a href="{{ route('admin.products.index') }}" class="sidebar-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">🍽️ Ürünler</a>
             <a href="{{ route('admin.tables.index') }}" class="sidebar-link {{ request()->routeIs('admin.tables.*') ? 'active' : '' }}">🪑 Masalar & QR</a>
-            <a href="{{ route('admin.orders.index') }}" class="sidebar-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">📋 Siparişler</a>
+            <a href="{{ route('admin.orders.index') }}" class="sidebar-link {{ request()->routeIs('admin.orders.index') || request()->routeIs('admin.orders.show') ? 'active' : '' }}">📋 Siparişler</a>
+            <a href="{{ route('admin.orders.archive') }}" class="sidebar-link {{ request()->routeIs('admin.orders.archive') ? 'active' : '' }}">📦 Geçmiş Adisyonlar</a>
             <a href="{{ route('admin.live-orders.index') }}" class="sidebar-link {{ request()->routeIs('admin.live-orders.*') ? 'active' : '' }}">⚡ Canlı Siparişler</a>
-            <a href="{{ route('kitchen.index') }}" class="sidebar-link" target="_blank">🍳 Mutfak Ekranı</a>
-            <a href="{{ route('admin.bar.index') }}" class="sidebar-link {{ request()->routeIs('admin.bar.*') ? 'active' : '' }}">☕ Bar (yönlendirme)</a>
             <a href="{{ route('admin.slides.index') }}" class="sidebar-link {{ request()->routeIs('admin.slides.*') ? 'active' : '' }}">🖥️ Ekran Slaytları</a>
             <a href="{{ route('admin.events.index') }}" class="sidebar-link {{ request()->routeIs('admin.events.*') ? 'active' : '' }}">🎉 Etkinlikler</a>
             <a href="{{ route('admin.settings.edit') }}" class="sidebar-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">⚙️ Ayarlar</a>
             <hr class="my-3 border-white/10">
             <a href="{{ route('menu.index') }}" target="_blank" class="sidebar-link">📱 Menüyü Gör</a>
             <a href="{{ route('display.index') }}" target="_blank" class="sidebar-link">📺 Ekranı Aç</a>
-            <a href="{{ route('kitchen.index') }}" target="_blank" class="sidebar-link">👨‍🍳 Mutfak</a>
         </nav>
         <div class="border-t border-white/10 p-4">
             <form action="{{ route('admin.logout') }}" method="POST">

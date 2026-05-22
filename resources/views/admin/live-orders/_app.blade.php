@@ -4,7 +4,9 @@
         class="flex {{ ($fullscreen ?? false) ? 'min-h-dvh' : 'min-h-[calc(100vh-8rem)]' }} flex-col"
         data-api-url="{{ route('live-orders.api') }}"
         data-status-url="{{ url('/api/admin/live-orders') }}"
+        data-resolve-call-url="{{ url('/api/admin/call') }}"
         data-csrf="{{ csrf_token() }}"
+        data-page-title="HSP Canlı Siparişler"
     >
         <header class="sticky top-0 z-40 border-b border-white/5 bg-[#121110]/95 px-4 py-4 backdrop-blur-md md:px-6">
             <div class="flex flex-wrap items-center justify-between gap-3">
@@ -29,6 +31,10 @@
                 <button type="button" class="live-ops-tab relative" data-tab="bar" role="tab">
                     Bar / İçecek
                     <span class="live-ops-badge hidden" data-badge="bar">0</span>
+                </button>
+                <button type="button" class="live-ops-tab relative" data-tab="calls" role="tab">
+                    🛎️ Çağrılar
+                    <span class="live-ops-badge hidden" data-badge="calls">0</span>
                 </button>
             </nav>
         </header>

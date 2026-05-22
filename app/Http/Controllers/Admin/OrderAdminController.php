@@ -37,8 +37,15 @@ class OrderAdminController extends Controller
     {
         $request->validate([
             'status' => 'required|in:pending,preparing,ready,delivered,cancelled',
+            'payment_method' => 'nullable|in:cash,card',
         ]);
-        $order->update(['status' => $request->status]);
+
+        $payload = ['status' => $request->status];
+        if ($request->status === Order::STATUS_DELIVERED && $request->filled('payment_method')) {
+            $payload['payment_method'] = $request->payment_method;
+        }
+
+        $order->update($payload);
 
         return back()->with('success', 'Sipariş durumu güncellendi.');
     }

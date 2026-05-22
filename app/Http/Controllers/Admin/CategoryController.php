@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Services\MenuImageOptimizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -11,6 +12,10 @@ use Illuminate\View\View;
 
 class CategoryController extends Controller
 {
+    public function __construct(
+        private readonly MenuImageOptimizer $images,
+    ) {}
+
     public function index(): View
     {
         $categories = Category::orderBy('sort_order')->get();
@@ -27,7 +32,7 @@ class CategoryController extends Controller
     {
         $data = $this->validated($request);
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('categories', 'public');
+            $data['image'] = $this->images->storeCategory($request->file('image'));
         }
         Category::create($data);
 
@@ -43,7 +48,7 @@ class CategoryController extends Controller
     {
         $data = $this->validated($request, $category);
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('categories', 'public');
+            $data['image'] = $this->images->storeCategory($request->file('image'));
         } else {
             unset($data['image']);
         }

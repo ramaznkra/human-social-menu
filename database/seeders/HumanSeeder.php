@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\Category;
 use App\Models\Event;
 use App\Models\CafeGallery;
-use App\Models\MenuSlide;
 use App\Models\Product;
 use App\Models\Setting;
 use App\Models\Table;
@@ -40,6 +39,10 @@ class HumanSeeder extends Seeder
             'wifi_password' => 'HumanSocial2026',
             'show_motto_banner' => '1',
             'show_wifi_banner' => '1',
+            'spotify_url' => 'https://open.spotify.com/playlist/37i9dQZF1DX0XUsuxWHRQd',
+            'spotify_title' => 'HSP Vibes',
+            'instagram_url' => 'https://www.instagram.com/ramaznkra/',
+            'instagram_handle' => '@ramaznkra',
         ];
         foreach ($defaults as $key => $value) {
             Setting::set($key, $value);
@@ -54,48 +57,6 @@ class HumanSeeder extends Seeder
 
         foreach ($categories as $cat) {
             Category::updateOrCreate(['slug' => $cat['slug']], $cat + ['is_active' => true, 'icon' => null]);
-        }
-
-        $menuSlides = [
-            [
-                'title' => 'Human Lounge',
-                'subtitle' => 'Social People',
-                'image' => 'images/menu/slider/mekan-1.jpg',
-                'type' => 'venue',
-                'duration' => 8,
-                'sort_order' => 1,
-            ],
-            [
-                'title' => 'Gece Atmosferi',
-                'subtitle' => 'Premium deneyim',
-                'image' => 'images/menu/slider/mekan-2.jpg',
-                'type' => 'venue',
-                'duration' => 8,
-                'sort_order' => 2,
-            ],
-            [
-                'title' => 'Özel Misafirlerimiz',
-                'subtitle' => 'Human ailesine hoş geldiniz',
-                'image' => 'images/menu/slider/misafir-1.jpg',
-                'type' => 'guest',
-                'duration' => 7,
-                'sort_order' => 3,
-            ],
-            [
-                'title' => 'Sosyal Buluşmalar',
-                'subtitle' => 'Unutulmaz anlar',
-                'image' => 'images/menu/slider/misafir-2.jpg',
-                'type' => 'guest',
-                'duration' => 7,
-                'sort_order' => 4,
-            ],
-        ];
-
-        foreach ($menuSlides as $slide) {
-            MenuSlide::updateOrCreate(
-                ['image' => $slide['image']],
-                $slide + ['is_active' => true]
-            );
         }
 
         $spottedCards = [

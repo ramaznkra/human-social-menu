@@ -23,6 +23,7 @@ class SettingController extends Controller
             'venue_name', 'venue_slogan', 'brand_mark', 'venue_tagline', 'venue_phone', 'venue_address',
             'currency', 'order_enabled', 'display_interval',
             'daily_motto', 'wifi_password', 'show_motto_banner', 'show_wifi_banner',
+            'spotify_url', 'spotify_title', 'instagram_url', 'instagram_handle',
         ];
 
         foreach ($keys as $key) {

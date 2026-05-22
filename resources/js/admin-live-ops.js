@@ -16,9 +16,12 @@ export function initAdminLiveOps(config) {
     const elStatus = document.getElementById('liveOpsStatus');
     if (!elOrders || !elCalls) return;
 
+    const baseTitle = document.title;
     let knownOrderIds = new Set();
     let knownCallIds = new Set();
+    let titleAlertCount = 0;
     let initialized = false;
+    let ordersSnapshot = '';
     let failCount = 0;
     let currentInterval = intervalMs;
     let timer = null;
@@ -70,11 +73,11 @@ export function initAdminLiveOps(config) {
         elCalls.innerHTML = calls.map(c => `
             <div class="flex items-center justify-between rounded-lg border border-[#E67E22]/20 bg-[#E67E22]/5 px-3 py-2.5" data-call-id="${c.id}">
                 <div>
-                    <span class="font-semibold text-gray-800">Masa ${c.table}</span>
+                    <span class="font-semibold text-gray-800">${c.headline || `Masa ${c.table ?? '—'}`}</span>
                     <span class="block text-xs text-gray-600">${c.type_label}</span>
                     <span class="text-xs text-gray-400">${c.created_at}</span>
                 </div>
-                <button type="button" class="btn btn-sm btn-primary acknowledge-call" data-id="${c.id}">Onayla</button>
+                <button type="button" class="btn btn-sm btn-primary acknowledge-call" data-id="${c.id}">${({ waiter: 'Garsonu Gönder', bill_cash: 'Hesabı Götür', bill_card: 'Pos Gönder' })[c.type] || 'Tamamlandı'}</button>
             </div>
         `).join('');
 
@@ -95,19 +98,48 @@ export function initAdminLiveOps(config) {
         });
     }
 
-    function detectNew(orders, calls) {
-        const newOrders = orders.filter(o => !knownOrderIds.has(o.id));
-        const newCalls = calls.filter(c => !knownCallIds.has(c.id));
+    function refreshDocumentTitle() {
+        if (document.hidden && titleAlertCount > 0) {
+            const label =
+                titleAlertCount === 1 ? '1 Yeni Sipariş' : `${titleAlertCount} Yeni Sipariş`;
+            document.title = `(${label}!) ${baseTitle}`;
+        } else {
+            document.title = baseTitle;
+        }
+    }
 
-        knownOrderIds = new Set(orders.map(o => o.id));
-        knownCallIds = new Set(calls.map(c => c.id));
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            titleAlertCount = 0;
+            document.title = baseTitle;
+        } else {
+            refreshDocumentTitle();
+        }
+    });
+
+    function detectNew(orders, calls) {
+        const newOrders = orders.filter((o) => !knownOrderIds.has(o.id));
+        const newCalls = calls.filter((c) => !knownCallIds.has(c.id));
 
         if (!initialized) {
             initialized = true;
-            return false;
+            knownOrderIds = new Set(orders.map((o) => o.id));
+            knownCallIds = new Set(calls.map((c) => c.id));
+            return { hasNew: false, newCount: 0 };
         }
 
-        return newOrders.length > 0 || newCalls.length > 0;
+        knownOrderIds = new Set(orders.map((o) => o.id));
+        knownCallIds = new Set(calls.map((c) => c.id));
+
+        const newCount = newOrders.length + newCalls.length;
+
+        return { hasNew: newCount > 0, newCount };
+    }
+
+    function ordersFingerprint(orders) {
+        return JSON.stringify(
+            orders.map(o => [o.id, o.status, o.updated_at, o.total]),
+        );
     }
 
     function updateBadge(orders, calls) {
@@ -121,20 +153,33 @@ export function initAdminLiveOps(config) {
 
     async function tick() {
         try {
-            const res = await fetch(apiUrl, { headers: { Accept: 'application/json' } });
+            const res = await fetch(apiUrl, {
+                headers: { Accept: 'application/json' },
+                credentials: 'same-origin',
+            });
             if (!res.ok) throw new Error('fetch failed');
             const data = await res.json();
 
             const orders = data.orders || [];
             const calls = data.calls || [];
 
-            if (detectNew(orders, calls)) {
+            const { hasNew, newCount } = detectNew(orders, calls);
+            if (hasNew) {
                 playAlert();
+                if (document.hidden && newCount > 0) {
+                    titleAlertCount += newCount;
+                    refreshDocumentTitle();
+                }
                 elOrders.classList.add('ring-2', 'ring-[#E67E22]/30');
                 setTimeout(() => elOrders.classList.remove('ring-2', 'ring-[#E67E22]/30'), 800);
             }
 
-            renderOrders(orders);
+            const ordersFp = ordersFingerprint(orders);
+            if (ordersFp !== ordersSnapshot) {
+                renderOrders(orders);
+                ordersSnapshot = ordersFp;
+            }
+
             renderCalls(calls);
             updateBadge(orders, calls);
 
