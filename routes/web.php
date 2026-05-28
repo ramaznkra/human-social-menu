@@ -19,7 +19,9 @@ use App\Http\Controllers\DisplayController;
 use App\Http\Controllers\KitchenController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\Waiter\WaiterDashboardController;
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\WaiterOnlyMiddleware;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect()->route('menu.index'));
@@ -43,15 +45,25 @@ Route::patch('/api/admin/call/{call}/resolve', [LiveOrdersController::class, 're
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/giris', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/giris', [AuthController::class, 'login']);
-    Route::post('/cikis', [AuthController::class, 'logout'])->name('logout');
+});
 
-    Route::middleware(AdminMiddleware::class)->group(function () {
+Route::middleware(AdminMiddleware::class)->group(function () {
+    Route::post('/admin/cikis', [AuthController::class, 'logout'])->name('admin.logout');
+
+    Route::post('/api/waiter/complete', [WaiterDashboardController::class, 'complete'])->name('waiter.complete');
+
+    Route::get('/admin/api/admin/manual-order/bootstrap', [ManualOrderController::class, 'bootstrap'])->name('admin.manual-order.bootstrap');
+    Route::get('/admin/api/admin/manual-order/products', [ManualOrderController::class, 'searchProducts'])->name('admin.manual-order.products');
+    Route::post('/admin/api/admin/manual-order', [ManualOrderController::class, 'store'])->name('admin.manual-order.store');
+
+    Route::middleware(WaiterOnlyMiddleware::class)->prefix('waiter')->name('waiter.')->group(function () {
+        Route::get('/dashboard', [WaiterDashboardController::class, 'index'])->name('dashboard');
+    });
+
+    Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/api/operasyon', [OperationsController::class, 'live'])->name('operations.live');
         Route::get('live-orders', [LiveOrdersController::class, 'index'])->name('live-orders.index');
-        Route::get('api/admin/manual-order/bootstrap', [ManualOrderController::class, 'bootstrap'])->name('manual-order.bootstrap');
-        Route::get('api/admin/manual-order/products', [ManualOrderController::class, 'searchProducts'])->name('manual-order.products');
-        Route::post('api/admin/manual-order', [ManualOrderController::class, 'store'])->name('manual-order.store');
         Route::patch('/api/cagri/{call}/onayla', [OperationsController::class, 'acknowledgeCall'])->name('operations.acknowledge');
 
         Route::resource('categories', CategoryController::class)->except(['show']);

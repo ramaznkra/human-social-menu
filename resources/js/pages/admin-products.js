@@ -7,7 +7,7 @@ function initProductAvailabilityToggles() {
     document.querySelectorAll('[data-product-toggle]').forEach((input) => {
         input.addEventListener('change', async () => {
             const url = input.dataset.toggleUrl;
-            const row = input.closest('[data-product-row]');
+            const row = input.closest('[data-product-item]');
             const label = row?.querySelector('[data-availability-label]');
             const prev = !input.checked;
 
@@ -38,6 +38,7 @@ function initProductAvailabilityToggles() {
                     label.classList.toggle('text-gray-400', !data.is_available);
                 }
                 row?.classList.toggle('opacity-50', !data.is_available);
+                row?.classList.toggle('admin-tray-card--hidden', !data.is_available);
             } catch {
                 input.checked = prev;
                 alert('Bağlantı hatası.');

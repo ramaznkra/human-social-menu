@@ -14,18 +14,20 @@
     @foreach($tables as $t)
     <article
         class="table-map-card flex flex-col rounded-2xl border p-4 shadow-sm transition
-            {{ $t->is_active ? 'border-gray-200 bg-white' : 'border-gray-200 bg-gray-50 opacity-60' }}"
+            {{ $t->is_active ? 'table-map-card--on' : 'table-map-card--off' }}"
+        title="{{ $t->is_active ? 'Masa açık' : 'Masa kapalı' }}"
     >
         <div class="flex items-start justify-between gap-2">
-            <div>
-                <p class="text-xs font-medium uppercase tracking-wider text-gray-500">Masa</p>
-                <p class="text-2xl font-bold text-gray-800">{{ $t->number }}</p>
+            <div class="flex items-start gap-2">
+                <span
+                    class="table-status-dot mt-1 shrink-0 {{ $t->is_active ? 'table-status-dot--on' : 'table-status-dot--off' }}"
+                    aria-hidden="true"
+                ></span>
+                <div>
+                    <p class="text-xs font-medium uppercase tracking-wider text-gray-500">Masa</p>
+                    <p class="text-2xl font-bold {{ $t->is_active ? 'text-gray-800' : 'text-gray-400' }}">{{ $t->number }}</p>
+                </div>
             </div>
-            @if($t->is_active)
-            <span class="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-600">Aktif</span>
-            @else
-            <span class="rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-semibold text-gray-500">Pasif</span>
-            @endif
         </div>
 
         @if($t->qr_image_url)

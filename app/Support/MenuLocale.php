@@ -18,6 +18,25 @@ class MenuLocale
         'ru' => 'RU',
     ];
 
+    /**
+     * QR menü sayfası: yalnızca ?lang= ile seçim; aksi halde her açılışta TR (cookie yok sayılır).
+     */
+    public static function resolveForMenuPage(Request $request): string
+    {
+        if ($request->filled('lang')) {
+            $candidate = $request->input('lang') ?? $request->query('lang');
+
+            if (in_array($candidate, self::LOCALES, true)) {
+                return $candidate;
+            }
+        }
+
+        return self::DEFAULT;
+    }
+
+    /**
+     * Sipariş durumu, API ve menü içi istekler: URL → cookie → session.
+     */
     public static function resolve(Request $request): string
     {
         $candidate = $request->input('lang')

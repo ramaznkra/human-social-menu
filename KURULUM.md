@@ -14,6 +14,7 @@ Laravel tabanlı QR menü, sipariş ve TV ekran sistemi.
 | TV Ekranı | `/ekran` | 10 sn geçişli tam ekran slider |
 | Mutfak | `/mutfak` | Sipariş takip paneli |
 | Admin | `/admin` | Tüm yönetim |
+| Garson paneli | `/waiter/dashboard` | Mobil canlı akış + hızlı sipariş (yalnızca `waiter` rolü) |
 | Canlı Siparişler | `/admin/live-orders` | Beklemede / hazırlanıyor / masada |
 | Geçmiş Adisyonlar | `/admin/orders/archive` | Tamamlanan ve iptal kayıtlar |
 
@@ -35,11 +36,79 @@ Tarayıcıda: http://127.0.0.1:8000
 
 **Her turda yapılan değişiklikleri localde görmek için** (iki terminal açık kalsın): `php artisan serve` · `npm run dev` — ardından tarayıcıda http://127.0.0.1:8000 ve gerekirse **Ctrl+F5**. Sadece PHP/veritabanı değiştiyse: `php artisan migrate` (yeni migration varsa). `npm run dev` kullanmıyorsanız her CSS/JS değişikliğinden sonra bir kez: `npm run build`.
 
+### Realtime (Laravel Reverb)
+
+Canlı siparişlerin garson ekranına sayfa yenilemeden düşmesi için Reverb + queue worker birlikte çalışmalıdır.
+
+1. Gerekli paketler:
+
+```bash
+composer require laravel/reverb pusher/pusher-php-server --ignore-platform-req=ext-gd
+npm install laravel-echo pusher-js
+```
+
+2. `.env` ayarları:
+
+```env
+BROADCAST_CONNECTION=reverb
+QUEUE_CONNECTION=database
+
+REVERB_APP_ID=human-qr-menu
+REVERB_APP_KEY=human-app-key
+REVERB_APP_SECRET=human-app-secret
+REVERB_HOST=127.0.0.1
+REVERB_PORT=8080
+REVERB_SCHEME=http
+```
+
+3. Tek komutla tüm geliştirme süreçlerini başlatın:
+
+```bash
+composer dev
+```
+
+Bu komut şunları aynı anda çalıştırır: `serve` + `reverb:start` + `queue:work` + `npm run dev`.
+
+> Not (Windows): `php artisan pail` için `pcntl` gerekir ve Windows'ta desteklenmez. Log takibi için ayrı terminalde `storage/logs/laravel.log` izleyin veya Linux sunucuda `composer dev:logs` kullanın.
+
+4. İsterseniz manuel (ayrı terminaller) çalıştırma:
+
+```bash
+php artisan serve
+php artisan reverb:start
+php artisan queue:work
+npm run dev
+```
+
+> Not: `reverb:start` açık ama `queue:work` kapalıysa event yayın kuyruğa düşer fakat tarayıcıya anlık gitmez.
+
+### PWA (yalnızca Garson / Admin)
+
+- Müşteri tarafı (`/menu`) normal mobil web olarak kalır; PWA manifest / service worker eklenmez.
+- PWA sadece personel ekranlarında aktiftir:
+  - `resources/views/layouts/waiter.blade.php`
+  - `resources/views/layouts/admin.blade.php`
+- Kullanılan dosyalar:
+  - `public/manifest-waiter.json`
+  - `public/staff-sw.js`
+  - `public/icons/waiter-app-icon.svg`
+
+Start URL: `/admin/giris` (giriş sonrası role gore garson/admin ekrana yonlenir).
+
+### Production notu (canlıya alırken)
+
+- Reverb ve queue worker process tabanlıdır; servis olarak sürekli ayakta tutulmalıdır (Supervisor/systemd/PM2 benzeri).
+- Realtime için canlıda en az bu iki süreç sürekli çalışmalıdır:
+  - `php artisan reverb:start --host=0.0.0.0 --port=8080`
+  - `php artisan queue:work --tries=1 --timeout=0`
+- Deploy sonrası: `php artisan optimize:clear && php artisan config:cache` çalıştırıp worker/reverb servislerini yeniden başlatın.
+
 ### Varsayılan Admin
 
 - **URL:** http://127.0.0.1:8000/admin/giris
 - **E-posta:** `admin@human.com`
 - **Şifre:** `human2026`
+- **Garson:** `garson@human.com` / `human2026` → otomatik `/waiter/dashboard` (admin paneline erişemez)
 
 > İlk girişten sonra şifreyi mutlaka değiştirin.
 
@@ -104,6 +173,15 @@ DB_CONNECTION=sqlite
 
 SESSION_DRIVER=file
 CACHE_STORE=file
+BROADCAST_CONNECTION=reverb
+QUEUE_CONNECTION=database
+
+REVERB_APP_ID=human-qr-menu
+REVERB_APP_KEY=human-app-key
+REVERB_APP_SECRET=human-app-secret
+REVERB_HOST=127.0.0.1
+REVERB_PORT=8080
+REVERB_SCHEME=https
 ```
 
 MySQL kullanıyorsanız veritabanını panelden oluşturup `php artisan migrate --seed` çalıştırın.

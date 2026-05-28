@@ -3,14 +3,17 @@
     <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
         <p class="text-xs font-semibold uppercase tracking-wider text-[#D4C5B9]">Masa Haritası</p>
         <div class="flex flex-wrap gap-2 text-[10px]">
-            <span class="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-emerald-300">
-                <span class="h-2 w-2 rounded-full bg-emerald-400"></span> Boş
+            <span class="live-map-legend live-map-legend--on">
+                <span class="table-status-dot table-status-dot--on" aria-hidden="true"></span>
+                Boş
             </span>
-            <span class="inline-flex items-center gap-1.5 rounded-full border border-[#E67E22]/40 bg-[#E67E22]/15 px-2 py-0.5 text-[#E67E22]">
-                <span class="h-2 w-2 animate-pulse rounded-full bg-[#E67E22]"></span> Aktif
+            <span class="live-map-legend live-map-legend--busy">
+                <span class="table-status-dot table-status-dot--busy" aria-hidden="true"></span>
+                Sipariş / çağrı
             </span>
-            <span class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[#D4C5B9]/60">
-                <span class="h-2 w-2 rounded-full bg-white/25"></span> Pasif
+            <span class="live-map-legend live-map-legend--off">
+                <span class="table-status-dot table-status-dot--off" aria-hidden="true"></span>
+                Kapalı
             </span>
         </div>
     </div>
@@ -19,13 +22,16 @@
         @php
             $isBusy = $busyTableIds->contains($t->id);
             $isInactive = ! $t->is_active;
+            $chipClass = $isInactive
+                ? 'live-table-chip--off'
+                : ($isBusy ? 'live-table-chip--busy' : 'live-table-chip--on');
         @endphp
         <div
-            class="live-table-chip flex flex-col items-center justify-center rounded-xl border px-1 py-2 text-center transition
-                {{ $isInactive ? 'border-white/10 bg-white/5 text-[#D4C5B9]/40' : ($isBusy ? 'live-table-chip--busy border-[#E67E22]/60 bg-[#E67E22]/20 text-[#E67E22]' : 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300') }}"
+            class="live-table-chip flex flex-col items-center justify-center rounded-xl border px-1 py-2 text-center transition {{ $chipClass }}"
             data-table-id="{{ $t->id }}"
             data-table-busy="{{ $isBusy ? '1' : '0' }}"
             data-table-active="{{ $t->is_active ? '1' : '0' }}"
+            title="{{ $isInactive ? 'Masa kapalı' : ($isBusy ? 'Sipariş veya çağrı var' : 'Masa boş') }}"
         >
             <span class="text-[10px] font-medium uppercase tracking-wide opacity-70">Masa</span>
             <span class="text-lg font-bold leading-none">{{ $t->number }}</span>

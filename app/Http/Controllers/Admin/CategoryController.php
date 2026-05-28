@@ -13,7 +13,7 @@ class CategoryController extends Controller
 {
     public function index(): View
     {
-        $categories = Category::orderBy('sort_order')->get();
+        $categories = Category::withCount('products')->orderBy('sort_order')->get();
 
         return view('admin.categories.index', compact('categories'));
     }

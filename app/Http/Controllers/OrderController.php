@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\OrderPlaced;
 use App\Models\Order;
 use App\Models\Table;
 use App\Services\OrderPlacementService;
@@ -16,8 +17,12 @@ class OrderController extends Controller
 
     public function store(Request $request, OrderPlacementService $placement): JsonResponse
     {
+        $locale = MenuLocale::resolve($request);
+        MenuLocale::apply($request, $locale);
+
         $validated = $request->validate([
             'table_token' => 'nullable|string',
+            'lang' => 'nullable|string|in:tr,en,ru',
             'notes' => 'nullable|string|max:500',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
@@ -37,12 +42,14 @@ class OrderController extends Controller
             $validated['notes'] ?? null,
         );
 
+        event(new OrderPlaced($order));
+
         return response()->json([
             'success' => true,
             'order_id' => $order->id,
             'order_number' => $order->order_number,
             'total' => $order->total,
-            'redirect' => route('order.status', $order->id).'?lang='.app()->getLocale(),
+            'redirect' => route('order.status', $order->id).'?lang='.$locale,
         ]);
     }
 

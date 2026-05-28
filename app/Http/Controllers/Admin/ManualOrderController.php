@@ -13,8 +13,24 @@ use Illuminate\Http\Request;
 
 class ManualOrderController extends Controller
 {
+    private function ensureAdminAccess(): ?JsonResponse
+    {
+        if (session('admin_role') !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sipariş alma yalnızca yönetim ekranından yapılabilir.',
+            ], 403);
+        }
+
+        return null;
+    }
+
     public function bootstrap(): JsonResponse
     {
+        if ($forbidden = $this->ensureAdminAccess()) {
+            return $forbidden;
+        }
+
         $tables = Table::query()
             ->where('is_active', true)
             ->orderBy('number')
@@ -31,6 +47,10 @@ class ManualOrderController extends Controller
 
     public function searchProducts(Request $request): JsonResponse
     {
+        if ($forbidden = $this->ensureAdminAccess()) {
+            return $forbidden;
+        }
+
         $q = trim((string) $request->query('q', ''));
 
         $products = Product::query()
@@ -58,6 +78,10 @@ class ManualOrderController extends Controller
 
     public function store(Request $request, OrderPlacementService $placement): JsonResponse
     {
+        if ($forbidden = $this->ensureAdminAccess()) {
+            return $forbidden;
+        }
+
         $validated = $request->validate([
             'table_id' => 'required|exists:tables,id',
             'notes' => 'nullable|string|max:500',

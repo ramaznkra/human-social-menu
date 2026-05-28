@@ -7,6 +7,10 @@
         data-resolve-call-url="{{ url('/api/admin/call') }}"
         data-csrf="{{ csrf_token() }}"
         data-page-title="HSP Canlı Siparişler"
+        data-reverb-key="{{ env('REVERB_APP_KEY') }}"
+        data-reverb-host="{{ env('REVERB_HOST', '127.0.0.1') }}"
+        data-reverb-port="{{ (int) env('REVERB_PORT', 8080) }}"
+        data-reverb-scheme="{{ env('REVERB_SCHEME', 'http') }}"
     >
         <header class="sticky top-0 z-40 border-b border-white/5 bg-[#121110]/95 px-4 py-4 backdrop-blur-md md:px-6">
             <div class="flex flex-wrap items-center justify-between gap-3">
@@ -32,6 +36,8 @@
                     Bar / İçecek
                     <span class="live-ops-badge hidden" data-badge="bar">0</span>
                 </button>
+                <button type="button" class="live-ops-tab" data-tab="prepared" role="tab">Hazırlanan</button>
+                <button type="button" class="live-ops-tab" data-tab="completed" role="tab">Tamamlanan</button>
                 <button type="button" class="live-ops-tab relative" data-tab="calls" role="tab">
                     🛎️ Çağrılar
                     <span class="live-ops-badge hidden" data-badge="calls">0</span>

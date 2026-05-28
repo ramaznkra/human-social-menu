@@ -21,6 +21,16 @@ class HumanSeeder extends Seeder
             [
                 'name' => 'Human Admin',
                 'password' => Hash::make('human2026'),
+                'role' => User::ROLE_ADMIN,
+            ]
+        );
+
+        User::updateOrCreate(
+            ['email' => 'garson@human.com'],
+            [
+                'name' => 'Garson',
+                'password' => Hash::make('human2026'),
+                'role' => User::ROLE_WAITER,
             ]
         );
 

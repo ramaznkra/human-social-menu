@@ -15,6 +15,8 @@ export default defineConfig({
                 'resources/js/pages/menu-spotted.js',
                 'resources/js/pages/menu-cart.js',
                 'resources/js/pages/admin-products.js',
+                'resources/js/pages/admin-catalog-view.js',
+                'resources/js/pages/waiter-dashboard.js',
                 'resources/js/pages/live-orders.js',
                 'resources/js/pages/admin-manual-order.js',
                 'resources/js/pages/admin-shell.js',

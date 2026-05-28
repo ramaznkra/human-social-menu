@@ -211,10 +211,34 @@ function initMenuCart() {
     });
 
     /* ── Sepet ── */
-    function updateCartUI() {
+    function escapeHtml(text) {
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function cartTotals() {
         const items = Object.values(cart);
         const count = items.reduce((s, i) => s + i.qty, 0);
         const total = items.reduce((s, i) => s + i.price * i.qty, 0);
+
+        return { items, count, total };
+    }
+
+    function setCartQty(id, qty) {
+        if (!cart[id]) return;
+        if (qty <= 0) {
+            delete cart[id];
+        } else {
+            cart[id].qty = qty;
+        }
+        updateCartUI();
+    }
+
+    function updateCartUI() {
+        const { items, count, total } = cartTotals();
         const bar = document.getElementById('cartBar');
         if (!bar) return;
         const countEl = document.getElementById('cartCount');
@@ -225,7 +249,51 @@ function initMenuCart() {
             labelEl.textContent = ` ${cartItemsLabel(count)} · `;
         }
         if (totalEl) totalEl.textContent = `${total.toFixed(0)} ${cfg.currency}`;
+
+        const modalTotal = document.getElementById('cartModalTotal');
+        if (modalTotal) modalTotal.textContent = `${total.toFixed(0)} ${cfg.currency}`;
+
         bar.classList.toggle('visible', count > 0);
+
+        const modal = document.getElementById('cartModal');
+        if (modal?.classList.contains('open') && count === 0) {
+            modal.classList.remove('open');
+        }
+    }
+
+    function renderCartModal() {
+        const list = document.getElementById('cartItems');
+        if (!list) return;
+
+        const { items, total } = cartTotals();
+        if (!items.length) {
+            list.innerHTML = '';
+            updateCartUI();
+            return;
+        }
+
+        list.innerHTML = items
+            .map(
+                (i) => `
+                <div class="cart-line" data-cart-id="${escapeHtml(i.id)}">
+                    <div class="cart-line__top">
+                        <span class="cart-line__name">${escapeHtml(i.name)}</span>
+                        <span class="cart-line__subtotal">${(i.price * i.qty).toFixed(0)} ${cfg.currency}</span>
+                    </div>
+                    <div class="cart-line__actions">
+                        <div class="cart-line__qty">
+                            <button type="button" class="cart-qty-btn" data-cart-action="dec" data-id="${escapeHtml(i.id)}" aria-label="${escapeHtml(t.cartDecrease || '-')}">−</button>
+                            <span class="cart-qty-value">${i.qty}</span>
+                            <button type="button" class="cart-qty-btn" data-cart-action="inc" data-id="${escapeHtml(i.id)}" aria-label="${escapeHtml(t.cartIncrease || '+')}">+</button>
+                        </div>
+                        <button type="button" class="cart-remove-btn" data-cart-action="remove" data-id="${escapeHtml(i.id)}">${escapeHtml(t.cartRemove || 'Remove')}</button>
+                    </div>
+                </div>`,
+            )
+            .join('');
+
+        const modalTotal = document.getElementById('cartModalTotal');
+        if (modalTotal) modalTotal.textContent = `${total.toFixed(0)} ${cfg.currency}`;
     }
 
     document.querySelectorAll('.add-btn').forEach((btn) => {
@@ -260,18 +328,29 @@ function initMenuCart() {
         });
     });
 
-    document.getElementById('openCart')?.addEventListener('click', () => {
-        const items = Object.values(cart);
-        if (!items.length) return;
-        const list = document.getElementById('cartItems');
-        if (list) {
-            list.innerHTML = items
-                .map(
-                    (i) =>
-                        `<div class="flex justify-between py-3 text-sm"><span class="text-gray-100">${i.name} ×${i.qty}</span><span class="font-semibold text-[#E67E22]">${(i.price * i.qty).toFixed(0)} ${cfg.currency}</span></div>`,
-                )
-                .join('');
+    document.getElementById('cartItems')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-cart-action]');
+        if (!btn) return;
+
+        const id = btn.dataset.id;
+        const action = btn.dataset.cartAction;
+        if (!id || !cart[id]) return;
+
+        if (action === 'inc') {
+            setCartQty(id, cart[id].qty + 1);
+        } else if (action === 'dec') {
+            setCartQty(id, cart[id].qty - 1);
+        } else if (action === 'remove') {
+            delete cart[id];
+            updateCartUI();
         }
+
+        renderCartModal();
+    });
+
+    document.getElementById('openCart')?.addEventListener('click', () => {
+        if (!cartTotals().count) return;
+        renderCartModal();
         document.getElementById('cartModal')?.classList.add('open');
     });
 
@@ -306,6 +385,7 @@ function initMenuCart() {
                 body: JSON.stringify({
                     table_token: cfg.tableToken,
                     masa: cfg.tableMasa,
+                    lang: cfg.locale || 'tr',
                     notes: document.getElementById('orderNotes')?.value ?? '',
                     items,
                 }),

@@ -287,6 +287,8 @@ function initManualOrder() {
                 hint: 'Garson siparişi · Canlı panelde Nakit/Kart ile kapatılır',
                 type: 'success',
             });
+
+            window.dispatchEvent(new CustomEvent('waiter:refresh'));
             setTimeout(() => {
                 closeModal();
                 resetForm();

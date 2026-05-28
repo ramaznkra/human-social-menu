@@ -231,7 +231,11 @@
 <div class="modal-overlay menu-modal" id="cartModal">
     <div class="menu-fixed-panel p-6">
         <h2 class="mb-4 text-xl font-bold text-gray-100">{{ __('menu.your_order') }}</h2>
-        <div id="cartItems" class="divide-y divide-white/5"></div>
+        <div id="cartItems" class="cart-items-list"></div>
+        <div class="cart-modal-total mt-4 flex items-center justify-between border-t border-white/10 pt-4">
+            <span class="text-sm text-[#D4C5B9]">{{ __('menu.total') }}</span>
+            <span id="cartModalTotal" class="text-lg font-bold text-[#E67E22]">0 {{ $settings['currency'] ?? '₺' }}</span>
+        </div>
         <textarea id="orderNotes" placeholder="{{ __('menu.order_notes') }}" class="mt-4 w-full min-h-[72px] resize-y rounded-xl border border-white/5 bg-[#121110] px-3.5 py-3 text-sm text-gray-100 outline-none focus:border-[#E67E22]/40 focus:ring-2 focus:ring-[#E67E22]/15"></textarea>
         <div class="mt-4 flex gap-3">
             <button type="button" id="closeCart" class="flex-1 rounded-xl border border-white/10 bg-white/5 py-3 text-sm font-medium text-gray-100">{{ __('menu.cancel') }}</button>
@@ -255,6 +259,9 @@ window.HSP_MENU = {
     callApiUrl: @json(route('table.call.api')),
     i18n: {
         cartItems: @json(__('menu.cart_items', ['count' => ':count'])),
+        cartRemove: @json(__('menu.cart_remove')),
+        cartDecrease: @json(__('menu.cart_decrease')),
+        cartIncrease: @json(__('menu.cart_increase')),
         send: @json(__('menu.send')),
         sending: @json(__('menu.sending')),
         callWaiterSent: @json(__('menu.call.waiter_sent')),

@@ -51,6 +51,50 @@
         @apply max-h-[85vh] overflow-y-auto rounded-t-2xl border-t border-white/10 bg-[#262220];
     }
 
+    .cart-items-list {
+        @apply flex flex-col gap-2;
+    }
+
+    .cart-line {
+        @apply rounded-xl border border-white/10 bg-[#121110]/80 p-3;
+    }
+
+    .cart-line__top {
+        @apply mb-2 flex items-start justify-between gap-2;
+    }
+
+    .cart-line__name {
+        @apply min-w-0 flex-1 text-sm font-medium leading-snug text-gray-100;
+    }
+
+    .cart-line__subtotal {
+        @apply shrink-0 text-sm font-semibold text-[#E67E22];
+    }
+
+    .cart-line__actions {
+        @apply flex items-center justify-between gap-2;
+    }
+
+    .cart-line__qty {
+        @apply flex items-center gap-1.5;
+    }
+
+    .cart-qty-btn {
+        @apply flex h-9 w-9 items-center justify-center rounded-lg border border-white/15 bg-white/5 text-base font-semibold text-gray-100 transition hover:border-[#E67E22]/40 hover:bg-[#E67E22]/15;
+    }
+
+    .cart-qty-value {
+        @apply min-w-[1.75rem] text-center text-sm font-semibold text-gray-100;
+    }
+
+    .cart-remove-btn {
+        @apply rounded-lg border border-red-500/25 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300 transition hover:bg-red-500/20;
+    }
+
+    .cart-modal-total {
+        @apply shrink-0;
+    }
+
     .menu-section { @apply hidden px-4 pb-6; }
     .menu-section.active,
     .menu-section.search-visible { @apply block; }
@@ -564,6 +608,308 @@
         @apply rounded-xl border border-gray-100 bg-white p-6 shadow-sm;
     }
 
+    /* Admin katalog — tepsi / liste */
+    .admin-catalog {
+        @apply min-w-0;
+    }
+
+    .admin-catalog__toolbar .form-input {
+        @apply max-w-none;
+    }
+
+    /* Garson mobil panel */
+    .waiter-body {
+        @apply overflow-x-hidden;
+    }
+
+    .waiter-shell {
+        @apply px-4 pb-8 pt-4;
+    }
+
+    .waiter-header {
+        @apply mb-3 flex items-start justify-between gap-3;
+    }
+
+    .waiter-header__venue {
+        @apply text-[10px] font-semibold uppercase tracking-[0.2em] text-[#E67E22];
+    }
+
+    .waiter-header__title {
+        @apply text-base font-bold leading-tight text-gray-100;
+    }
+
+    .waiter-header__tagline {
+        @apply mt-0.5 text-[11px] text-[#D4C5B9]/70;
+    }
+
+    .waiter-live-badge {
+        @apply inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[10px] font-semibold;
+    }
+
+    .waiter-live-badge--on {
+        @apply border-emerald-500/40 bg-emerald-500/15 text-emerald-300;
+    }
+
+    .waiter-live-badge--off {
+        @apply border-red-500/30 bg-red-500/10 text-red-300;
+    }
+
+    .waiter-live-badge__dot {
+        @apply h-2 w-2 rounded-full bg-current;
+    }
+
+    .waiter-live-badge--on .waiter-live-badge__dot {
+        animation: tableMapPulse 2s ease-in-out infinite;
+    }
+
+    .waiter-header__right {
+        @apply flex items-start;
+    }
+
+    .waiter-top-actions {
+        @apply mb-4 grid grid-cols-2 gap-2;
+    }
+
+    .waiter-install-btn {
+        @apply inline-flex min-h-[40px] w-full items-center justify-center rounded-xl border border-[#E67E22]/45 bg-gradient-to-b from-[#E67E22]/30 to-[#E67E22]/15 px-3 py-2 text-xs font-semibold text-[#FFE6CC] shadow-sm shadow-[#E67E22]/20 transition active:scale-[0.98];
+    }
+
+    .waiter-install-btn:hover {
+        @apply border-[#E67E22]/70 from-[#E67E22]/40 to-[#E67E22]/25 text-white;
+    }
+
+    .waiter-logout-form {
+        @apply m-0;
+    }
+
+    .waiter-logout-btn {
+        @apply inline-flex min-h-[40px] w-full items-center justify-center gap-1.5 rounded-xl border border-red-500/30 bg-gradient-to-b from-red-500/20 to-red-500/10 px-3 py-2 text-xs font-semibold text-red-100 shadow-sm shadow-red-900/20 transition active:scale-[0.98];
+    }
+
+    .waiter-logout-btn:hover {
+        @apply border-red-400/40 bg-red-500/20 text-red-100;
+    }
+
+    .waiter-logout-btn__icon {
+        @apply flex h-4 w-4 shrink-0 items-center justify-center opacity-90;
+    }
+
+    .waiter-logout-btn__icon svg {
+        @apply h-3.5 w-3.5;
+    }
+
+    .waiter-logout-btn__text {
+        @apply leading-none tracking-wide;
+    }
+
+    .waiter-quick-order-btn {
+        @apply mb-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#E67E22] px-4 py-4 text-base font-bold text-white shadow-lg shadow-[#E67E22]/25 transition active:scale-[0.98];
+    }
+
+    .waiter-feed-section__head {
+        @apply mb-3 flex items-end justify-between gap-2;
+    }
+
+    .waiter-feed-section__title {
+        @apply text-sm font-bold uppercase tracking-wide text-[#D4C5B9];
+    }
+
+    .waiter-feed-section__status {
+        @apply text-[10px] text-[#D4C5B9]/60;
+    }
+
+    .waiter-feed {
+        @apply flex flex-col gap-3;
+    }
+
+    .waiter-feed__empty {
+        @apply rounded-2xl border border-dashed border-white/10 py-14 text-center text-sm text-[#D4C5B9]/50;
+    }
+
+    .waiter-feed-card {
+        @apply rounded-2xl border p-4 transition;
+    }
+
+    .waiter-feed-card--out {
+        @apply scale-95 opacity-0;
+    }
+
+    .waiter-feed-card--call-waiter {
+        @apply border-sky-500/35 bg-sky-500/10;
+    }
+
+    .waiter-feed-card--call-bill {
+        @apply border-amber-500/35 bg-amber-500/10;
+    }
+
+    .waiter-feed-card--call {
+        @apply border-violet-500/30 bg-violet-500/10;
+    }
+
+    .waiter-feed-card--order {
+        @apply border-[#E67E22]/35 bg-[#E67E22]/10;
+    }
+
+    .waiter-feed-card--ready-alert {
+        @apply border-emerald-400/70 bg-emerald-500/20 shadow-lg shadow-emerald-500/20;
+        animation: waiterReadyPulse 1s ease-in-out infinite;
+    }
+
+    .waiter-ready-alert {
+        @apply mb-2 inline-flex rounded-full border border-emerald-300/60 bg-emerald-500/20 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-100;
+    }
+
+    .waiter-feed-card__top {
+        @apply mb-2 flex items-center justify-between gap-2;
+    }
+
+    .waiter-feed-card__badge {
+        @apply text-[10px] font-bold uppercase tracking-wide text-gray-200;
+    }
+
+    .waiter-feed-card__time {
+        @apply text-[10px] text-[#D4C5B9]/60;
+    }
+
+    .waiter-feed-card__tag {
+        @apply mb-1 inline-block rounded bg-white/10 px-1.5 py-0.5 text-[9px] font-semibold text-violet-200;
+    }
+
+    .waiter-feed-card__headline {
+        @apply text-sm font-semibold leading-snug text-gray-100;
+    }
+
+    .waiter-feed-card__meta {
+        @apply mt-1 text-xs leading-relaxed text-[#D4C5B9]/80;
+    }
+
+    .waiter-feed-card__price {
+        @apply mt-2 text-lg font-bold text-[#E67E22];
+    }
+
+    .waiter-feed-card__action {
+        @apply mt-4 flex min-h-[44px] w-full items-center justify-center rounded-xl border border-white/20 bg-gradient-to-b from-white/20 to-white/10 px-3 py-3 text-sm font-bold text-gray-100 shadow-sm transition active:scale-[0.98];
+    }
+
+    .waiter-feed-card__pay-label {
+        @apply mt-4 text-center text-[10px] font-semibold uppercase tracking-wide text-[#D4C5B9]/70;
+    }
+
+    .waiter-feed-card__actions {
+        @apply mt-2 grid grid-cols-2 gap-2;
+    }
+
+    .waiter-feed-card__pay {
+        @apply flex min-h-[44px] items-center justify-center rounded-xl border py-3 text-sm font-bold shadow-sm transition active:scale-[0.98];
+    }
+
+    .waiter-feed-card__pay--cash {
+        @apply border-emerald-500/40 bg-emerald-500/15 text-emerald-100;
+    }
+
+    .waiter-feed-card__pay--card {
+        @apply border-sky-500/40 bg-sky-500/15 text-sky-100;
+    }
+
+    .waiter-feed-card__wait {
+        @apply mt-4 rounded-xl border border-dashed border-white/10 py-3 text-center text-xs text-[#D4C5B9]/55;
+    }
+
+    .waiter-body .manual-order-fab {
+        display: none;
+    }
+
+    @keyframes waiterReadyPulse {
+        0%, 100% {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.28);
+        }
+        50% {
+            box-shadow: 0 0 0 10px rgba(16, 185, 129, 0.04);
+        }
+    }
+
+    .admin-view-toggle {
+        @apply inline-flex shrink-0 rounded-lg border border-gray-200 bg-gray-50 p-0.5;
+    }
+
+    .admin-view-toggle__btn {
+        @apply rounded-md px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-white;
+    }
+
+    .admin-view-toggle__btn.is-active {
+        @apply bg-[#E67E22] text-white shadow-sm hover:bg-[#d35400];
+    }
+
+    .admin-catalog-tray {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .admin-tray-card {
+        @apply flex min-w-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm;
+    }
+
+    .admin-tray-card--hidden {
+        @apply opacity-50;
+    }
+
+    .admin-tray-card__media {
+        @apply relative aspect-square w-full shrink-0 overflow-hidden bg-gray-100;
+    }
+
+    .admin-tray-card__media--category {
+        @apply bg-gradient-to-br from-gray-50 to-gray-100;
+    }
+
+    .admin-tray-card__img {
+        @apply block h-full w-full object-cover;
+    }
+
+    .admin-tray-card__placeholder {
+        @apply flex h-full w-full items-center justify-center text-3xl text-gray-300;
+    }
+
+    .admin-tray-card__placeholder--icon {
+        @apply text-4xl;
+    }
+
+    .admin-tray-card__badge {
+        @apply absolute left-1.5 top-1.5 max-w-[90%] truncate rounded bg-[#E67E22] px-1.5 py-0.5 text-[9px] font-bold uppercase text-white;
+    }
+
+    .admin-tray-card__status-dot {
+        @apply absolute right-1.5 top-1.5 h-2.5 w-2.5;
+    }
+
+    .admin-tray-card__body {
+        @apply flex min-h-0 flex-1 flex-col gap-1 p-2.5;
+    }
+
+    .admin-tray-card__title {
+        @apply line-clamp-2 min-h-[2.5em] text-xs font-semibold leading-snug text-gray-800;
+    }
+
+    .admin-tray-card__meta {
+        @apply truncate text-[11px] text-gray-500;
+    }
+
+    .admin-tray-card__price {
+        @apply text-sm font-bold text-[#E67E22];
+    }
+
+    .admin-tray-card__toggle {
+        @apply border-t border-gray-100 pt-1.5;
+    }
+
+    .admin-tray-card__actions {
+        @apply mt-auto flex flex-col gap-1 pt-1.5;
+    }
+
+    .admin-tray-card__actions .btn-sm {
+        @apply px-2 py-1.5 text-xs;
+    }
+
     .form-label {
         @apply mb-1.5 block text-sm font-medium text-gray-700;
     }
@@ -662,11 +1008,77 @@
         @apply mt-2 text-2xl font-bold text-gray-900;
     }
 
-    .table-map-card--busy {
+    /* Masa açık / kapalı (Masalar + canlı harita) */
+    .table-status-dot {
+        @apply inline-block h-2.5 w-2.5 rounded-full;
+    }
+
+    .table-status-dot--on {
+        @apply bg-emerald-400;
+        box-shadow: 0 0 8px rgb(52 211 153 / 0.85);
+    }
+
+    .table-status-dot--busy {
+        @apply bg-[#E67E22];
         animation: tableMapPulse 2s ease-in-out infinite;
     }
 
+    .table-status-dot--off {
+        @apply bg-gray-400/70;
+    }
+
+    .table-map-card--on {
+        @apply border-emerald-300/60 bg-white;
+        box-shadow: 0 0 0 1px rgb(16 185 129 / 0.15), 0 4px 18px rgb(16 185 129 / 0.12);
+    }
+
+    .table-map-card--off {
+        @apply border-gray-200 bg-gray-100 text-gray-400;
+        opacity: 0.55;
+        filter: grayscale(0.35);
+    }
+
+    .table-map-card--off img {
+        opacity: 0.65;
+    }
+
+    .live-table-chip {
+        @apply border;
+    }
+
+    .live-table-chip--on {
+        @apply border-emerald-400/45 bg-emerald-500/12 text-emerald-200;
+        box-shadow: 0 0 12px rgb(16 185 129 / 0.28);
+    }
+
+    .live-table-chip--off {
+        @apply border-white/10 bg-white/[0.03] text-[#D4C5B9]/35;
+        opacity: 0.5;
+        filter: grayscale(0.4);
+    }
+
     .live-table-chip--busy {
+        @apply border-[#E67E22]/60 bg-[#E67E22]/20 text-[#E67E22];
+        animation: tableMapPulse 2s ease-in-out infinite;
+    }
+
+    .live-map-legend {
+        @apply inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5;
+    }
+
+    .live-map-legend--on {
+        @apply border-emerald-500/30 bg-emerald-500/10 text-emerald-300;
+    }
+
+    .live-map-legend--busy {
+        @apply border-[#E67E22]/40 bg-[#E67E22]/15 text-[#E67E22];
+    }
+
+    .live-map-legend--off {
+        @apply border-white/10 bg-white/5 text-[#D4C5B9]/55;
+    }
+
+    .table-map-card--busy {
         animation: tableMapPulse 2s ease-in-out infinite;
     }
 

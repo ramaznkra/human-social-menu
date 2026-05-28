@@ -16,7 +16,7 @@ class MenuController extends Controller
 {
     public function index(Request $request, ?string $token = null): View
     {
-        $locale = MenuLocale::resolve($request);
+        $locale = MenuLocale::resolveForMenuPage($request);
         MenuLocale::apply($request, $locale);
 
         $table = null;

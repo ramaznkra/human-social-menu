@@ -1,4 +1,5 @@
 import { showAdminToast } from '../admin-toast.js';
+import { createEchoClient } from '../echo.js';
 
 /**
  * Birleşik sipariş + masa çağrıları (tek API, istemci filtreleme).
@@ -57,6 +58,7 @@ function filterOrders(orders, tab) {
     if (tab === 'all' || tab === 'calls') return orders;
     if (tab === 'kitchen') return orders.filter((o) => o.has_kitchen);
     if (tab === 'bar') return orders.filter((o) => o.has_bar);
+    if (tab === 'prepared') return orders.filter((o) => o.status === 'ready');
     return orders;
 }
 
@@ -77,26 +79,6 @@ function itemBorderClass(type) {
 function statusActions(status, paymentMethod = null, isWaiterOrder = false) {
     const buttons = [];
 
-    if (isWaiterOrder) {
-        if (!paymentMethod) {
-            buttons.push({
-                status: 'delivered',
-                payment_method: 'cash',
-                payment_only: true,
-                label: '💵 Nakit',
-                cls: 'live-ops-btn-secondary',
-            });
-            buttons.push({
-                status: 'delivered',
-                payment_method: 'card',
-                payment_only: true,
-                label: '💳 Kart',
-                cls: 'live-ops-btn-secondary',
-            });
-        }
-        return buttons;
-    }
-
     if (status === 'pending') {
         buttons.push({
             status: 'preparing',
@@ -104,11 +86,19 @@ function statusActions(status, paymentMethod = null, isWaiterOrder = false) {
             cls: 'live-ops-btn-primary',
         });
     }
-    if (status === 'preparing' || status === 'ready') {
+    if (status === 'preparing') {
         buttons.push({
-            status: 'delivered',
-            label: 'Afiyet Olsun ✓',
+            status: 'ready',
+            label: 'Mutfakta Hazır · Garsona Bildir',
             cls: 'live-ops-btn-primary',
+        });
+    }
+    if (status === 'ready') {
+        buttons.push({
+            status: 'ready',
+            label: 'Garson Teslim Edecek',
+            cls: 'live-ops-btn-secondary',
+            disabled: true,
         });
     }
     if (status === 'delivered' && !paymentMethod) {
@@ -146,9 +136,12 @@ function buildCallsFingerprint(calls) {
     return JSON.stringify(calls.map((c) => [c.id, c.updated_at, c.type]));
 }
 
-function buildViewFingerprint(orders, calls, tab) {
+function buildViewFingerprint(orders, calls, completedOrders, tab) {
     if (tab === 'calls') {
         return `calls:${buildCallsFingerprint(calls)}`;
+    }
+    if (tab === 'completed') {
+        return `completed:${JSON.stringify(completedOrders.map((o) => [o.id, o.status, o.payment_method, o.updated_at]))}`;
     }
     if (tab === 'all') {
         const feed = buildMixedFeed(orders, calls);
@@ -190,7 +183,7 @@ function renderOrderCard(order, tab) {
     const actions = statusActions(order.status, order.payment_method, order.is_waiter_order)
         .map(
             (a) =>
-                `<button type="button" class="live-ops-status-btn ${a.cls}" data-order-id="${order.id}" data-status="${a.status}"${a.payment_method ? ` data-payment-method="${a.payment_method}"` : ''}${a.payment_only ? ' data-payment-only="1"' : ''}>${a.label}</button>`,
+                `<button type="button" class="live-ops-status-btn ${a.cls}" data-order-id="${order.id}" data-status="${a.status}"${a.payment_method ? ` data-payment-method="${a.payment_method}"` : ''}${a.payment_only ? ' data-payment-only="1"' : ''}${a.disabled ? ' disabled' : ''}>${a.label}</button>`,
         )
         .join('');
 
@@ -243,12 +236,20 @@ function renderCallCard(call) {
     </article>`;
 }
 
-function renderGrid(orders, calls, tab) {
+function renderGrid(orders, calls, completedOrders, tab) {
     if (tab === 'calls') {
         if (!calls.length) {
             return '<p class="py-20 text-center text-[#D4C5B9]">Aktif masa çağrısı yok</p>';
         }
         return `<div class="grid grid-cols-1 gap-3 lg:grid-cols-2">${calls.map((c) => renderCallCard(c)).join('')}</div>`;
+    }
+
+    if (tab === 'completed') {
+        if (!completedOrders.length) {
+            return '<p class="py-20 text-center text-[#D4C5B9]">Henüz tamamlanan sipariş yok</p>';
+        }
+        const cards = completedOrders.map((o) => renderOrderCard(o, 'all')).filter(Boolean).join('');
+        return `<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">${cards}</div>`;
     }
 
     if (tab === 'all') {
@@ -290,6 +291,12 @@ if (root) {
     const resolveCallUrlBase = root.dataset.resolveCallUrl;
     const csrf = root.dataset.csrf;
     const baseTitle = root.dataset.pageTitle || document.title;
+    const reverbCfg = {
+        key: root.dataset.reverbKey || '',
+        host: root.dataset.reverbHost || '127.0.0.1',
+        port: Number(root.dataset.reverbPort || 8080),
+        scheme: root.dataset.reverbScheme || 'http',
+    };
     const grid = document.getElementById('liveOrdersGrid');
     const tableMapGrid = document.getElementById('liveTableMapGrid');
     const statusEl = document.getElementById('liveOrdersStatus');
@@ -303,6 +310,7 @@ if (root) {
 
     let activeTab = 'all';
     let ordersState = [];
+    let completedOrdersState = [];
     let callsState = [];
     let dataFingerprint = '';
     let knownOrderIds = new Set();
@@ -323,6 +331,7 @@ if (root) {
     let tablesState = [];
     let tablesFingerprint = '';
     let knownBusyTableIds = new Set();
+    let echoClient = null;
 
     if (tableMapGrid) {
         tableMapGrid.querySelectorAll('[data-table-id]').forEach((chip) => {
@@ -334,12 +343,18 @@ if (root) {
 
     function tableChipClass(table) {
         if (!table.is_active) {
-            return 'border-white/10 bg-white/5 text-[#D4C5B9]/40';
+            return 'live-table-chip--off';
         }
         if (table.is_busy) {
-            return 'live-table-chip--busy border-[#E67E22]/60 bg-[#E67E22]/20 text-[#E67E22]';
+            return 'live-table-chip--busy';
         }
-        return 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300';
+        return 'live-table-chip--on';
+    }
+
+    function tableChipTitle(table) {
+        if (!table.is_active) return 'Masa kapalı';
+        if (table.is_busy) return 'Sipariş veya çağrı var';
+        return 'Masa boş';
     }
 
     function renderTableMap(tables) {
@@ -353,6 +368,7 @@ if (root) {
                 data-table-id="${t.id}"
                 data-table-busy="${t.is_busy ? '1' : '0'}"
                 data-table-active="${t.is_active ? '1' : '0'}"
+                title="${escapeHtml(tableChipTitle(t))}"
             >
                 <span class="text-[10px] font-medium uppercase tracking-wide opacity-70">Masa</span>
                 <span class="text-lg font-bold leading-none">${escapeHtml(String(t.number))}</span>
@@ -530,20 +546,20 @@ if (root) {
 
     function updateStatusLine() {
         const busyCount = tablesState.filter((t) => t.is_busy).length;
-        const line = `${busyCount} aktif masa · ${ordersState.length} sipariş · ${callsState.length} çağrı · ${new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`;
+        const line = `${busyCount} aktif masa · ${ordersState.length} canlı · ${completedOrdersState.length} tamamlanan · ${callsState.length} çağrı · ${new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`;
         if (line === lastStatusLine || !statusEl) return;
         lastStatusLine = line;
         statusEl.textContent = line;
     }
 
     function paint() {
-        const fp = buildViewFingerprint(ordersState, callsState, activeTab);
+        const fp = buildViewFingerprint(ordersState, callsState, completedOrdersState, activeTab);
         if (fp === dataFingerprint) {
             return false;
         }
 
         dataFingerprint = fp;
-        grid.innerHTML = renderGrid(ordersState, callsState, activeTab);
+        grid.innerHTML = renderGrid(ordersState, callsState, completedOrdersState, activeTab);
         bindButtons();
         return true;
     }
@@ -593,6 +609,15 @@ if (root) {
                                 hint: 'Mutfak ve bar ekranında bildirim düşer',
                                 type: 'success',
                             });
+                        } else if (status === 'ready') {
+                            showAdminToast({
+                                title: 'Garsona Bildirildi',
+                                message: order
+                                    ? `#${order.order_number} · Masa ${order.table ?? '—'}`
+                                    : 'Sipariş hazır bildirimi gönderildi',
+                                hint: 'Garson ekranında masa ve ürün bildirimi açıldı',
+                                type: 'success',
+                            });
                         } else if (status === 'delivered') {
                             showAdminToast({
                                 title: 'Afiyet Olsun',
@@ -637,6 +662,36 @@ if (root) {
         });
     }
 
+    function initRealtimeListeners() {
+        echoClient = createEchoClient(reverbCfg);
+        if (!echoClient) return;
+
+        echoClient.channel('orders').listen('.OrderPlaced', () => {
+            poll(true);
+        });
+
+        echoClient.channel('orders').listen('.OrderStatusUpdated', (payload) => {
+            const status = String(payload?.status || '');
+            if (status === 'ready') {
+                showAdminToast({
+                    title: 'Mutfakta Hazır',
+                    message: `#${payload?.order_number ?? payload?.order_id ?? ''} · Masa ${payload?.table ?? '—'}`,
+                    type: 'success',
+                    durationMs: 2500,
+                });
+            }
+            if (status === 'delivered') {
+                showAdminToast({
+                    title: 'Teslim Edildi',
+                    message: `#${payload?.order_number ?? payload?.order_id ?? ''} kapatılıyor`,
+                    type: 'info',
+                    durationMs: 2200,
+                });
+            }
+            poll(true);
+        });
+    }
+
     tabs.forEach((tab) => {
         tab.addEventListener('click', () => {
             activeTab = tab.dataset.tab;
@@ -656,6 +711,7 @@ if (root) {
             if (!res.ok) throw new Error('fetch');
             const data = await res.json();
             ordersState = data.orders || [];
+            completedOrdersState = data.completed_orders || [];
             callsState = data.calls || [];
             tablesState = data.tables || tablesState;
             const wasInitialized = initialized;
@@ -682,5 +738,6 @@ if (root) {
         pollTimer = setTimeout(() => poll(false), currentInterval);
     }
 
+    initRealtimeListeners();
     poll(false);
 }

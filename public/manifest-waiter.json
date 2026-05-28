@@ -1,0 +1,19 @@
+{
+    "name": "Human Social - Garson",
+    "short_name": "Human Garson",
+    "description": "Human Social garson ve yonetim paneli",
+    "start_url": "/admin/giris",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#121110",
+    "theme_color": "#121110",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "/icons/waiter-app-icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ]
+}
