@@ -19,6 +19,10 @@ class OrderArchiveFilter
             $query->where('status', $request->status);
         }
 
+        if ($request->filled('table_id')) {
+            $query->where('table_id', (int) $request->table_id);
+        }
+
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
         }

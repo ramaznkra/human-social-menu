@@ -13,12 +13,12 @@ use Illuminate\Http\Request;
 
 class ManualOrderController extends Controller
 {
-    private function ensureAdminAccess(): ?JsonResponse
+    private function ensureStaffAccess(): ?JsonResponse
     {
-        if (session('admin_role') !== 'admin') {
+        if (! in_array(session('admin_role'), ['admin', 'waiter'], true)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Sipariş alma yalnızca yönetim ekranından yapılabilir.',
+                'message' => 'Sipariş alma için yetkiniz yok.',
             ], 403);
         }
 
@@ -27,7 +27,7 @@ class ManualOrderController extends Controller
 
     public function bootstrap(): JsonResponse
     {
-        if ($forbidden = $this->ensureAdminAccess()) {
+        if ($forbidden = $this->ensureStaffAccess()) {
             return $forbidden;
         }
 
@@ -47,7 +47,7 @@ class ManualOrderController extends Controller
 
     public function searchProducts(Request $request): JsonResponse
     {
-        if ($forbidden = $this->ensureAdminAccess()) {
+        if ($forbidden = $this->ensureStaffAccess()) {
             return $forbidden;
         }
 
@@ -78,7 +78,7 @@ class ManualOrderController extends Controller
 
     public function store(Request $request, OrderPlacementService $placement): JsonResponse
     {
-        if ($forbidden = $this->ensureAdminAccess()) {
+        if ($forbidden = $this->ensureStaffAccess()) {
             return $forbidden;
         }
 

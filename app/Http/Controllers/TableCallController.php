@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\TableCallReceived;
 use App\Models\Table;
 use App\Models\TableCall;
 use App\Support\MenuLocale;
@@ -43,11 +44,13 @@ class TableCallController extends Controller
             ]);
         }
 
-        TableCall::create([
+        $call = TableCall::create([
             'table_id' => $table->id,
             'type' => $validated['type'],
             'status' => TableCall::STATUS_ACTIVE,
         ]);
+
+        event(new TableCallReceived($call));
 
         $message = match ($validated['type']) {
             'waiter' => __('menu.table_call.waiter'),

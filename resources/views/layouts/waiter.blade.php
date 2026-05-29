@@ -32,7 +32,7 @@
     <script>
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function () {
-            navigator.serviceWorker.register('{{ asset('staff-sw.js') }}', { scope: '/waiter/' })
+            navigator.serviceWorker.register('{{ asset('staff-sw.js') }}?v=3', { scope: '/waiter/' })
                 .catch(function () {});
         });
     }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Table;
 use App\Services\TableQrCodeService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -29,10 +30,9 @@ class TableController extends Controller
     {
         $data = $request->validate([
             'number' => 'required|string|max:20|unique:tables,number',
-            'is_active' => 'boolean',
         ]);
         $data['qr_token'] = Table::generateToken();
-        $data['is_active'] = $request->boolean('is_active', true);
+        $data['is_active'] = true;
 
         $table = Table::create($data);
         $this->qr->generateFor($table);
@@ -49,9 +49,7 @@ class TableController extends Controller
     {
         $data = $request->validate([
             'number' => 'required|string|max:20|unique:tables,number,'.$table->id,
-            'is_active' => 'boolean',
         ]);
-        $data['is_active'] = $request->boolean('is_active');
 
         $numberChanged = $table->number !== $data['number'];
         $table->update($data);
@@ -70,6 +68,18 @@ class TableController extends Controller
         $table->delete();
 
         return redirect()->route('admin.tables.index')->with('success', 'Masa silindi.');
+    }
+
+    public function toggleActive(Table $table): JsonResponse
+    {
+        $table->update(['is_active' => ! $table->is_active]);
+
+        return response()->json([
+            'success' => true,
+            'table_id' => $table->id,
+            'is_active' => $table->is_active,
+            'label' => $table->is_active ? 'Masa açık' : 'Masa kapalı',
+        ]);
     }
 
     public function regenerate(Table $table): RedirectResponse

@@ -15,20 +15,36 @@
     <article
         class="table-map-card flex flex-col rounded-2xl border p-4 shadow-sm transition
             {{ $t->is_active ? 'table-map-card--on' : 'table-map-card--off' }}"
+        data-table-item
         title="{{ $t->is_active ? 'Masa açık' : 'Masa kapalı' }}"
     >
         <div class="flex items-start justify-between gap-2">
             <div class="flex items-start gap-2">
                 <span
                     class="table-status-dot mt-1 shrink-0 {{ $t->is_active ? 'table-status-dot--on' : 'table-status-dot--off' }}"
+                    data-table-dot
                     aria-hidden="true"
                 ></span>
                 <div>
                     <p class="text-xs font-medium uppercase tracking-wider text-gray-500">Masa</p>
-                    <p class="text-2xl font-bold {{ $t->is_active ? 'text-gray-800' : 'text-gray-400' }}">{{ $t->number }}</p>
+                    <p class="table-card__number text-2xl font-bold {{ $t->is_active ? 'text-gray-800' : 'text-gray-400' }}" data-table-number>{{ $t->number }}</p>
                 </div>
             </div>
+            <label class="relative inline-flex shrink-0 cursor-pointer items-center" title="Masayı aç / kapat">
+                <input
+                    type="checkbox"
+                    class="peer sr-only"
+                    data-table-toggle
+                    data-toggle-url="{{ route('admin.tables.toggle-active', $t) }}"
+                    {{ $t->is_active ? 'checked' : '' }}
+                    aria-label="Masa {{ $t->number }} aktif"
+                >
+                <span class="relative h-6 w-11 shrink-0 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-emerald-500 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-emerald-500/30"></span>
+            </label>
         </div>
+        <p class="mt-1 text-[11px] font-medium {{ $t->is_active ? 'text-emerald-600' : 'text-gray-400' }}" data-table-status-label>
+            {{ $t->is_active ? 'Masa açık' : 'Masa kapalı' }}
+        </p>
 
         @if($t->qr_image_url)
         <div class="mx-auto my-3 flex h-24 w-24 items-center justify-center rounded-xl border border-gray-100 bg-white p-2 shadow-inner">
@@ -69,3 +85,7 @@
 </div>
 @endif
 @endsection
+
+@push('scripts')
+@vite('resources/js/pages/admin-tables.js')
+@endpush

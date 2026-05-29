@@ -70,7 +70,7 @@ class OrderArchiveController extends Controller
         $order->delete();
 
         return redirect()
-            ->route('admin.orders.archive', request()->only(['q', 'status', 'date_from', 'date_to', 'page']))
+            ->route('admin.orders.archive', request()->only(['q', 'status', 'table_id', 'date_from', 'date_to', 'page']))
             ->with('success', "#{$number} adisyonu silindi.");
     }
 }

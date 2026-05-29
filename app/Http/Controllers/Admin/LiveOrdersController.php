@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Events\OrderStatusUpdated;
+use App\Events\TableCallForwarded;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Table;
@@ -120,6 +121,8 @@ class LiveOrdersController extends Controller
                 'headline' => $call->headline,
                 'table' => $call->tableNumber(),
                 'status' => $call->status,
+                'is_bill' => $call->isBill(),
+                'forwarded_to_waiter' => (bool) $call->forwarded_to_waiter,
                 'created_at' => $call->created_at->format('H:i'),
                 'updated_at' => $call->updated_at->toIso8601String(),
                 'sort_at' => $call->created_at->toIso8601String(),
@@ -146,13 +149,64 @@ class LiveOrdersController extends Controller
         ]);
     }
 
-    public function resolveCall(TableCall $call): JsonResponse
+    /** Kasa: hesap (POS) çağrısını garsona yönlendirir. */
+    public function forwardCall(TableCall $call): JsonResponse
     {
+        if ($call->status === TableCall::STATUS_RESOLVED) {
+            return response()->json(['success' => false, 'message' => 'Çağrı kapatılmış.'], 422);
+        }
+
+        if (! $call->forwarded_to_waiter) {
+            $call->update(['forwarded_to_waiter' => true]);
+            event(new TableCallForwarded($call->fresh()));
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Garsona iletildi. POS / masa bildirimi gönderildi.',
+        ]);
+    }
+
+    public function resolveCall(Request $request, TableCall $call): JsonResponse
+    {
+        $request->validate([
+            'payment_method' => 'nullable|in:cash,card',
+        ]);
+
         if ($call->status === TableCall::STATUS_RESOLVED) {
             return response()->json(['success' => true, 'message' => 'Çağrı zaten kapatılmış.']);
         }
 
         $call->update(['status' => TableCall::STATUS_RESOLVED]);
+
+        // Hesap çağrısı kapatılıyorsa, ilgili teslim edilmiş siparişin ödemesini de kapat.
+        if ($call->isBill()) {
+            $paymentMethod = match ($request->input('payment_method')) {
+                'card' => Order::PAYMENT_CARD,
+                'cash' => Order::PAYMENT_CASH,
+                default => $call->type === 'bill_card' ? Order::PAYMENT_CARD : Order::PAYMENT_CASH,
+            };
+
+            $orderForPayment = Order::query()
+                ->where('table_id', $call->table_id)
+                ->where('status', Order::STATUS_DELIVERED)
+                ->whereNull('payment_method')
+                ->latest('updated_at')
+                ->first();
+
+            if ($orderForPayment) {
+                $orderForPayment->update(['payment_method' => $paymentMethod]);
+                $orderForPayment->refresh();
+                event(OrderStatusUpdated::fromOrder($orderForPayment));
+
+                return response()->json([
+                    'success' => true,
+                    'message' => $paymentMethod === Order::PAYMENT_CARD
+                        ? 'Hesap kart ile kapatıldı.'
+                        : 'Hesap nakit ile kapatıldı.',
+                ]);
+            }
+        }
 
         return response()->json(['success' => true, 'message' => 'Çağrı tamamlandı.']);
     }
@@ -183,6 +237,7 @@ class LiveOrdersController extends Controller
             }
 
             $order->refresh();
+            event(OrderStatusUpdated::fromOrder($order));
 
             return response()->json([
                 'success' => true,

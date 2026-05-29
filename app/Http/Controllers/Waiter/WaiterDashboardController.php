@@ -19,7 +19,7 @@ class WaiterDashboardController extends Controller
 
         return view('waiter.dashboard', [
             'venueName' => $settings['venue_name'] ?? 'Human',
-            'venueTagline' => $settings['venue_tagline'] ?? 'Social People',
+            'venueTagline' => $settings['venue_tagline'] ?? 'Human Social People',
         ]);
     }
 
@@ -31,6 +31,7 @@ class WaiterDashboardController extends Controller
         $validated = $request->validate([
             'type' => 'required|in:call,order',
             'id' => 'required|integer|min:1',
+            'payment_method' => 'nullable|in:cash,card',
         ]);
 
         if ($validated['type'] === 'call') {
@@ -43,7 +44,12 @@ class WaiterDashboardController extends Controller
             $call->update(['status' => TableCall::STATUS_RESOLVED]);
 
             if (in_array($call->type, ['bill_cash', 'bill_card', 'bill'], true)) {
-                $paymentMethod = $call->type === 'bill_card' ? Order::PAYMENT_CARD : Order::PAYMENT_CASH;
+                // Garson nakit/kart seçtiyse onu kullan, yoksa çağrı tipinden türet.
+                $paymentMethod = match ($validated['payment_method'] ?? null) {
+                    'card' => Order::PAYMENT_CARD,
+                    'cash' => Order::PAYMENT_CASH,
+                    default => $call->type === 'bill_card' ? Order::PAYMENT_CARD : Order::PAYMENT_CASH,
+                };
                 $orderForPayment = Order::query()
                     ->where('table_id', $call->table_id)
                     ->where('status', Order::STATUS_DELIVERED)

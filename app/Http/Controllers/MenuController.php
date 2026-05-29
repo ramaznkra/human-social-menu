@@ -32,8 +32,7 @@ class MenuController extends Controller
 
         $categories = Category::active()
             ->with(['products' => fn ($q) => $q->available()])
-            ->get()
-            ->filter(fn ($c) => $c->products->isNotEmpty());
+            ->get();
 
         $settings = Setting::allCached();
 

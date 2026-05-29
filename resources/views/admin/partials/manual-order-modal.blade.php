@@ -8,7 +8,7 @@
     ➕ Yeni Sipariş Ekle
 </button>
 
-<div id="manualOrderModal" class="manual-order-modal" aria-hidden="true">
+<div id="manualOrderModal" class="manual-order-modal" aria-hidden="true" inert>
     <div class="manual-order-modal__backdrop" data-manual-order-close></div>
     <div class="manual-order-modal__panel" role="dialog" aria-labelledby="manualOrderTitle">
         <header class="manual-order-modal__header">

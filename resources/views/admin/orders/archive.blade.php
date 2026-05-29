@@ -5,12 +5,12 @@
 
 @section('content')
 @php
-    $exportQuery = request()->only(['q', 'status', 'date_from', 'date_to']);
+    $exportQuery = request()->only(['q', 'status', 'table_id', 'date_from', 'date_to']);
 @endphp
 <div class="orders-archive">
     <div class="orders-archive__top mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <p class="max-w-xl text-sm text-gray-500">
-            Ödenmiş veya iptal edilmiş adisyonlar. Arama ve tarih alanları seçildiğinde liste otomatik güncellenir.
+            Ödenmiş veya iptal edilmiş adisyonlar. Filtreler sadece "Filtrele" butonuna basıldığında uygulanır.
         </p>
         <div class="orders-archive__top-actions flex shrink-0 flex-wrap gap-2">
             <a href="{{ route('admin.orders.index') }}" class="btn btn-secondary">Siparişler</a>
@@ -36,14 +36,24 @@
                         id="archive-q"
                         name="q"
                         value="{{ request('q') }}"
-                        placeholder="Adisyon no veya masa no…"
+                        placeholder="Adisyon no…"
                         class="form-input w-full max-w-none"
-                        data-archive-auto
                     >
                 </div>
                 <div class="orders-archive__filter-field">
+                    <label class="form-label" for="archive-table">Masa</label>
+                    <select id="archive-table" name="table_id" class="form-input w-full max-w-none">
+                        <option value="">Tüm masalar</option>
+                        @foreach($tables as $table)
+                            <option value="{{ $table->id }}" {{ (string) request('table_id') === (string) $table->id ? 'selected' : '' }}>
+                                Masa {{ $table->number }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="orders-archive__filter-field">
                     <label class="form-label" for="archive-status">Durum</label>
-                    <select id="archive-status" name="status" class="form-input w-full max-w-none" data-archive-auto>
+                    <select id="archive-status" name="status" class="form-input w-full max-w-none">
                         <option value="">Tamamlandı + İptal</option>
                         <option value="delivered" {{ request('status') === 'delivered' ? 'selected' : '' }}>Tamamlandı</option>
                         <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>İptal</option>
@@ -57,7 +67,6 @@
                         name="date_from"
                         value="{{ request('date_from') }}"
                         class="form-input w-full max-w-none"
-                        data-archive-auto
                     >
                 </div>
                 <div class="orders-archive__filter-field">
@@ -68,14 +77,13 @@
                         name="date_to"
                         value="{{ request('date_to') }}"
                         class="form-input w-full max-w-none"
-                        data-archive-auto
                     >
                 </div>
             </div>
 
             <div class="orders-archive__filter-actions">
                 <p class="orders-archive__filter-hint text-xs text-gray-500">
-                    @if(request()->hasAny(['q', 'status', 'date_from', 'date_to']))
+                    @if(request()->hasAny(['q', 'status', 'table_id', 'date_from', 'date_to']))
                         <span class="font-medium text-gray-700">{{ $filteredTotal }} kayıt</span>
                         <span class="text-gray-400">·</span>
                         Filtre aktif
@@ -85,9 +93,7 @@
                 </p>
                 <div class="orders-archive__filter-buttons flex flex-wrap gap-2">
                     <button type="submit" class="btn btn-primary">Filtrele</button>
-                    @if(request()->hasAny(['q', 'status', 'date_from', 'date_to']))
                     <a href="{{ route('admin.orders.archive') }}" class="btn btn-secondary">Filtreleri Sıfırla</a>
-                    @endif
                 </div>
             </div>
         </form>
@@ -153,7 +159,7 @@
                 ])
             >
                 @csrf
-                @foreach(request()->only(['q', 'status', 'date_from', 'date_to']) as $key => $value)
+                @foreach(request()->only(['q', 'status', 'table_id', 'date_from', 'date_to']) as $key => $value)
                     @if($value !== null && $value !== '')
                     <input type="hidden" name="{{ $key }}" value="{{ $value }}">
                     @endif
@@ -236,25 +242,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-(function () {
-    const form = document.querySelector('[data-archive-filter-form]');
-    if (!form) return;
-
-    let searchTimer = null;
-
-    form.querySelectorAll('[data-archive-auto]').forEach((el) => {
-        if (el.type === 'search' || el.type === 'text') {
-            el.addEventListener('input', () => {
-                clearTimeout(searchTimer);
-                searchTimer = setTimeout(() => form.requestSubmit(), 450);
-            });
-            return;
-        }
-        el.addEventListener('change', () => form.requestSubmit());
-    });
-})();
-</script>
-@endpush

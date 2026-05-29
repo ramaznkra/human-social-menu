@@ -133,7 +133,7 @@ function buildOrdersFingerprint(orders, tab) {
 }
 
 function buildCallsFingerprint(calls) {
-    return JSON.stringify(calls.map((c) => [c.id, c.updated_at, c.type]));
+    return JSON.stringify(calls.map((c) => [c.id, c.updated_at, c.type, c.forwarded_to_waiter]));
 }
 
 function buildViewFingerprint(orders, calls, completedOrders, tab) {
@@ -145,7 +145,7 @@ function buildViewFingerprint(orders, calls, completedOrders, tab) {
     }
     if (tab === 'all') {
         const feed = buildMixedFeed(orders, calls);
-        return `all:${JSON.stringify(feed.map((f) => [f.kind, f.sort_at, f.data.id, f.data.updated_at ?? f.data.status]))}`;
+        return `all:${JSON.stringify(feed.map((f) => [f.kind, f.sort_at, f.data.id, f.data.updated_at ?? f.data.status, f.data.forwarded_to_waiter]))}`;
     }
     return `orders:${buildOrdersFingerprint(orders, tab)}`;
 }
@@ -210,28 +210,41 @@ function renderOrderCard(order, tab) {
     </article>`;
 }
 
-function staffActionLabel(type) {
-    const labels = {
-        waiter: '🛎️ Garsonu Gönder',
-        bill_cash: '💵 Hesabı Götür',
-        bill_card: '💳 Pos Gönder',
-    };
-    return labels[type] || '✓ Tamamlandı';
+function isBillCall(call) {
+    return call.is_bill || call.type === 'bill_cash' || call.type === 'bill_card';
+}
+
+function callActionsHtml(call) {
+    const id = call.id;
+
+    // Garson çağrısı: doğrudan tamamla
+    if (!isBillCall(call)) {
+        return `<button type="button" class="live-ops-resolve-call shrink-0 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-md transition hover:bg-emerald-500" data-call-id="${id}">🛎️ Garsonu Gönder</button>`;
+    }
+
+    // Hesap (POS) çağrısı
+    const forwardBtn = call.forwarded_to_waiter
+        ? `<span class="inline-flex items-center gap-1 rounded-lg bg-emerald-500/15 px-3 py-2 text-xs font-semibold text-emerald-300">✓ Garsona iletildi</span>`
+        : `<button type="button" class="live-ops-forward-call rounded-xl bg-[#E67E22] px-4 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-[#d06f15]" data-call-id="${id}">➜ Garsona Yönlendir (POS)</button>`;
+
+    const closeBtns = `
+        <button type="button" class="live-ops-close-call rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-500" data-call-id="${id}" data-payment-method="cash">💵 Nakit · Kapat</button>
+        <button type="button" class="live-ops-close-call rounded-xl bg-sky-600 px-3 py-2.5 text-sm font-bold text-white transition hover:bg-sky-500" data-call-id="${id}" data-payment-method="card">💳 Kart · Kapat</button>`;
+
+    return `<div class="flex flex-wrap items-center justify-end gap-2">${forwardBtn}${closeBtns}</div>`;
 }
 
 function renderCallCard(call) {
-    const actionLabel = staffActionLabel(call.type);
+    const forwarded = isBillCall(call) && call.forwarded_to_waiter;
 
     return `
-    <article class="live-ops-call-card animate-pulse rounded-2xl border-2 border-[#E67E22]/50 bg-[#E67E22]/15 p-5 shadow-lg shadow-[#E67E22]/10" data-call-id="${call.id}">
-        <div class="flex items-start justify-between gap-3">
+    <article class="live-ops-call-card ${forwarded ? '' : 'animate-pulse'} rounded-2xl border-2 border-[#E67E22]/50 bg-[#E67E22]/15 p-5 shadow-lg shadow-[#E67E22]/10" data-call-id="${call.id}">
+        <div class="flex flex-col gap-3">
             <div class="min-w-0 flex-1">
                 <p class="text-2xl font-black leading-tight tracking-wide text-[#E67E22] sm:text-3xl">${call.headline || `MASA ${call.table ?? '?'}`}</p>
-                <p class="mt-2 text-xs text-[#D4C5B9]">Masa ${call.table ?? '—'} · ${call.type_label} · ${call.created_at}</p>
+                <p class="mt-2 text-xs text-[#D4C5B9]">Masa ${call.table ?? '—'} · ${call.type_label} · ${call.created_at}${forwarded ? ' · Garson yolda' : ''}</p>
             </div>
-            <button type="button" class="live-ops-resolve-call shrink-0 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-md transition hover:bg-emerald-500" data-call-id="${call.id}">
-                ${actionLabel}
-            </button>
+            ${callActionsHtml(call)}
         </div>
     </article>`;
 }
@@ -660,6 +673,76 @@ if (root) {
                 }
             };
         });
+
+        grid.querySelectorAll('.live-ops-forward-call').forEach((btn) => {
+            btn.onclick = async () => {
+                const callId = btn.dataset.callId;
+                btn.disabled = true;
+                try {
+                    const res = await fetch(`${resolveCallUrlBase}/${callId}/forward`, {
+                        method: 'PATCH',
+                        headers: { 'X-CSRF-TOKEN': csrf, Accept: 'application/json' },
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (res.ok && data.success !== false) {
+                        showAdminToast({
+                            title: 'Garsona Yönlendirildi',
+                            message: 'POS / masa bildirimi gönderildi',
+                            type: 'success',
+                            durationMs: 2200,
+                        });
+                        await poll(true);
+                    } else {
+                        showAdminToast({
+                            title: 'Yönlendirilemedi',
+                            message: data.message || 'Tekrar deneyin',
+                            type: 'error',
+                        });
+                    }
+                } finally {
+                    btn.disabled = false;
+                }
+            };
+        });
+
+        grid.querySelectorAll('.live-ops-close-call').forEach((btn) => {
+            btn.onclick = async () => {
+                const callId = btn.dataset.callId;
+                const paymentMethod = btn.dataset.paymentMethod || 'cash';
+                btn.disabled = true;
+                try {
+                    const res = await fetch(`${resolveCallUrlBase}/${callId}/resolve`, {
+                        method: 'PATCH',
+                        headers: {
+                            'X-CSRF-TOKEN': csrf,
+                            Accept: 'application/json',
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ payment_method: paymentMethod }),
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (res.ok && data.success !== false) {
+                        callNotifications.delete(Number(callId));
+                        syncNotificationBadges();
+                        showAdminToast({
+                            title: 'Hesap Kapatıldı',
+                            message: `${paymentMethod === 'card' ? 'Kart' : 'Nakit'} · ${data.message || ''}`.trim(),
+                            type: 'info',
+                            durationMs: 2400,
+                        });
+                        await poll(true);
+                    } else {
+                        showAdminToast({
+                            title: 'Kapatılamadı',
+                            message: data.message || 'Tekrar deneyin',
+                            type: 'error',
+                        });
+                    }
+                } finally {
+                    btn.disabled = false;
+                }
+            };
+        });
     }
 
     function initRealtimeListeners() {
@@ -688,6 +771,24 @@ if (root) {
                     durationMs: 2200,
                 });
             }
+            poll(true);
+        });
+
+        echoClient.channel('orders').listen('.TableCallReceived', (payload) => {
+            const call = payload?.call;
+            if (call && isBillCall(call)) {
+                playCallAlert();
+                showAdminToast({
+                    title: 'Hesap İsteniyor',
+                    message: `Masa ${call.table ?? '—'} · ${call.type_label ?? ''} · POS hazırla`,
+                    type: 'warning',
+                    durationMs: 3000,
+                });
+            }
+            poll(true);
+        });
+
+        echoClient.channel('orders').listen('.TableCallForwarded', () => {
             poll(true);
         });
     }

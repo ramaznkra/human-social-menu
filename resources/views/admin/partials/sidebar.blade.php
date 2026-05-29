@@ -1,5 +1,23 @@
+@php
+    $adminLogoPath = public_path('images/human-logo.png');
+    $adminLogo = file_exists($adminLogoPath)
+        ? asset('images/human-logo.png') . '?v=' . filemtime($adminLogoPath)
+        : asset('icons/human-logo.svg');
+    $adminLogoFallback = asset('icons/human-logo.svg');
+@endphp
+
 <aside class="admin-sidebar flex w-64 shrink-0 flex-col bg-[#262220] text-brand-cream">
     <div class="admin-sidebar__brand border-b border-white/10 px-5 py-5">
+        <div class="mb-3 flex items-center justify-center rounded-2xl border border-[#C6A046]/25 bg-[#181512] px-3 py-2 shadow-md shadow-black/30">
+            <img
+                src="{{ $adminLogo }}"
+                alt="{{ $settings['venue_name'] ?? 'Human' }}"
+                class="admin-sidebar__logo"
+                loading="eager"
+                decoding="async"
+                onerror="this.onerror=null;this.src='{{ $adminLogoFallback }}';"
+            >
+        </div>
         <h1 class="text-lg font-bold uppercase tracking-[0.12em] text-gray-100">{{ $settings['venue_name'] ?? 'Human' }}</h1>
         @if(filled($settings['venue_slogan'] ?? null))
         <p class="mt-1 text-[11px] tracking-wide text-brand-cream/70">{{ $settings['venue_slogan'] }}</p>

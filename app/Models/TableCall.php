@@ -11,7 +11,18 @@ class TableCall extends Model
 
     public const STATUS_RESOLVED = 'resolved';
 
-    protected $fillable = ['table_id', 'type', 'status'];
+    protected $fillable = ['table_id', 'type', 'status', 'forwarded_to_waiter'];
+
+    protected function casts(): array
+    {
+        return ['forwarded_to_waiter' => 'boolean'];
+    }
+
+    /** Hesap (POS) tipli çağrı mı? */
+    public function isBill(): bool
+    {
+        return in_array($this->type, ['bill_cash', 'bill_card', 'bill'], true);
+    }
 
     /** @deprecated linkedTable() kullanın — table adı Model::$table ile çakışır */
     public function table(): BelongsTo

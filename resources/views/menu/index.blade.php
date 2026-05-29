@@ -4,8 +4,8 @@
 
 @section('content')
 @php
-    $brandMark = $settings['brand_mark'] ?? 'HSP';
-    $tagline = $settings['venue_tagline'] ?? 'Human Social Person — Coffee, Community, Experiences.';
+    $brandMark = $settings['brand_mark'] ?? 'Human';
+    $tagline = $settings['venue_tagline'] ?? 'Human Social People';
     $firstCategoryId = $categories->first()?->id;
 @endphp
 
@@ -26,16 +26,19 @@
 <div class="menu-page">
 <main class="menu-shell {{ $scrollPad }}" id="menuApp">
     {{-- Header / Logo --}}
-    <header class="menu-header relative px-5 pt-6 pb-2 text-center">
-        <div class="absolute top-4 right-4 flex flex-col items-end gap-2">
-            @include('menu.partials.lang-switcher', ['table' => $table, 'locale' => $locale])
+    <header class="menu-header relative px-5 pt-4 pb-2 text-center">
+        <div class="menu-top-meta mb-3 flex w-full items-center {{ $table ? 'justify-between' : 'justify-end' }} gap-3 px-0.5">
             @if($table)
-            <span class="rounded-full border border-[#E67E22]/30 bg-[#E67E22]/15 px-2.5 py-0.5 text-[10px] font-semibold text-[#E67E22]">
-                {{ __('menu.table', ['number' => $table->number]) }}
-            </span>
+                <span class="menu-table-chip rounded-full border border-[#C6A046]/35 bg-[#C6A046]/10 px-2.5 py-0.5 text-[10px] font-semibold text-[#E0C376]">
+                    {{ __('menu.table', ['number' => $table->number]) }}
+                </span>
             @endif
+            @include('menu.partials.lang-switcher', ['table' => $table, 'locale' => $locale])
         </div>
-        <h1 class="menu-logo">{{ $brandMark }}</h1>
+        <div class="menu-logo-wrap">
+            <img src="{{ asset('images/human-logo.png') }}" alt="{{ $settings['venue_name'] ?? 'Human' }}" class="menu-logo-img mx-auto" loading="eager">
+        </div>
+        <h1 class="sr-only">{{ $brandMark }}</h1>
         <p class="menu-tagline">{{ $tagline }}</p>
 
     </header>
@@ -116,6 +119,13 @@
             data-category-panel="{{ $cat->id }}"
             id="cat-panel-{{ $cat->id }}"
         >
+            @if($cat->products->isEmpty())
+            <div class="menu-coming-soon" data-coming-soon>
+                <span class="menu-coming-soon__icon" aria-hidden="true">✨</span>
+                <p class="menu-coming-soon__title">{{ __('menu.coming_soon') }}</p>
+                <p class="menu-coming-soon__hint">{{ __('menu.coming_soon_hint') }}</p>
+            </div>
+            @endif
             @foreach($cat->products as $product)
             <article
                 class="product-item product-row-card"
@@ -180,10 +190,10 @@
 >
     <div class="menu-fixed-panel" style="padding-bottom: calc(12px + env(safe-area-inset-bottom))">
         <div id="callActionButtons" class="grid grid-cols-2 gap-3">
-            <button type="button" id="callWaiter" class="menu-call-waiter rounded-xl border border-[#E67E22] px-3 py-3 text-sm font-semibold text-[#E67E22] transition hover:bg-[#E67E22]/10">
+            <button type="button" id="callWaiter" class="menu-call-waiter rounded-xl border border-[#C6A046]/45 bg-[#191613]/90 px-3 py-3 text-sm font-semibold text-[#C6A046] transition hover:border-[#C6A046]/70 hover:bg-[#C6A046]/10">
                 🛎️ {{ __('menu.call_waiter') }}
             </button>
-            <button type="button" id="callBillOpen" class="menu-call-bill rounded-xl bg-[#E67E22] px-3 py-3 text-sm font-semibold text-white shadow-lg shadow-[#E67E22]/25 transition hover:brightness-110">
+            <button type="button" id="callBillOpen" class="menu-call-bill rounded-xl border border-[#C6A046]/45 bg-[#191613]/90 px-3 py-3 text-sm font-semibold text-[#C6A046] shadow-lg shadow-[#C6A046]/20 transition hover:border-[#C6A046]/70 hover:bg-[#C6A046]/10">
                 💳 {{ __('menu.request_bill') }}
             </button>
         </div>
@@ -222,9 +232,9 @@
                 <span id="cartCount" class="font-semibold text-gray-100">0</span>
                 <span id="cartCountLabel"></span>
             </span>
-            <span class="font-bold text-[#E67E22]" id="cartTotal">0 {{ $settings['currency'] ?? '₺' }}</span>
+            <span class="font-bold text-[#C6A046]" id="cartTotal">0 {{ $settings['currency'] ?? '₺' }}</span>
         </div>
-        <button type="button" id="openCart" class="rounded-full bg-[#E67E22] px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110">{{ __('menu.place_order') }}</button>
+        <button type="button" id="openCart" class="rounded-full bg-[#C6A046] px-5 py-2.5 text-sm font-semibold text-[#1B1714] transition hover:brightness-110">{{ __('menu.place_order') }}</button>
     </div>
 </div>
 
@@ -234,12 +244,12 @@
         <div id="cartItems" class="cart-items-list"></div>
         <div class="cart-modal-total mt-4 flex items-center justify-between border-t border-white/10 pt-4">
             <span class="text-sm text-[#D4C5B9]">{{ __('menu.total') }}</span>
-            <span id="cartModalTotal" class="text-lg font-bold text-[#E67E22]">0 {{ $settings['currency'] ?? '₺' }}</span>
+            <span id="cartModalTotal" class="text-lg font-bold text-[#C6A046]">0 {{ $settings['currency'] ?? '₺' }}</span>
         </div>
-        <textarea id="orderNotes" placeholder="{{ __('menu.order_notes') }}" class="mt-4 w-full min-h-[72px] resize-y rounded-xl border border-white/5 bg-[#121110] px-3.5 py-3 text-sm text-gray-100 outline-none focus:border-[#E67E22]/40 focus:ring-2 focus:ring-[#E67E22]/15"></textarea>
+        <textarea id="orderNotes" placeholder="{{ __('menu.order_notes') }}" class="mt-4 w-full min-h-[72px] resize-y rounded-xl border border-white/5 bg-[#121110] px-3.5 py-3 text-sm text-gray-100 outline-none focus:border-[#C6A046]/40 focus:ring-2 focus:ring-[#C6A046]/15"></textarea>
         <div class="mt-4 flex gap-3">
             <button type="button" id="closeCart" class="flex-1 rounded-xl border border-white/10 bg-white/5 py-3 text-sm font-medium text-gray-100">{{ __('menu.cancel') }}</button>
-            <button type="button" id="submitOrder" class="flex-1 rounded-xl bg-[#E67E22] py-3 text-sm font-semibold text-white">{{ __('menu.send') }}</button>
+            <button type="button" id="submitOrder" class="flex-1 rounded-xl bg-[#C6A046] py-3 text-sm font-semibold text-[#1B1714]">{{ __('menu.send') }}</button>
         </div>
     </div>
 </div>

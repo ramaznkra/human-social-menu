@@ -19,6 +19,7 @@ class OrderStatusUpdated implements ShouldBroadcast
         public ?int $tableNumber = null,
         public ?string $orderNumber = null,
         public array $items = [],
+        public ?string $paymentMethod = null,
     ) {
     }
 
@@ -38,6 +39,7 @@ class OrderStatusUpdated implements ShouldBroadcast
                 ])
                 ->values()
                 ->all(),
+            paymentMethod: $order->payment_method,
         );
     }
 
@@ -59,6 +61,7 @@ class OrderStatusUpdated implements ShouldBroadcast
             'table' => $this->tableNumber,
             'order_number' => $this->orderNumber,
             'items' => $this->items,
+            'payment_method' => $this->paymentMethod,
         ];
     }
 }

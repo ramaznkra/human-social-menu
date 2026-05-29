@@ -5,7 +5,7 @@
 @endphp
 <section
     class="menu-social-grid mt-12 mb-6 grid w-full grid-cols-2 gap-3 px-5 {{ $socialCardCount === 1 ? 'max-w-xs mx-auto' : '' }}"
-    aria-label="Sosyal bağlantılar"
+    aria-label="{{ __('menu.social_links_aria') }}"
 >
     @if($spotifyUrl !== '')
     <article class="menu-social-card flex aspect-square min-w-0 flex-col justify-between overflow-hidden rounded-2xl border border-white/5 bg-[#262220]/50 p-4 backdrop-blur-md {{ $socialCardCount === 1 ? 'col-span-2' : '' }}">
@@ -15,15 +15,15 @@
             </svg>
         </div>
         <div class="menu-social-card__body min-w-0 w-full flex-1">
-            <h2 class="menu-social-card__title font-bold text-gray-100">{{ $settings['spotify_title'] ?? 'HSP Vibes' }}</h2>
-            <p class="menu-social-card__desc mt-1 text-xs leading-snug text-[#D4C5B9]">Şu an kafede ne çalıyor? Ritme ortak ol.</p>
+            <h2 class="menu-social-card__title font-bold text-gray-100">{{ $settings['spotify_title'] ?? __('menu.spotify_title_fallback') }}</h2>
+            <p class="menu-social-card__desc mt-1 text-xs leading-snug text-[#D4C5B9]">{{ __('menu.spotify_desc') }}</p>
         </div>
         <a
             href="{{ $spotifyUrl }}"
             target="_blank"
             rel="noopener noreferrer"
             class="menu-social-card__action mt-2 w-full shrink-0 rounded-full bg-[#E67E22] px-3 py-1.5 text-center text-xs font-medium text-white transition hover:brightness-110"
-        >Listeyi Aç</a>
+        >{{ __('menu.spotify_open') }}</a>
     </article>
     @endif
 
@@ -40,8 +40,8 @@
             </svg>
         </div>
         <div class="menu-social-card__body min-w-0 w-full flex-1">
-            <h2 class="menu-social-card__title font-bold text-gray-100">Share the Moment</h2>
-            <p class="menu-social-card__desc mt-1 text-xs leading-snug text-[#D4C5B9]">Anı yakala, bizi etiketle…</p>
+            <h2 class="menu-social-card__title font-bold text-gray-100">{{ __('menu.instagram_title') }}</h2>
+            <p class="menu-social-card__desc mt-1 text-xs leading-snug text-[#D4C5B9]">{{ __('menu.instagram_desc') }}</p>
         </div>
         <p class="menu-social-card__handle mt-2 w-full shrink-0 text-center text-sm font-semibold tracking-wide text-[#E67E22]">{{ $instagramHandle }} ✨</p>
     </a>

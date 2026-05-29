@@ -19,33 +19,43 @@
                 <thead>
                     <tr>
                         <th>Sıra</th>
+                        <th>Görsel</th>
                         <th>Ad (TR)</th>
                         <th>EN / RU</th>
                         <th>Slug</th>
                         <th>Ürün</th>
+                        <th>Durum</th>
                         <th></th>
                     </tr>
                 </thead>
                 <tbody>
                 @forelse($categories as $cat)
-                <tr class="{{ $cat->is_active ? '' : 'opacity-50' }}">
+                <tr class="{{ $cat->is_active ? '' : 'opacity-50' }}" data-category-item>
                     <td>{{ $cat->sort_order }}</td>
+                    <td>
+                        @if($cat->image_url)
+                            <img src="{{ $cat->image_url }}" alt="{{ $cat->name }}" class="h-10 w-14 rounded-md border border-gray-200 object-cover">
+                        @else
+                            <span class="text-xs text-gray-400">—</span>
+                        @endif
+                    </td>
                     <td class="font-medium">
                         <span class="inline-flex items-center gap-2">
-                            <span class="table-status-dot {{ $cat->is_active ? 'table-status-dot--on' : 'table-status-dot--off' }}" aria-hidden="true"></span>
+                            <span class="table-status-dot {{ $cat->is_active ? 'table-status-dot--on' : 'table-status-dot--off' }}" data-category-dot aria-hidden="true"></span>
                             {{ $cat->name }}
                         </span>
                     </td>
                     <td class="text-xs text-gray-500">{{ $cat->name_en ?: '—' }} · {{ $cat->name_ru ?: '—' }}</td>
                     <td class="text-gray-500">{{ $cat->slug }}</td>
                     <td>{{ $cat->products_count }}</td>
+                    <td>@include('admin.partials.category-active-toggle', ['category' => $cat])</td>
                     <td class="space-x-1 whitespace-nowrap">
                         <a href="{{ route('admin.categories.edit', $cat) }}" class="btn btn-sm btn-secondary">Düzenle</a>
                         @include('admin.partials.category-delete-form', ['category' => $cat])
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="6" class="py-12 text-center text-gray-500">Kategori yok.</td></tr>
+                <tr><td colspan="8" class="py-12 text-center text-gray-500">Kategori yok.</td></tr>
                 @endforelse
                 </tbody>
             </table>
@@ -58,17 +68,24 @@
             Henüz kategori yok. <a href="{{ route('admin.categories.create') }}" class="font-medium text-[#E67E22] hover:underline">İlk kategoriyi ekleyin</a>.
         </div>
         @else
-        <div class="admin-catalog-tray">
+        <div class="admin-catalog-tray admin-catalog-tray--categories">
             @foreach($categories as $cat)
-            <article class="admin-tray-card admin-tray-card--category {{ $cat->is_active ? '' : 'admin-tray-card--hidden' }}">
+            <article class="admin-tray-card admin-tray-card--category {{ $cat->is_active ? '' : 'admin-tray-card--hidden' }}" data-category-item>
                 <div class="admin-tray-card__media admin-tray-card__media--category">
-                    <div class="admin-tray-card__placeholder admin-tray-card__placeholder--icon" aria-hidden="true">
-                        {{ $cat->icon ?: '📁' }}
-                    </div>
-                    <span class="table-status-dot {{ $cat->is_active ? 'table-status-dot--on' : 'table-status-dot--off' }} admin-tray-card__status-dot" aria-hidden="true"></span>
+                    @if($cat->image_url)
+                        <img src="{{ $cat->image_url }}" alt="{{ $cat->name }}" class="admin-tray-card__img admin-tray-card__img--category">
+                    @else
+                        <div class="admin-tray-card__placeholder admin-tray-card__placeholder--icon" aria-hidden="true">
+                            {{ $cat->icon ?: '📁' }}
+                        </div>
+                    @endif
+                    <span class="table-status-dot {{ $cat->is_active ? 'table-status-dot--on' : 'table-status-dot--off' }} admin-tray-card__status-dot" data-category-dot aria-hidden="true"></span>
                 </div>
                 <div class="admin-tray-card__body">
-                    <h3 class="admin-tray-card__title" title="{{ $cat->name }}">{{ $cat->name }}</h3>
+                    <div class="flex items-start justify-between gap-2">
+                        <h3 class="admin-tray-card__title" title="{{ $cat->name }}">{{ $cat->name }}</h3>
+                        @include('admin.partials.category-active-toggle', ['category' => $cat])
+                    </div>
                     <p class="admin-tray-card__meta">Sıra {{ $cat->sort_order }} · {{ $cat->products_count }} ürün</p>
                     <p class="admin-tray-card__meta text-[11px]">{{ $cat->slug }}</p>
                     @if($cat->name_en || $cat->name_ru)
@@ -88,5 +105,5 @@
 @endsection
 
 @push('scripts')
-@vite('resources/js/pages/admin-catalog-view.js')
+@vite(['resources/js/pages/admin-catalog-view.js', 'resources/js/pages/admin-categories.js'])
 @endpush

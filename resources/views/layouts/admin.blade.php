@@ -47,13 +47,15 @@
         @yield('content')
     </main>
 </div>
-@include('admin.partials.manual-order-modal')
+@if(request()->routeIs('admin.live-orders.*'))
+    @include('admin.partials.manual-order-modal')
+@endif
 @include('admin.partials.admin-toast-host')
 @stack('scripts')
 <script>
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-        navigator.serviceWorker.register('{{ asset('staff-sw.js') }}', { scope: '/admin/' })
+        navigator.serviceWorker.register('{{ asset('staff-sw.js') }}?v=3', { scope: '/admin/' })
             .catch(function () {});
     });
 }

@@ -4,13 +4,19 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Services\MenuImageOptimizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class CategoryController extends Controller
 {
+    public function __construct(
+        private readonly MenuImageOptimizer $images,
+    ) {}
+
     public function index(): View
     {
         $categories = Category::withCount('products')->orderBy('sort_order')->get();
@@ -25,7 +31,10 @@ class CategoryController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        Category::create($this->validated($request));
+        $data = $this->validated($request);
+        $data = $this->resolveImage($request, $data);
+        $data['is_active'] = true;
+        Category::create($data);
 
         return redirect()->route('admin.categories.index')->with('success', 'Kategori eklendi.');
     }
@@ -37,7 +46,9 @@ class CategoryController extends Controller
 
     public function update(Request $request, Category $category): RedirectResponse
     {
-        $category->update($this->validated($request, $category));
+        $data = $this->validated($request, $category);
+        $data = $this->resolveImage($request, $data, $category);
+        $category->update($data);
 
         return redirect()->route('admin.categories.index')->with('success', 'Kategori güncellendi.');
     }
@@ -49,6 +60,18 @@ class CategoryController extends Controller
         return redirect()->route('admin.categories.index')->with('success', 'Kategori silindi.');
     }
 
+    public function toggleActive(Category $category): \Illuminate\Http\JsonResponse
+    {
+        $category->update(['is_active' => ! $category->is_active]);
+
+        return response()->json([
+            'success' => true,
+            'category_id' => $category->id,
+            'is_active' => $category->is_active,
+            'label' => $category->is_active ? 'Aktif' : 'Pasif',
+        ]);
+    }
+
     private function validated(Request $request, ?Category $category = null): array
     {
         $data = $request->validate([
@@ -57,13 +80,53 @@ class CategoryController extends Controller
             'name_ru' => 'nullable|string|max:100',
             'slug' => 'nullable|string|max:100',
             'icon' => 'nullable|string|max:50',
+            'image' => 'nullable|image|max:3072',
+            'preset_image' => 'nullable|string|in:images/categories/samples/yiyecek.svg,images/categories/samples/icecek.svg,images/categories/samples/nargile.svg,images/categories/samples/okey.svg',
+            'remove_image' => 'nullable|boolean',
             'sort_order' => 'nullable|integer|min:0',
-            'is_active' => 'boolean',
         ]);
 
         $data['slug'] = $data['slug'] ?? Str::slug($data['name']);
-        $data['is_active'] = $request->boolean('is_active');
 
         return $data;
+    }
+
+    private function resolveImage(Request $request, array $data, ?Category $category = null): array
+    {
+        $removeImage = $request->boolean('remove_image');
+        $presetImage = $data['preset_image'] ?? null;
+        unset($data['image'], $data['preset_image'], $data['remove_image']);
+
+        $currentImage = $category?->image;
+        if ($request->hasFile('image')) {
+            if ($this->isStoredCategoryImage($currentImage)) {
+                Storage::disk('public')->delete($currentImage);
+            }
+            $data['image'] = $this->images->storeCategory($request->file('image'));
+            return $data;
+        }
+
+        if ($removeImage) {
+            if ($this->isStoredCategoryImage($currentImage)) {
+                Storage::disk('public')->delete($currentImage);
+            }
+            $data['image'] = null;
+            return $data;
+        }
+
+        if ($presetImage) {
+            if ($this->isStoredCategoryImage($currentImage)) {
+                Storage::disk('public')->delete($currentImage);
+            }
+            $data['image'] = $presetImage;
+            return $data;
+        }
+
+        return $data;
+    }
+
+    private function isStoredCategoryImage(?string $path): bool
+    {
+        return filled($path) && str_starts_with($path, 'categories/');
     }
 }

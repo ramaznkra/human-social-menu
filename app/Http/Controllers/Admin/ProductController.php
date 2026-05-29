@@ -33,7 +33,11 @@ class ProductController extends Controller
     {
         $categories = Category::orderBy('sort_order')->get();
 
-        return view('admin.products.form', ['product' => new Product, 'categories' => $categories]);
+        return view('admin.products.form', [
+            'product' => new Product,
+            'categories' => $categories,
+            'badgeSuggestions' => $this->badgeSuggestions(),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -42,6 +46,7 @@ class ProductController extends Controller
         if ($request->hasFile('image')) {
             $data['image'] = $this->images->storeProduct($request->file('image'));
         }
+        $data['is_available'] = true;
         Product::create($data);
 
         return redirect()->route('admin.products.index')->with('success', 'Ürün eklendi.');
@@ -51,7 +56,36 @@ class ProductController extends Controller
     {
         $categories = Category::orderBy('sort_order')->get();
 
-        return view('admin.products.form', compact('product', 'categories'));
+        return view('admin.products.form', [
+            'product' => $product,
+            'categories' => $categories,
+            'badgeSuggestions' => $this->badgeSuggestions(),
+        ]);
+    }
+
+    /**
+     * Hazır rozetler + daha önce kullanılmış rozetler (tekrarsız).
+     *
+     * @return array<int, string>
+     */
+    private function badgeSuggestions(): array
+    {
+        $defaults = ['Popüler', 'Yeni', 'Paket', 'Şefin Önerisi', 'İndirim', 'Acı', 'Vegan', 'Glutensiz'];
+
+        $used = Product::query()
+            ->whereNotNull('badge')
+            ->where('badge', '!=', '')
+            ->distinct()
+            ->pluck('badge')
+            ->all();
+
+        return collect($defaults)
+            ->merge($used)
+            ->map(fn ($b) => trim((string) $b))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
     }
 
     public function update(Request $request, Product $product): RedirectResponse
@@ -98,10 +132,8 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0',
             'badge' => 'nullable|string|max:30',
             'sort_order' => 'nullable|integer|min:0',
-            'is_available' => 'boolean',
             'image' => 'nullable|image|max:2048',
         ]);
-        $data['is_available'] = $request->boolean('is_available');
 
         return $data;
     }

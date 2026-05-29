@@ -36,9 +36,9 @@ class HumanSeeder extends Seeder
 
         $defaults = [
             'venue_name' => 'Human',
-            'venue_slogan' => 'Social People',
-            'brand_mark' => 'HSP',
-            'venue_tagline' => 'Human Social Person — Coffee, Community, Experiences.',
+            'venue_slogan' => 'Human Social People',
+            'brand_mark' => 'Human',
+            'venue_tagline' => 'Human Social People',
             'venue_phone' => '+90 555 000 00 00',
             'venue_address' => 'İstanbul',
             'currency' => '₺',
@@ -58,10 +58,10 @@ class HumanSeeder extends Seeder
         }
 
         $categories = [
-            ['name' => 'Yiyecek', 'slug' => 'yiyecek', 'image' => 'images/menu/categories/yiyecek.jpg', 'sort_order' => 1],
-            ['name' => 'İçecek', 'slug' => 'icecek', 'image' => 'images/menu/categories/icecek.jpg', 'sort_order' => 2],
-            ['name' => 'Nargile', 'slug' => 'nargile', 'image' => 'images/menu/categories/nargile.jpg', 'sort_order' => 3],
-            ['name' => 'Okey', 'slug' => 'okey', 'image' => 'images/menu/categories/okey.jpg', 'sort_order' => 4],
+            ['name' => 'Yiyecek', 'slug' => 'yiyecek', 'image' => 'images/categories/samples/yiyecek.svg', 'sort_order' => 1],
+            ['name' => 'İçecek', 'slug' => 'icecek', 'image' => 'images/categories/samples/icecek.svg', 'sort_order' => 2],
+            ['name' => 'Nargile', 'slug' => 'nargile', 'image' => 'images/categories/samples/nargile.svg', 'sort_order' => 3],
+            ['name' => 'Okey', 'slug' => 'okey', 'image' => 'images/categories/samples/okey.svg', 'sort_order' => 4],
         ];
 
         foreach ($categories as $cat) {

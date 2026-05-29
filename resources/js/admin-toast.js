@@ -1,7 +1,7 @@
 /**
  * Admin panel toast bildirimleri (Hazırlanıyor, sipariş alındı vb.)
  */
-export function showAdminToast({ title, message, hint = '', type = 'success', durationMs = 4200 }) {
+export function showAdminToast({ title, message, hint = '', type = 'success', durationMs = 2000 }) {
     let host = document.getElementById('adminToastHost');
     if (!host) {
         host = document.createElement('div');
@@ -14,6 +14,7 @@ export function showAdminToast({ title, message, hint = '', type = 'success', du
     const icons = {
         success: '👨‍🍳',
         info: '⚡',
+        warning: '🔔',
         error: '⚠️',
     };
 
@@ -38,6 +39,18 @@ export function showAdminToast({ title, message, hint = '', type = 'success', du
     host.appendChild(el);
     requestAnimationFrame(() => el.classList.add('admin-toast--in'));
 
-    const timer = setTimeout(dismiss, durationMs);
-    el.addEventListener('mouseenter', () => clearTimeout(timer));
+    // Tüm bildirimler 2 saniyede elle kapatmaya gerek kalmadan kapanır.
+    let remaining = 2000;
+    let startedAt = Date.now();
+    let timer = setTimeout(dismiss, remaining);
+
+    // Fareyle üzerine gelince duraklat, ayrılınca kalan süreden devam et (asılı kalmasın).
+    el.addEventListener('mouseenter', () => {
+        clearTimeout(timer);
+        remaining -= Date.now() - startedAt;
+    });
+    el.addEventListener('mouseleave', () => {
+        startedAt = Date.now();
+        timer = setTimeout(dismiss, Math.max(remaining, 600));
+    });
 }

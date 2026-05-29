@@ -35,6 +35,7 @@ function initManualOrder() {
 
     function openModal() {
         modal.classList.add('is-open');
+        modal.removeAttribute('inert');
         modal.setAttribute('aria-hidden', 'false');
         document.body.classList.add('manual-order-open');
         if (!bootstrapLoaded) {
@@ -44,8 +45,17 @@ function initManualOrder() {
     }
 
     function closeModal() {
+        // Odak modal içindeyse, aria-hidden/inert uygulamadan önce tetikleyiciye geri ver.
+        if (modal.contains(document.activeElement)) {
+            if (typeof fab?.focus === 'function') {
+                fab.focus();
+            } else {
+                document.activeElement.blur();
+            }
+        }
         modal.classList.remove('is-open');
         modal.setAttribute('aria-hidden', 'true');
+        modal.setAttribute('inert', '');
         document.body.classList.remove('manual-order-open');
         hideError();
         successEl?.classList.add('hidden');

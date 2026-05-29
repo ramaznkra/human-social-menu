@@ -8,9 +8,9 @@
         <form method="POST" action="{{ route('admin.settings.update') }}" class="space-y-4">
             @csrf @method('PUT')
             <div><label class="form-label">Mekan Adı</label><input type="text" name="venue_name" value="{{ $settings['venue_name'] ?? 'Human' }}" class="form-input"></div>
-            <div><label class="form-label">Menü Logo Yazısı (HSP)</label><input type="text" name="brand_mark" value="{{ $settings['brand_mark'] ?? 'HSP' }}" class="form-input" placeholder="HSP"></div>
-            <div><label class="form-label">Menü Alt Slogan</label><input type="text" name="venue_tagline" value="{{ $settings['venue_tagline'] ?? 'Human Social Person — Coffee, Community, Experiences.' }}" class="form-input"></div>
-            <div><label class="form-label">Slogan (kısa)</label><input type="text" name="venue_slogan" value="{{ $settings['venue_slogan'] ?? 'Social People' }}" class="form-input"></div>
+            <div><label class="form-label">Menü Logo Yazısı</label><input type="text" name="brand_mark" value="{{ $settings['brand_mark'] ?? 'Human' }}" class="form-input" placeholder="Human"></div>
+            <div><label class="form-label">Menü Alt Slogan</label><input type="text" name="venue_tagline" value="{{ $settings['venue_tagline'] ?? 'Human Social People' }}" class="form-input"></div>
+            <div><label class="form-label">Slogan (kısa)</label><input type="text" name="venue_slogan" value="{{ $settings['venue_slogan'] ?? 'Human Social People' }}" class="form-input"></div>
             <div><label class="form-label">Telefon</label><input type="text" name="venue_phone" value="{{ $settings['venue_phone'] ?? '' }}" class="form-input"></div>
             <div><label class="form-label">Adres</label><input type="text" name="venue_address" value="{{ $settings['venue_address'] ?? '' }}" class="form-input"></div>
             <div><label class="form-label">Para Birimi</label><input type="text" name="currency" value="{{ $settings['currency'] ?? '₺' }}" class="form-input"></div>

@@ -12,9 +12,9 @@
                 <input type="text" name="number" value="{{ old('number', $table->number) }}" required class="form-input" placeholder="15">
                 <p class="mt-1 text-xs text-gray-500">QR linki: {{ url('/menu') }}?masa=<strong>NUMARA</strong></p>
             </div>
-            <label class="flex items-center gap-2 text-sm text-gray-600">
-                <input type="checkbox" name="is_active" value="1" {{ old('is_active', $table->is_active ?? true) ? 'checked' : '' }} class="rounded border-gray-300 text-[#E67E22] focus:ring-[#E67E22]"> Aktif
-            </label>
+            @if($table->exists)
+            <p class="text-xs text-gray-500">Masanın aktif/pasif durumunu <a href="{{ route('admin.tables.index') }}" class="font-medium text-[#E67E22] hover:underline">Masalar</a> listesindeki anahtardan değiştirebilirsiniz.</p>
+            @endif
             <div class="flex gap-3 pt-2">
                 <button type="submit" class="btn btn-primary">{{ $table->exists ? 'Kaydet' : 'Masa Ekle & QR Oluştur' }}</button>
                 <a href="{{ route('admin.tables.index') }}" class="btn btn-secondary">İptal</a>

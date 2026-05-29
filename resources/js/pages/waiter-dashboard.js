@@ -25,8 +25,11 @@ function initWaiterDashboard() {
     let audioCtx = null;
     let deferredInstallPrompt = null;
     let knownOrderIds = new Set();
+    let knownCallIds = new Set();
     let hasBootstrappedOrders = false;
+    let hasBootstrappedCalls = false;
     const readyAlertIds = new Set();
+    const recentlyCompletedIds = new Set();
 
     function setLive(ok) {
         if (!liveBadge) return;
@@ -34,11 +37,16 @@ function initWaiterDashboard() {
         liveBadge.classList.toggle('waiter-live-badge--off', !ok);
     }
 
+    // Garson; garson çağrılarını ve hesap (POS) çağrılarını anında görür (kasayla eş zamanlı).
+    function waiterShouldShowCall(c) {
+        return ['waiter', 'bill_cash', 'bill_card', 'bill'].includes(String(c?.type));
+    }
+
     function buildFeed(orders, calls) {
         const items = [];
 
         (calls || [])
-            .filter((c) => ['waiter', 'bill_cash', 'bill_card', 'bill'].includes(String(c.type)))
+            .filter(waiterShouldShowCall)
             .forEach((c) => {
             items.push({
                 kind: 'call',
@@ -68,6 +76,27 @@ function initWaiterDashboard() {
         return 'waiter-feed-card--call';
     }
 
+    function callActionsHtml(call) {
+        const isBill = ['bill_cash', 'bill_card', 'bill'].includes(String(call.type));
+        if (isBill) {
+            return `
+                <p class="waiter-feed-card__pay-label">Hesabı kapat</p>
+                <div class="waiter-feed-card__pay-actions">
+                    <button type="button" class="waiter-feed-card__action waiter-feed-card__action--cash" data-complete="1" data-payment="cash">
+                        💵 Nakit
+                    </button>
+                    <button type="button" class="waiter-feed-card__action waiter-feed-card__action--card" data-complete="1" data-payment="card">
+                        💳 Kart
+                    </button>
+                </div>`;
+        }
+
+        return `
+            <button type="button" class="waiter-feed-card__action" data-complete="1">
+                ✓ Tamamlandı / Kapat
+            </button>`;
+    }
+
     function renderCallCard(call) {
         return `
             <article class="waiter-feed-card ${callCardClass(call.type)}" data-feed-kind="call" data-feed-id="${call.id}">
@@ -77,9 +106,7 @@ function initWaiterDashboard() {
                 </div>
                 <p class="waiter-feed-card__headline">${escapeHtml(call.headline || call.type_label || 'Masa çağrısı')}</p>
                 <p class="waiter-feed-card__meta">Masa ${escapeHtml(call.table ?? '—')} · ${escapeHtml(call.type_label || '')}</p>
-                <button type="button" class="waiter-feed-card__action" data-complete="1">
-                    ✓ Tamamlandı / Kapat
-                </button>
+                ${callActionsHtml(call)}
             </article>`;
     }
 
@@ -250,9 +277,61 @@ function initWaiterDashboard() {
         }
     }
 
+    function prependRealtimeCall(call) {
+        if (!feedEl || !call?.id) return;
+
+        const existing = feedEl.querySelector(`[data-feed-kind="call"][data-feed-id="${call.id}"]`);
+        existing?.remove();
+
+        const empty = feedEl.querySelector('.waiter-feed__empty');
+        empty?.remove();
+
+        const wrap = document.createElement('div');
+        wrap.innerHTML = renderCallCard(call).trim();
+        const card = wrap.firstElementChild;
+        if (!card) return;
+        feedEl.prepend(card);
+
+        const total = feedEl.querySelectorAll('[data-feed-kind]').length;
+        if (statusEl) {
+            statusEl.textContent = `${total} aktif kayıt · ${new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`;
+        }
+    }
+
     function initRealtimeOrders() {
         echoClient = createEchoClient(cfg.reverb || {});
         if (!echoClient) return;
+
+        // Hem garson çağrısı hem hesap (POS) çağrısı garsona anında düşer (kasayla eş zamanlı).
+        echoClient.channel('orders').listen('.TableCallReceived', (payload) => {
+            const call = payload?.call;
+            if (!call?.id) return;
+            knownCallIds.add(Number(call.id));
+            prependRealtimeCall(call);
+            playReadyRing();
+            const isBill = ['bill_cash', 'bill_card', 'bill'].includes(String(call.type));
+            showAdminToast({
+                title: isBill ? 'Hesap İstendi · Masaya Git' : 'Garson çağrısı',
+                message: call.headline || `Masa ${call.table ?? '—'} · ${call.type_label ?? ''}`,
+                type: 'warning',
+                durationMs: isBill ? 5000 : 4200,
+            });
+        });
+
+        // Kasa hesap çağrısını ayrıca yönlendirdiğinde POS hatırlatması.
+        echoClient.channel('orders').listen('.TableCallForwarded', (payload) => {
+            const call = payload?.call;
+            if (!call?.id) return;
+            knownCallIds.add(Number(call.id));
+            prependRealtimeCall(call);
+            playReadyRing();
+            showAdminToast({
+                title: 'POS · Masaya Git',
+                message: `Masa ${call.table ?? '—'} · ${call.type_label ?? 'Hesap'} · POS hazır`,
+                type: 'warning',
+                durationMs: 5000,
+            });
+        });
 
         echoClient.channel('orders').listen('.OrderPlaced', (payload) => {
             const order = payload?.order;
@@ -277,7 +356,44 @@ function initWaiterDashboard() {
                 const existingCard = feedEl?.querySelector(`[data-feed-kind="order"][data-feed-id="${orderId}"]`);
                 existingCard?.classList.remove('waiter-feed-card--ready-alert');
                 existingCard?.querySelector('.waiter-ready-alert')?.remove();
-                if (status === 'delivered') {
+
+                // Garson bu siparişi kendi kapattıysa tekrar bildirim gösterme.
+                const selfHandled = recentlyCompletedIds.has(orderId);
+                recentlyCompletedIds.delete(orderId);
+
+                if ((status === 'delivered' || status === 'cancelled') && !selfHandled) {
+                    const payment = String(payload?.payment_method || '');
+                    const paymentText = payment === 'cash'
+                        ? ' · Nakit ile kapatıldı'
+                        : payment === 'card'
+                            ? ' · Kart ile kapatıldı'
+                            : '';
+                    const closedTitle = status === 'cancelled' ? 'Sipariş iptal edildi' : 'Sipariş kapatıldı';
+
+                    // Garson kartı görüyorduysa sesli + görsel bildir.
+                    if (existingCard) {
+                        playBip();
+                    }
+                    showAdminToast({
+                        title: closedTitle,
+                        message: `Masa ${payload?.table ?? '—'} · #${payload?.order_number ?? orderId}${paymentText}`,
+                        type: status === 'cancelled' ? 'error' : 'success',
+                        durationMs: 4200,
+                    });
+
+                    if (existingCard) {
+                        existingCard.classList.add('waiter-feed-card--out');
+                        setTimeout(() => {
+                            existingCard.remove();
+                            if (!feedEl?.querySelector('[data-feed-kind]')) {
+                                feedEl.innerHTML = '<p class="waiter-feed__empty">Bekleyen çağrı veya sipariş yok ✨</p>';
+                                if (statusEl) statusEl.textContent = 'Şu an bekleyen iş yok';
+                            }
+                        }, 280);
+                    }
+                }
+
+                if (status === 'delivered' || status === 'cancelled') {
                     poll();
                 }
                 return;
@@ -349,6 +465,9 @@ function initWaiterDashboard() {
             const orders = (data.orders || []).filter((o) => String(o.status) === 'ready');
             const nextOrderIds = new Set(orders.map((o) => Number(o.id)).filter((id) => Number.isFinite(id)));
 
+            const calls = (data.calls || []).filter(waiterShouldShowCall);
+            const nextCallIds = new Set(calls.map((c) => Number(c.id)).filter((id) => Number.isFinite(id)));
+
             if (hasBootstrappedOrders) {
                 const newOrders = orders.filter((o) => !knownOrderIds.has(Number(o.id)));
                 if (newOrders.length) {
@@ -363,8 +482,24 @@ function initWaiterDashboard() {
                 }
             }
 
+            if (hasBootstrappedCalls) {
+                const newCalls = calls.filter((c) => !knownCallIds.has(Number(c.id)));
+                if (newCalls.length) {
+                    playReadyRing();
+                    const first = newCalls[0];
+                    showAdminToast({
+                        title: 'Masa çağrısı',
+                        message: first.headline || `Masa ${first.table ?? '—'} · ${first.type_label ?? ''}`,
+                        type: 'warning',
+                        durationMs: 4000,
+                    });
+                }
+            }
+
             knownOrderIds = nextOrderIds;
+            knownCallIds = nextCallIds;
             hasBootstrappedOrders = true;
+            hasBootstrappedCalls = true;
 
             renderFeed(orders, data.calls || []);
             setLive(true);
@@ -374,7 +509,7 @@ function initWaiterDashboard() {
         }
     }
 
-    async function completeItem(kind, id, btn) {
+    async function completeItem(kind, id, btn, paymentMethod = null) {
         if (completing) return;
         completing = true;
         const card = btn.closest('[data-feed-kind]');
@@ -385,6 +520,7 @@ function initWaiterDashboard() {
         btn.textContent = '…';
 
         const payload = { type: kind, id };
+        if (paymentMethod) payload.payment_method = paymentMethod;
 
         try {
             const res = await fetch(cfg.completeUrl, {
@@ -415,6 +551,9 @@ function initWaiterDashboard() {
 
             if (kind === 'order') {
                 readyAlertIds.delete(Number(id));
+                // Realtime 'delivered' yayını geri geldiğinde çift bildirim olmasın.
+                recentlyCompletedIds.add(Number(id));
+                setTimeout(() => recentlyCompletedIds.delete(Number(id)), 10000);
             }
             card?.classList.add('waiter-feed-card--out');
             setTimeout(() => {
@@ -453,7 +592,7 @@ function initWaiterDashboard() {
         if (!btn) return;
         const card = btn.closest('[data-feed-kind]');
         if (!card) return;
-        completeItem(card.dataset.feedKind, Number(card.dataset.feedId), btn);
+        completeItem(card.dataset.feedKind, Number(card.dataset.feedId), btn, btn.dataset.payment || null);
     });
 
     poll();

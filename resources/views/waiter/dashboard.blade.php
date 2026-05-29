@@ -6,7 +6,7 @@
 <header class="waiter-header">
     <div class="waiter-header__brand">
         <p class="waiter-header__venue">{{ $venueName }}</p>
-        <h1 class="waiter-header__title">Human Social Person — Garson Paneli</h1>
+        <h1 class="waiter-header__title">Human Social People — Garson Paneli</h1>
         @if(filled($venueTagline))
         <p class="waiter-header__tagline">{{ $venueTagline }}</p>
         @endif
@@ -47,6 +47,8 @@
         <p class="waiter-feed__empty">Bekleyen çağrı veya sipariş yok ✨</p>
     </div>
 </section>
+
+@include('admin.partials.manual-order-modal')
 @endsection
 
 @push('scripts')
@@ -54,7 +56,7 @@
 window.HSP_WAITER = {
     feedUrl: @json(route('live-orders.api')),
     completeUrl: @json(route('waiter.complete')),
-    pollMs: 4000,
+    pollMs: 3000,
     reverb: {
         key: @json(env('REVERB_APP_KEY')),
         host: @json(env('REVERB_HOST', '127.0.0.1')),
@@ -63,5 +65,5 @@ window.HSP_WAITER = {
     },
 };
 </script>
-@vite('resources/js/pages/admin-shell.js')
+@vite(['resources/js/pages/admin-shell.js', 'resources/js/pages/admin-manual-order.js'])
 @endpush

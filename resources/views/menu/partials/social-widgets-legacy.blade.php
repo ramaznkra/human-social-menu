@@ -1,6 +1,6 @@
 {{-- ESKİ DÜZEN (dikey Spotify + Instagram şeridi). Geri almak için index.blade.php içinde include'u buna çevirin. --}}
 @if($spotifyUrl !== '' || $instagramUrl !== '')
-<footer class="menu-social-footer px-5" aria-label="Sosyal bağlantılar">
+<footer class="menu-social-footer px-5" aria-label="{{ __('menu.social_links_aria') }}">
     @if($spotifyUrl !== '')
     <div class="mt-12 flex items-center gap-4 rounded-2xl border border-white/5 bg-[#262220]/40 p-4 backdrop-blur-md md:mt-16">
         <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#1DB954]/25 bg-[#1DB954]/15" aria-hidden="true">
@@ -9,16 +9,16 @@
             </svg>
         </div>
         <div class="min-w-0 flex-1">
-            <h2 class="font-bold text-gray-100">{{ $settings['spotify_title'] ?? 'HSP Vibes' }}</h2>
-            <p class="mt-0.5 text-xs text-[#D4C5B9]">Şu an kafede ne çalıyor? Ritme ortak ol.</p>
+            <h2 class="font-bold text-gray-100">{{ $settings['spotify_title'] ?? __('menu.spotify_title_fallback') }}</h2>
+            <p class="mt-0.5 text-xs text-[#D4C5B9]">{{ __('menu.spotify_desc') }}</p>
         </div>
-        <a href="{{ $spotifyUrl }}" target="_blank" rel="noopener noreferrer" class="shrink-0 rounded-full bg-[#E67E22] px-4 py-2 text-xs font-semibold text-white shadow-md transition-all hover:scale-105">Listeyi Aç</a>
+        <a href="{{ $spotifyUrl }}" target="_blank" rel="noopener noreferrer" class="shrink-0 rounded-full bg-[#E67E22] px-4 py-2 text-xs font-semibold text-white shadow-md transition-all hover:scale-105">{{ __('menu.spotify_open') }}</a>
     </div>
     @endif
     @if($instagramUrl !== '')
     <a href="{{ $instagramUrl }}" target="_blank" rel="noopener noreferrer" class="menu-instagram-strip my-8 block border-y border-white/5 py-4 transition-colors hover:border-[#E67E22]/20 hover:bg-white/[0.02]">
         <p class="text-center text-sm font-light tracking-wide text-[#D4C5B9]">
-            Anı yakala ve bizi etiketle: <span class="text-[#E67E22]/90">{{ $instagramHandle }}</span> ✨ #HumanSocialPerson
+            {{ __('menu.instagram_strip_text') }} <span class="text-[#E67E22]/90">{{ $instagramHandle }}</span> ✨ #HumanSocialPerson
         </p>
     </a>
     @endif

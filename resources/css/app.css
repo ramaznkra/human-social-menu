@@ -23,11 +23,11 @@
     }
 
     .menu-page {
-        @apply relative min-h-dvh w-full bg-[#121110] md:shadow-2xl;
+        @apply relative min-h-dvh w-full bg-[#121212] md:shadow-2xl;
     }
 
     .menu-ambient {
-        @apply bg-[#121110];
+        @apply bg-[#121212];
     }
 
     .menu-shell {
@@ -68,7 +68,7 @@
     }
 
     .cart-line__subtotal {
-        @apply shrink-0 text-sm font-semibold text-[#E67E22];
+        @apply shrink-0 text-sm font-semibold text-[#C6A046];
     }
 
     .cart-line__actions {
@@ -171,11 +171,11 @@
     }
 
     .menu-info-card--motto {
-        @apply border-[#C9A962]/20 bg-gradient-to-br from-[#262220]/80 to-[#1a1816]/90;
+        @apply border-[#C9A962]/20 bg-[#1A2622]/60;
     }
 
     .menu-info-card--wifi {
-        @apply flex-wrap border-[#E67E22]/20 sm:flex-nowrap;
+        @apply flex-wrap border-[#C6A046]/20 bg-[#1A2622]/60 sm:flex-nowrap;
     }
 
     .menu-info-card__icon {
@@ -183,15 +183,14 @@
     }
 
     .menu-info-card__icon--wifi {
-        @apply border-[#E67E22]/25 bg-[#E67E22]/10 text-[#E67E22];
+        @apply border-[#C6A046]/25 bg-[#C6A046]/10 text-[#C6A046];
     }
 
     .menu-info-card__label {
-        @apply text-[10px] font-semibold uppercase tracking-[0.14em] text-[#D4C5B9]/70;
+        @apply text-[10px] font-semibold uppercase tracking-[0.14em] text-white/75;
     }
 
     .menu-info-card__motto {
-        font-family: 'Cormorant Garamond', Georgia, serif;
         @apply mt-1 text-base font-medium italic leading-snug tracking-wide text-[#D4C5B9];
     }
 
@@ -200,7 +199,7 @@
     }
 
     .menu-info-copy-btn {
-        @apply shrink-0 self-center rounded-full border border-[#E67E22]/35 bg-[#E67E22]/15 px-3 py-1.5 text-[11px] font-semibold text-[#E67E22] transition hover:bg-[#E67E22]/25;
+        @apply shrink-0 self-center rounded-full border border-[#C6A046]/35 bg-[#C6A046]/15 px-3 py-1.5 text-[11px] font-semibold text-[#C6A046] transition hover:bg-[#C6A046]/25;
     }
 
     .menu-info-copy-btn--done {
@@ -209,24 +208,40 @@
 
     /* ── HSP menü başlık ── */
     .menu-lang-switcher {
-        @apply inline-flex gap-1 rounded-full border border-white/10 bg-[#121110]/80 p-0.5 backdrop-blur-md;
+        @apply inline-flex gap-1 rounded-full border border-[#C6A046]/25 bg-[#15120F]/70 p-0.5 opacity-80 backdrop-blur-md;
     }
 
     .menu-lang-btn {
-        @apply rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide text-[#D4C5B9] transition hover:text-gray-100;
+        @apply rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide text-[#E9DFC9] transition hover:text-[#C6A046];
     }
 
     .menu-lang-btn.is-active {
-        @apply bg-[#E67E22] text-white shadow-sm;
+        @apply bg-[#C6A046] text-[#1B1714] shadow-sm;
     }
 
     .menu-logo {
-        font-family: 'Cormorant Garamond', Georgia, serif;
         @apply text-5xl font-semibold tracking-[0.12em] text-[#C9A962];
     }
 
+    .menu-logo-wrap {
+        @apply relative mx-auto my-3 flex w-fit items-center justify-center rounded-full px-4 py-2;
+        box-shadow: 0 0 60px rgba(198, 160, 70, 0.15);
+    }
+
+    .menu-logo-wrap::before {
+        content: "";
+        @apply pointer-events-none absolute inset-0 rounded-full;
+        background: radial-gradient(circle, rgba(198, 160, 70, 0.26) 0%, rgba(198, 160, 70, 0.12) 48%, rgba(198, 160, 70, 0) 78%);
+        filter: blur(8px);
+    }
+
+    .menu-logo-img {
+        @apply relative z-[1] h-auto w-28 max-w-[120px] bg-transparent object-contain;
+        filter: drop-shadow(0 6px 20px rgba(198, 160, 70, 0.25)) contrast(1.08) saturate(1.06) brightness(1.04);
+    }
+
     .menu-tagline {
-        @apply mx-auto mt-2 max-w-xs text-[11px] font-light leading-relaxed tracking-wide text-[#D4C5B9]/90;
+        @apply mx-auto mt-2 max-w-xs text-[11px] font-light leading-relaxed tracking-wide text-[#E6DCC8]/85;
     }
 
     .menu-action-btn {
@@ -234,7 +249,7 @@
     }
 
     .menu-search-input {
-        @apply rounded-full border border-white/5 bg-[#262220]/40 py-2 pr-8 pl-9 text-sm text-gray-100 placeholder:text-[#D4C5B9]/35 outline-none backdrop-blur-md focus:border-[#E67E22]/40;
+        @apply rounded-full border border-[rgba(198,160,70,0.2)] bg-[#201A16]/70 py-2 pr-8 pl-9 text-sm text-gray-100 placeholder:text-[#D4C5B9]/35 outline-none backdrop-blur-md focus:border-[#C6A046]/45;
     }
 
     /* ── Social Spotted (hero kart) ── */
@@ -290,7 +305,7 @@
     }
 
     .category-pill {
-        @apply shrink-0 transform rounded-full border border-white/10 bg-[#262220]/40 px-4 py-2 text-sm font-medium text-[#D4C5B9] backdrop-blur-md transition-all duration-300 ease-in-out;
+        @apply shrink-0 transform rounded-full border border-[#C6A046]/20 bg-[#1E1A16]/70 px-4 py-2 text-sm font-medium text-[#E6DCC8] backdrop-blur-md transition-all duration-300 ease-in-out;
     }
 
     .category-pill:active {
@@ -298,7 +313,7 @@
     }
 
     .category-pill.is-active {
-        @apply border-[#E67E22] bg-[#E67E22]/10 text-[#E67E22] shadow-lg shadow-[#E67E22]/15;
+        @apply border-[#C6A046] bg-[#C6A046]/15 text-[#C6A046] shadow-lg shadow-[#C6A046]/20;
     }
 
     /* ── Ürün listesi + glow ── */
@@ -309,6 +324,23 @@
     .product-list-wrap::before {
         content: '';
         @apply pointer-events-none absolute top-0 left-1/2 h-48 w-[85%] -translate-x-1/2 rounded-full bg-[#E67E22]/12 blur-3xl;
+    }
+
+    .menu-coming-soon {
+        @apply flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-[#C6A046]/30 bg-[#1A1714]/60 px-6 py-10 text-center backdrop-blur-md;
+    }
+
+    .menu-coming-soon__icon {
+        @apply text-2xl;
+        filter: drop-shadow(0 0 14px rgba(198, 160, 70, 0.35));
+    }
+
+    .menu-coming-soon__title {
+        @apply text-sm font-semibold uppercase tracking-[0.16em] text-[#C6A046];
+    }
+
+    .menu-coming-soon__hint {
+        @apply text-xs font-light text-[#D4C5B9]/70;
     }
 
     .product-row-card {
@@ -328,7 +360,7 @@
     }
 
     .btn-siparis {
-        @apply shrink-0 rounded-full bg-[#E67E22] px-4 py-2 text-xs font-semibold text-white shadow-md shadow-[#E67E22]/30 transition hover:brightness-110 active:scale-95;
+        @apply shrink-0 rounded-full bg-[#C6A046] px-4 py-2 text-xs font-semibold text-[#1B1714] shadow-md shadow-[#C6A046]/30 transition hover:brightness-110 active:scale-95;
     }
 
     /* ── Birleşik canlı sipariş ekranı ── */
@@ -373,11 +405,11 @@
     }
 
     .menu-action-bar .menu-fixed-panel {
-        @apply rounded-t-3xl border-t border-white/10 bg-[#262220]/80 p-4 backdrop-blur-md;
+        @apply rounded-t-3xl border-t border-[rgba(198,160,70,0.2)] bg-[#1A1512]/85 p-4 backdrop-blur-md;
     }
 
     .menu-cart-dock .menu-fixed-panel {
-        @apply border-t border-white/10 bg-[#262220]/95 px-4 py-3 backdrop-blur-lg;
+        @apply border-t border-[rgba(198,160,70,0.2)] bg-[#15120F]/95 px-4 py-3 backdrop-blur-lg;
     }
 
     /* Sticky garson/sepet çubuğu — içerik üstünde kalsın (pb-40 tabanı + safe area) */
@@ -553,11 +585,11 @@
     }
 
     .sidebar-link:hover {
-        @apply bg-white/5 text-gray-100;
+        @apply bg-[#9E4E2C]/15 text-[#F3E8D0];
     }
 
     .sidebar-link.active {
-        @apply bg-[#E67E22]/20 font-semibold text-[#E67E22];
+        @apply bg-[#C6A046]/20 font-semibold text-[#C6A046];
     }
 
     .sidebar-link--panel {
@@ -565,7 +597,12 @@
     }
 
     .sidebar-link--panel.active {
-        @apply bg-white/10 text-[#E67E22];
+        @apply bg-[#C6A046]/15 text-[#C6A046];
+    }
+
+    .admin-sidebar__logo {
+        @apply h-auto w-28 max-w-full bg-transparent object-contain;
+        filter: drop-shadow(0 6px 18px rgba(198, 160, 70, 0.2)) contrast(1.08) saturate(1.06);
     }
 
     .sidebar-link--external {
@@ -628,6 +665,10 @@
 
     .waiter-header {
         @apply mb-3 flex items-start justify-between gap-3;
+    }
+
+    .waiter-header__logo {
+        @apply mb-2 h-auto w-24 rounded-xl border border-[#C6A046]/35 bg-[#F4EFE8] p-1 shadow-sm shadow-black/20;
     }
 
     .waiter-header__venue {
@@ -795,6 +836,22 @@
         @apply mt-4 text-center text-[10px] font-semibold uppercase tracking-wide text-[#D4C5B9]/70;
     }
 
+    .waiter-feed-card__pay-actions {
+        @apply mt-2 grid grid-cols-2 gap-2;
+    }
+
+    .waiter-feed-card__pay-actions .waiter-feed-card__action {
+        @apply mt-0;
+    }
+
+    .waiter-feed-card__action--cash {
+        @apply border-emerald-400/40 from-emerald-500/25 to-emerald-500/10 text-emerald-50;
+    }
+
+    .waiter-feed-card__action--card {
+        @apply border-sky-400/40 from-sky-500/25 to-sky-500/10 text-sky-50;
+    }
+
     .waiter-feed-card__actions {
         @apply mt-2 grid grid-cols-2 gap-2;
     }
@@ -813,10 +870,6 @@
 
     .waiter-feed-card__wait {
         @apply mt-4 rounded-xl border border-dashed border-white/10 py-3 text-center text-xs text-[#D4C5B9]/55;
-    }
-
-    .waiter-body .manual-order-fab {
-        display: none;
     }
 
     @keyframes waiterReadyPulse {
@@ -846,6 +899,11 @@
         gap: 0.75rem;
     }
 
+    .admin-catalog-tray--categories {
+        grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+        gap: 1rem;
+    }
+
     .admin-tray-card {
         @apply flex min-w-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm;
     }
@@ -860,10 +918,22 @@
 
     .admin-tray-card__media--category {
         @apply bg-gradient-to-br from-gray-50 to-gray-100;
+        aspect-ratio: 16 / 10;
+    }
+
+    .admin-tray-card__media--category::after {
+        content: '';
+        @apply pointer-events-none absolute inset-0;
+        background: linear-gradient(to top, rgba(18, 18, 18, 0.42) 0%, rgba(18, 18, 18, 0.12) 40%, rgba(18, 18, 18, 0) 75%);
     }
 
     .admin-tray-card__img {
         @apply block h-full w-full object-cover;
+    }
+
+    .admin-tray-card__img--category {
+        object-position: center;
+        transform: scale(1.01);
     }
 
     .admin-tray-card__placeholder {
@@ -883,15 +953,15 @@
     }
 
     .admin-tray-card__body {
-        @apply flex min-h-0 flex-1 flex-col gap-1 p-2.5;
+        @apply flex min-h-0 flex-1 flex-col gap-1.5 p-3;
     }
 
     .admin-tray-card__title {
-        @apply line-clamp-2 min-h-[2.5em] text-xs font-semibold leading-snug text-gray-800;
+        @apply line-clamp-2 min-h-[2.8em] text-sm font-semibold leading-snug text-gray-800;
     }
 
     .admin-tray-card__meta {
-        @apply truncate text-[11px] text-gray-500;
+        @apply truncate text-xs text-gray-500;
     }
 
     .admin-tray-card__price {
@@ -910,11 +980,108 @@
         @apply px-2 py-1.5 text-xs;
     }
 
+    .admin-tray-card--category {
+        @apply rounded-2xl border-gray-200/90 shadow-[0_8px_24px_rgba(15,23,42,0.08)] transition-all duration-200;
+    }
+
+    .admin-tray-card--category:hover {
+        @apply -translate-y-0.5 shadow-[0_14px_30px_rgba(15,23,42,0.12)];
+    }
+
+    .product-badge-chip {
+        @apply rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-600 transition hover:border-[#E67E22]/40 hover:text-[#E67E22];
+    }
+
+    .product-badge-chip.is-active {
+        @apply border-[#E67E22] bg-[#E67E22] text-white shadow-sm;
+    }
+
+    /* ── Ekran slaytları (display) geçiş efekti ── */
+    .display-slide {
+        @apply absolute inset-0 overflow-hidden;
+        opacity: 0;
+        z-index: 0;
+        transition: opacity 1.4s ease-in-out;
+        pointer-events: none;
+    }
+
+    .display-slide.is-active {
+        opacity: 1;
+        z-index: 1;
+    }
+
+    .display-slide__media {
+        @apply absolute inset-0 bg-cover bg-center;
+        transform: scale(1.06);
+        will-change: transform;
+    }
+
+    .display-slide.is-active .display-slide__media {
+        animation: displayKenBurns 14s ease-out forwards;
+    }
+
+    .display-slide__overlay {
+        @apply absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 via-black/10 to-transparent p-16;
+    }
+
+    .display-slide.is-active .display-slide__title,
+    .display-slide.is-active .display-slide__subtitle {
+        animation: displayCaptionUp 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .display-slide.is-active .display-slide__subtitle {
+        animation-delay: 0.18s;
+    }
+
+    @keyframes displayKenBurns {
+        from {
+            transform: scale(1.06);
+        }
+        to {
+            transform: scale(1.16) translate3d(-1.5%, -1.5%, 0);
+        }
+    }
+
+    @keyframes displayCaptionUp {
+        from {
+            opacity: 0;
+            transform: translateY(28px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
     .form-label {
         @apply mb-1.5 block text-sm font-medium text-gray-700;
     }
     .form-input {
         @apply w-full max-w-lg rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-800 outline-none transition focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20;
+    }
+
+    .orders-filter-select {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        padding-right: 2.25rem;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M6 8l4 4 4-4' stroke='%236B7280' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.65rem center;
+        background-size: 1rem 1rem;
+    }
+
+    .orders-filter-select::-ms-expand {
+        display: none;
+    }
+
+    .orders-filter-select:hover,
+    .orders-filter-select:active,
+    .orders-filter-select:focus,
+    .orders-filter-select:focus-visible {
+        outline: none;
+        box-shadow: none !important;
+        border-color: rgb(229 231 235);
     }
 
     .admin-table th {
@@ -933,7 +1100,7 @@
     }
 
     .orders-archive__filter-grid {
-        @apply grid gap-4 md:grid-cols-2 lg:grid-cols-4;
+        @apply grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5;
     }
 
     .orders-archive__filter-actions {
@@ -1118,6 +1285,10 @@
         @apply fixed right-5 top-5 z-[90] rounded-full bg-[#E67E22] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-[#E67E22]/40 transition hover:brightness-110 active:scale-95;
     }
 
+    .waiter-body .manual-order-fab {
+        @apply bottom-6 right-5 top-auto;
+    }
+
     body.manual-order-open {
         @apply overflow-hidden;
     }
@@ -1290,6 +1461,10 @@
 
     .admin-toast--info {
         @apply border-[#E67E22]/25 bg-gradient-to-br from-white to-orange-50/60;
+    }
+
+    .admin-toast--warning {
+        @apply border-amber-300/80 bg-gradient-to-br from-white to-amber-50/80;
     }
 
     .admin-toast--error {

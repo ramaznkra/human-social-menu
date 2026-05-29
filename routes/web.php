@@ -41,6 +41,7 @@ Route::get('/mutfak', [LiveOrdersController::class, 'screen'])->name('kitchen.in
 Route::get('/api/admin/live-orders', [LiveOrdersController::class, 'liveOrders'])->name('live-orders.api');
 Route::patch('/api/admin/live-orders/{order}/status', [LiveOrdersController::class, 'updateStatus'])->name('live-orders.status');
 Route::patch('/api/admin/call/{call}/resolve', [LiveOrdersController::class, 'resolveCall'])->name('admin.call.resolve');
+Route::patch('/api/admin/call/{call}/forward', [LiveOrdersController::class, 'forwardCall'])->name('admin.call.forward');
 
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/giris', [AuthController::class, 'showLogin'])->name('login');
@@ -67,10 +68,14 @@ Route::middleware(AdminMiddleware::class)->group(function () {
         Route::patch('/api/cagri/{call}/onayla', [OperationsController::class, 'acknowledgeCall'])->name('operations.acknowledge');
 
         Route::resource('categories', CategoryController::class)->except(['show']);
+        Route::patch('api/admin/categories/{category}/toggle-active', [CategoryController::class, 'toggleActive'])
+            ->name('categories.toggle-active');
         Route::resource('products', ProductController::class)->except(['show']);
         Route::patch('api/admin/products/{product}/toggle-availability', [ProductController::class, 'toggleAvailability'])
             ->name('products.toggle-availability');
         Route::resource('tables', TableController::class)->except(['show']);
+        Route::patch('api/admin/tables/{table}/toggle-active', [TableController::class, 'toggleActive'])
+            ->name('tables.toggle-active');
         Route::post('tables/{table}/regenerate', [TableController::class, 'regenerate'])->name('tables.regenerate');
         Route::get('tables/{table}/qr.png', [TableController::class, 'qrPng'])->name('tables.qr.png');
         Route::get('tables/{table}/qr.svg', [TableController::class, 'qrSvg'])->name('tables.qr.svg');
