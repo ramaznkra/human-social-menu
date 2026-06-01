@@ -55,6 +55,7 @@ class ManualOrderController extends Controller
 
         $products = Product::query()
             ->available()
+            ->inStock()
             ->with('category:id,name')
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($sub) use ($q) {

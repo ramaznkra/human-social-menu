@@ -63,6 +63,8 @@ Route::middleware([AdminMiddleware::class, SetStaffRestaurantContext::class])->g
 
     Route::post('/api/waiter/complete', [WaiterDashboardController::class, 'complete'])->name('waiter.complete');
     Route::patch('/api/waiter/call/{call}/claim', [WaiterDashboardController::class, 'claimCall'])->name('waiter.call.claim');
+    Route::post('/api/waiter/order/{order}/approve', [WaiterDashboardController::class, 'approveOrder'])->name('waiter.order.approve');
+    Route::post('/api/waiter/tables/transfer', [WaiterDashboardController::class, 'transferTable'])->name('waiter.tables.transfer');
 
     Route::get('/admin/api/admin/manual-order/bootstrap', [ManualOrderController::class, 'bootstrap'])->name('admin.manual-order.bootstrap');
     Route::get('/admin/api/admin/manual-order/products', [ManualOrderController::class, 'searchProducts'])->name('admin.manual-order.products');
@@ -81,9 +83,13 @@ Route::middleware([AdminMiddleware::class, SetStaffRestaurantContext::class])->g
         Route::resource('categories', CategoryController::class)->except(['show']);
         Route::patch('api/admin/categories/{category}/toggle-active', [CategoryController::class, 'toggleActive'])
             ->name('categories.toggle-active');
+        Route::patch('api/admin/categories/sort-order', [CategoryController::class, 'updateSortOrder'])
+            ->name('categories.sort-order');
         Route::resource('products', ProductController::class)->except(['show']);
         Route::patch('api/admin/products/{product}/toggle-availability', [ProductController::class, 'toggleAvailability'])
             ->name('products.toggle-availability');
+        Route::patch('api/admin/products/{product}/toggle-in-stock', [ProductController::class, 'toggleInStock'])
+            ->name('products.toggle-in-stock');
         Route::resource('tables', TableController::class)->except(['show']);
         Route::patch('api/admin/tables/{table}/toggle-active', [TableController::class, 'toggleActive'])
             ->name('tables.toggle-active');

@@ -23,7 +23,7 @@ class DashboardController extends Controller
             'products' => Product::count(),
             'tables' => Table::count(),
             'orders_today' => Order::whereDate('created_at', today())->count(),
-            'pending_orders' => Order::where('status', Order::STATUS_PENDING)->count(),
+            'pending_orders' => Order::whereIn('status', [Order::STATUS_PENDING_APPROVAL, Order::STATUS_PENDING])->count(),
         ];
 
         $recentOrders = Order::query()

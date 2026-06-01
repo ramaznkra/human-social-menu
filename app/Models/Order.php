@@ -13,6 +13,8 @@ class Order extends Model
     /** @use BelongsToRestaurant — App\Models\Scopes\RestaurantScope tenant izolasyonu */
     use BelongsToRestaurant;
 
+    public const STATUS_PENDING_APPROVAL = 'pending_approval';
+
     public const STATUS_PENDING = 'pending';
 
     public const STATUS_PREPARING = 'preparing';
@@ -35,6 +37,7 @@ class Order extends Model
     public static function liveStatuses(): array
     {
         return [
+            self::STATUS_PENDING_APPROVAL,
             self::STATUS_PENDING,
             self::STATUS_PREPARING,
             self::STATUS_READY,
@@ -92,6 +95,7 @@ class Order extends Model
     {
         return $query->where(function (Builder $q) {
             $q->whereIn('status', [
+                self::STATUS_PENDING_APPROVAL,
                 self::STATUS_PENDING,
                 self::STATUS_PREPARING,
                 self::STATUS_READY,
@@ -115,6 +119,7 @@ class Order extends Model
     public function getStatusLabelAttribute(): string
     {
         return match ($this->status) {
+            self::STATUS_PENDING_APPROVAL => 'Onay Bekliyor',
             self::STATUS_PENDING => 'Beklemede',
             self::STATUS_PREPARING => 'Hazırlanıyor',
             self::STATUS_READY => 'Masada',
@@ -137,6 +142,7 @@ class Order extends Model
     public function getCustomerStatusLabelAttribute(): string
     {
         return match ($this->status) {
+            self::STATUS_PENDING_APPROVAL => __('menu.order_label.pending_approval'),
             self::STATUS_PENDING => __('menu.order_label.pending'),
             self::STATUS_PREPARING => __('menu.order_label.preparing'),
             self::STATUS_READY => __('menu.order_label.ready'),
@@ -173,6 +179,7 @@ class Order extends Model
     public function getCustomerStatusMessageAttribute(): string
     {
         return match ($this->status) {
+            self::STATUS_PENDING_APPROVAL => __('menu.order_msg.pending_approval'),
             self::STATUS_PENDING => __('menu.order_msg.pending'),
             self::STATUS_PREPARING => __('menu.order_msg.preparing'),
             self::STATUS_READY => __('menu.order_msg.ready'),
@@ -191,6 +198,7 @@ class Order extends Model
         }
 
         return match ($this->status) {
+            self::STATUS_PENDING_APPROVAL => in_array($nextStatus, [self::STATUS_PREPARING, self::STATUS_CANCELLED], true),
             self::STATUS_PENDING => in_array($nextStatus, [self::STATUS_PREPARING, self::STATUS_CANCELLED], true),
             self::STATUS_PREPARING => in_array($nextStatus, [self::STATUS_READY, self::STATUS_DELIVERED, self::STATUS_CANCELLED], true),
             self::STATUS_READY => in_array($nextStatus, [self::STATUS_DELIVERED, self::STATUS_CANCELLED], true),
@@ -203,6 +211,7 @@ class Order extends Model
     public function getStatusColorAttribute(): string
     {
         return match ($this->status) {
+            self::STATUS_PENDING_APPROVAL => 'warning',
             self::STATUS_PENDING => 'warning',
             self::STATUS_PREPARING => 'info',
             self::STATUS_READY => 'success',

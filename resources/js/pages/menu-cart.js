@@ -44,9 +44,101 @@ function initMenuCart() {
     /* ── Garson / hesap ── */
     const callStatusUrl = document.getElementById('menuActionBar')?.dataset.callStatusUrl;
 
+    const CALL_COOLDOWN_MS = 2 * 60 * 1000;
+    let callCooldownTimer = null;
+
+    const callCooldownKey = () => `hsp_call_cd_${cfg.tableToken || 'guest'}`;
+
+    function formatCooldown(ms) {
+        const totalSec = Math.max(0, Math.ceil(ms / 1000));
+        const min = Math.floor(totalSec / 60);
+        const sec = totalSec % 60;
+        return `${min}:${String(sec).padStart(2, '0')}`;
+    }
+
+    function readCallCooldown() {
+        try {
+            const raw = localStorage.getItem(callCooldownKey());
+            if (!raw) return null;
+            const data = JSON.parse(raw);
+            if (!data?.until || Date.now() >= data.until) {
+                localStorage.removeItem(callCooldownKey());
+                return null;
+            }
+            return data;
+        } catch {
+            return null;
+        }
+    }
+
+    function startCallCooldown(message) {
+        const until = Date.now() + CALL_COOLDOWN_MS;
+        try {
+            localStorage.setItem(callCooldownKey(), JSON.stringify({ until, message }));
+        } catch {
+            /* gizli mod */
+        }
+        applyCallCooldownUI(message);
+    }
+
+    function applyCallCooldownUI(message) {
+        const data = readCallCooldown();
+        const hint = document.getElementById('callCooldownHint');
+        const buttons = document.getElementById('callActionButtons');
+        const msg = document.getElementById('callSuccessMsg');
+        const waiter = document.getElementById('callWaiter');
+        const bill = document.getElementById('callBillOpen');
+
+        if (!data) {
+            if (callCooldownTimer) {
+                clearInterval(callCooldownTimer);
+                callCooldownTimer = null;
+            }
+            hint?.classList.add('hidden');
+            return false;
+        }
+
+        buttons?.classList.add('hidden');
+        if (msg) {
+            msg.textContent = message || data.message || t.callCooldown || t.callWaiterSent || '';
+            msg.classList.remove('hidden');
+        }
+
+        const remaining = data.until - Date.now();
+        const timerTpl = t.callCooldownTimer || ':time';
+        if (hint) {
+            hint.textContent = timerTpl.replace(':time', formatCooldown(remaining));
+            hint.classList.remove('hidden');
+        }
+
+        if (waiter) waiter.disabled = true;
+        if (bill) bill.disabled = true;
+
+        if (!callCooldownTimer) {
+            callCooldownTimer = setInterval(() => {
+                const active = readCallCooldown();
+                if (!active) {
+                    clearInterval(callCooldownTimer);
+                    callCooldownTimer = null;
+                    hint?.classList.add('hidden');
+                    syncCallBarOnLoad();
+                    return;
+                }
+                const left = active.until - Date.now();
+                if (hint) {
+                    hint.textContent = timerTpl.replace(':time', formatCooldown(left));
+                }
+            }, 1000);
+        }
+
+        return true;
+    }
+
     function resetCallButtons() {
+        if (readCallCooldown()) return;
         document.getElementById('callActionButtons')?.classList.remove('hidden');
         document.getElementById('callSuccessMsg')?.classList.add('hidden');
+        document.getElementById('callCooldownHint')?.classList.add('hidden');
         const waiter = document.getElementById('callWaiter');
         const bill = document.getElementById('callBillOpen');
         if (waiter) waiter.disabled = false;
@@ -54,13 +146,7 @@ function initMenuCart() {
     }
 
     function showCallSent(message) {
-        document.getElementById('callActionButtons')?.classList.add('hidden');
-        const msg = document.getElementById('callSuccessMsg');
-        if (msg) {
-            msg.textContent = message || t.callWaiterSent || '';
-            msg.classList.remove('hidden');
-            msg.classList.add('animate-fade-in-up');
-        }
+        startCallCooldown(message);
         startCallStatusPoll();
     }
 
@@ -79,12 +165,14 @@ function initMenuCart() {
             const data = await res.json();
             if (!data.active) {
                 stopCallStatusPoll();
-                resetCallButtons();
-                const msg = document.getElementById('callSuccessMsg');
-                if (msg) {
-                    msg.textContent = t.callWaiterActive || '';
-                    msg.classList.remove('hidden');
-                    setTimeout(() => msg.classList.add('hidden'), 5000);
+                if (!readCallCooldown()) {
+                    resetCallButtons();
+                    const msg = document.getElementById('callSuccessMsg');
+                    if (msg) {
+                        msg.textContent = t.callWaiterActive || '';
+                        msg.classList.remove('hidden');
+                        setTimeout(() => msg.classList.add('hidden'), 5000);
+                    }
                 }
             }
         } catch {
@@ -99,7 +187,7 @@ function initMenuCart() {
     }
 
     async function sendTableCall(type) {
-        if (!cfg.tableToken) return false;
+        if (!cfg.tableToken || readCallCooldown()) return false;
         const payload = { type };
         if (cfg.tableToken) payload.table_token = cfg.tableToken;
         if (cfg.locale) payload.lang = cfg.locale;
@@ -126,6 +214,7 @@ function initMenuCart() {
     }
 
     async function syncCallBarOnLoad() {
+        if (applyCallCooldownUI()) return;
         if (!callStatusUrl || !cfg.tableToken) return;
         try {
             const res = await fetch(`${callStatusUrl}?${callQueryParams()}`, { headers: { Accept: 'application/json' } });
@@ -648,7 +737,7 @@ function initMenuCart() {
     document.getElementById('productModalClose')?.addEventListener('click', closeProductModal);
 
     productModalAdd?.addEventListener('click', () => {
-        if (!activeProduct) return;
+        if (!activeProduct || activeProduct.card?.dataset.inStock === '0') return;
         if (!validateSelections(activeProduct.groups, modalSelections)) {
             if (productModalError) {
                 productModalError.textContent = t.optionRequired || '';
@@ -672,6 +761,7 @@ function initMenuCart() {
             e.stopPropagation();
             const card = btn.closest('.product-item');
             if (!card) return;
+            if (card.dataset.inStock === '0') return;
 
             const hasOptions = card.dataset.hasOptions === '1';
             if (hasOptions) {

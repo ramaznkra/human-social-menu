@@ -130,12 +130,14 @@
             @php
                 $optionGroups = $product->cartOptionsPayload($locale);
                 $hasOptions = count($optionGroups) > 0;
+                $inStock = $product->in_stock ?? true;
             @endphp
             <article
-                class="product-item product-row-card"
+                class="product-item product-row-card {{ !$inStock ? 'product-row-card--sold-out' : '' }}"
                 data-id="{{ $product->id }}"
                 data-name="{{ $product->localizedName() }}"
                 data-price="{{ $product->price }}"
+                data-in-stock="{{ $inStock ? '1' : '0' }}"
                 data-has-options="{{ $hasOptions ? '1' : '0' }}"
                 data-options='@json($optionGroups)'
                 data-category-id="{{ $cat->id }}"
@@ -146,6 +148,9 @@
                     <img src="{{ $product->image_url }}" alt="" class="product-row-thumb" loading="lazy">
                     @else
                     <div class="product-row-thumb product-row-thumb--placeholder flex items-center justify-center text-lg text-[#D4C5B9]/30">☕</div>
+                    @endif
+                    @if(!$inStock)
+                    <span class="product-sold-out-badge">{{ __('menu.sold_out') }}</span>
                     @endif
                 </div>
                 <div class="min-w-0 flex-1">
@@ -165,7 +170,11 @@
                     <div class="mt-3 flex items-end justify-between gap-2">
                         <span class="text-lg font-bold text-gray-100">{{ number_format($product->price, 0) }} <span class="text-sm font-medium text-[#D4C5B9]">{{ $settings['currency'] ?? '₺' }}</span></span>
                         @if(($settings['order_enabled'] ?? '1') === '1')
-                        <button type="button" class="add-btn btn-siparis" data-order-label="{{ __('menu.order_btn') }}" aria-label="{{ __('menu.order_btn') }}">{{ __('menu.order_btn') }}</button>
+                            @if($inStock)
+                            <button type="button" class="add-btn btn-siparis" data-order-label="{{ __('menu.order_btn') }}" aria-label="{{ __('menu.order_btn') }}">{{ __('menu.order_btn') }}</button>
+                            @else
+                            <span class="btn-siparis btn-siparis--disabled" aria-disabled="true">{{ __('menu.sold_out') }}</span>
+                            @endif
                         @endif
                     </div>
                 </div>
@@ -203,6 +212,7 @@
                 💳 {{ __('menu.request_bill') }}
             </button>
         </div>
+        <p id="callCooldownHint" class="call-cooldown-hint hidden text-center text-xs text-[#D4C5B9]"></p>
         <p id="callSuccessMsg" class="call-success-msg hidden text-center text-sm font-light text-[#D4C5B9]"></p>
     </div>
 </div>
@@ -306,6 +316,9 @@ window.HSP_MENU = {
         callFail: @json(__('menu.call.fail')),
         connection: @json(__('menu.call.connection')),
         orderFail: @json(__('menu.call.fail')),
+        callCooldown: @json(__('menu.call_cooldown')),
+        callCooldownTimer: @json(__('menu.call_cooldown_timer')),
+        soldOut: @json(__('menu.sold_out')),
     },
 };
 </script>

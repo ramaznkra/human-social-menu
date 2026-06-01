@@ -5,8 +5,11 @@
 
 @section('content')
 <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-    <p class="text-sm text-gray-500">Kategorileri tepsi veya liste görünümünde yönetin.</p>
-    <a href="{{ route('admin.categories.create') }}" class="btn btn-primary shrink-0">+ Yeni Kategori</a>
+    <p class="text-sm text-gray-500">Kategorileri tepsi veya liste görünümünde yönetin. Sıra numaralarını güncelleyip kaydedin (ileride sürükle-bırak).</p>
+    <div class="flex shrink-0 flex-wrap gap-2">
+        <button type="button" id="saveCategorySort" class="btn btn-secondary hidden" data-save-category-sort>Sıralamayı Kaydet</button>
+        <a href="{{ route('admin.categories.create') }}" class="btn btn-primary">+ Yeni Kategori</a>
+    </div>
 </div>
 
 <div class="admin-catalog" data-catalog-root="categories">
@@ -30,8 +33,17 @@
                 </thead>
                 <tbody>
                 @forelse($categories as $cat)
-                <tr class="{{ $cat->is_active ? '' : 'opacity-50' }}" data-category-item>
-                    <td>{{ $cat->sort_order }}</td>
+                <tr class="{{ $cat->is_active ? '' : 'opacity-50' }}" data-category-item data-category-id="{{ $cat->id }}">
+                    <td>
+                        <input
+                            type="number"
+                            min="0"
+                            class="form-input w-20 py-1.5 text-sm"
+                            data-category-sort-input
+                            value="{{ $cat->sort_order }}"
+                            aria-label="Sıra {{ $cat->getTranslation('name', 'tr') }}"
+                        >
+                    </td>
                     <td>
                         @if($cat->image_url)
                             <img src="{{ $cat->image_url }}" alt="{{ $cat->name }}" class="h-10 w-14 rounded-md border border-gray-200 object-cover">
@@ -70,7 +82,7 @@
         @else
         <div class="admin-catalog-tray admin-catalog-tray--categories">
             @foreach($categories as $cat)
-            <article class="admin-tray-card admin-tray-card--category {{ $cat->is_active ? '' : 'admin-tray-card--hidden' }}" data-category-item>
+            <article class="admin-tray-card admin-tray-card--category {{ $cat->is_active ? '' : 'admin-tray-card--hidden' }}" data-category-item data-category-id="{{ $cat->id }}">
                 <div class="admin-tray-card__media admin-tray-card__media--category">
                     @if($cat->image_url)
                         <img src="{{ $cat->image_url }}" alt="{{ $cat->name }}" class="admin-tray-card__img admin-tray-card__img--category">
@@ -86,7 +98,11 @@
                         <h3 class="admin-tray-card__title" title="{{ $cat->getTranslation('name', 'tr') }}">{{ $cat->getTranslation('name', 'tr') }}</h3>
                         @include('admin.partials.category-active-toggle', ['category' => $cat])
                     </div>
-                    <p class="admin-tray-card__meta">Sıra {{ $cat->sort_order }} · {{ $cat->products_count }} ürün</p>
+                    <p class="admin-tray-card__meta flex items-center gap-2">
+                        <span>Sıra</span>
+                        <input type="number" min="0" class="form-input w-16 py-1 text-xs" data-category-sort-input value="{{ $cat->sort_order }}" aria-label="Sıra">
+                        <span>· {{ $cat->products_count }} ürün</span>
+                    </p>
                     <p class="admin-tray-card__meta text-[11px]">{{ $cat->slug }}</p>
                     @if($cat->getTranslation('name', 'en', false) || $cat->getTranslation('name', 'ru', false))
                     <p class="admin-tray-card__meta text-[10px] text-gray-400">{{ $cat->getTranslation('name', 'en', false) ?: '—' }} / {{ $cat->getTranslation('name', 'ru', false) ?: '—' }}</p>
@@ -105,5 +121,6 @@
 @endsection
 
 @push('scripts')
+<script>window.HSP_ADMIN_CATEGORIES = { sortUrl: @json(route('admin.categories.sort-order')) };</script>
 @vite(['resources/js/pages/admin-catalog-view.js', 'resources/js/pages/admin-categories.js'])
 @endpush

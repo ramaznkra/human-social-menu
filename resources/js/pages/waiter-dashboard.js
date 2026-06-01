@@ -59,7 +59,7 @@ function initWaiterDashboard() {
         });
 
         (orders || [])
-            .filter((o) => String(o.status) === 'ready')
+            .filter((o) => ['pending_approval', 'ready'].includes(String(o.status)))
             .forEach((o) => {
             items.push({
                 kind: 'order',
@@ -179,6 +179,13 @@ function initWaiterDashboard() {
     }
 
     function orderActionsHtml(order) {
+        if (order.status === 'pending_approval') {
+            return `
+                <button type="button" class="waiter-feed-card__action waiter-feed-card__action--approve" data-approve-order="1">
+                    ✓ Siparişi Onayla
+                </button>`;
+        }
+
         if (order.status === 'ready') {
             return `
                 <button type="button" class="waiter-feed-card__action" data-complete="1">
@@ -205,7 +212,7 @@ function initWaiterDashboard() {
             : '';
 
         return `
-            <article class="waiter-feed-card waiter-feed-card--order${isReadyAlert ? ' waiter-feed-card--ready-alert' : ''}" data-feed-kind="order" data-feed-id="${order.id}">
+            <article class="waiter-feed-card waiter-feed-card--order${order.status === 'pending_approval' ? ' waiter-feed-card--pending-approval' : ''}${isReadyAlert ? ' waiter-feed-card--ready-alert' : ''}" data-feed-kind="order" data-feed-id="${order.id}">
                 <div class="waiter-feed-card__top">
                     <span class="waiter-feed-card__badge">Sipariş #${escapeHtml(order.order_number)}</span>
                     <span class="waiter-feed-card__time">${escapeHtml(order.created_at || '')}</span>
@@ -517,6 +524,20 @@ function initWaiterDashboard() {
             if (status !== 'ready') {
                 readyAlertIds.delete(orderId);
                 const existingCard = feedEl?.querySelector(`[data-feed-kind="order"][data-feed-id="${orderId}"]`);
+
+                if (status === 'preparing') {
+                    existingCard?.classList.add('waiter-feed-card--out');
+                    setTimeout(() => {
+                        existingCard?.remove();
+                        if (!feedEl?.querySelector('[data-feed-kind]')) {
+                            feedEl.innerHTML = '<p class="waiter-feed__empty">Bekleyen çağrı veya sipariş yok ✨</p>';
+                            if (statusEl) statusEl.textContent = 'Şu an bekleyen iş yok';
+                        }
+                    }, 280);
+                    poll();
+                    return;
+                }
+
                 existingCard?.classList.remove('waiter-feed-card--ready-alert');
                 existingCard?.querySelector('.waiter-ready-alert')?.remove();
 
@@ -625,7 +646,9 @@ function initWaiterDashboard() {
             const res = await fetch(cfg.feedUrl, { headers: { Accept: 'application/json' } });
             if (!res.ok) throw new Error('feed');
             const data = await res.json();
-            const orders = (data.orders || []).filter((o) => String(o.status) === 'ready');
+            const orders = (data.orders || []).filter((o) =>
+                ['pending_approval', 'ready'].includes(String(o.status)),
+            );
             const nextOrderIds = new Set(orders.map((o) => Number(o.id)).filter((id) => Number.isFinite(id)));
 
             const calls = (data.calls || []).filter(waiterShouldShowCall);
@@ -665,6 +688,7 @@ function initWaiterDashboard() {
             hasBootstrappedCalls = true;
 
             renderFeed(orders, data.calls || []);
+            initTableTransfer(data.tables || []);
             setLive(true);
         } catch {
             setLive(false);
@@ -800,7 +824,123 @@ function initWaiterDashboard() {
         }
     }
 
+    async function approveOrder(orderId, btn) {
+        if (!cfg.approveOrderUrl) return;
+        btn.disabled = true;
+        const original = btn.textContent;
+        btn.textContent = '…';
+
+        try {
+            const res = await fetch(`${cfg.approveOrderUrl}/${orderId}/approve`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrf(),
+                    Accept: 'application/json',
+                },
+            });
+            const data = await res.json().catch(() => ({}));
+
+            if (res.ok && data.success) {
+                const card = btn.closest('[data-feed-kind]');
+                card?.classList.add('waiter-feed-card--out');
+                setTimeout(() => {
+                    card?.remove();
+                    if (!feedEl?.querySelector('[data-feed-kind]')) {
+                        feedEl.innerHTML = '<p class="waiter-feed__empty">Bekleyen çağrı veya sipariş yok ✨</p>';
+                        if (statusEl) statusEl.textContent = 'Şu an bekleyen iş yok';
+                    }
+                }, 280);
+                showAdminToast({
+                    title: 'Sipariş onaylandı',
+                    message: data.message || 'Mutfakta hazırlanıyor.',
+                    type: 'success',
+                    durationMs: 2800,
+                });
+                await poll();
+                return;
+            }
+
+            showAdminToast({
+                title: 'Onaylanamadı',
+                message: data.message || 'Tekrar deneyin.',
+                type: 'error',
+            });
+        } catch {
+            showAdminToast({ title: 'Bağlantı hatası', message: 'Tekrar deneyin.', type: 'error' });
+        } finally {
+            btn.disabled = false;
+            btn.textContent = original;
+        }
+    }
+
+    async function transferTable(fromId, toId) {
+        if (!cfg.transferTableUrl || !fromId || !toId) return;
+        const res = await fetch(cfg.transferTableUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrf(),
+                Accept: 'application/json',
+            },
+            body: JSON.stringify({ from_table_id: fromId, to_table_id: toId }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+            throw new Error(data.message || 'Transfer başarısız.');
+        }
+        return data;
+    }
+
+    function initTableTransfer(tables) {
+        const fromSel = document.getElementById('transferFromTable');
+        const toSel = document.getElementById('transferToTable');
+        const btn = document.getElementById('transferTableBtn');
+        if (!fromSel || !toSel || !btn) return;
+
+        const options = (tables || [])
+            .filter((t) => t.is_active)
+            .map(
+                (t) =>
+                    `<option value="${t.id}">${escapeHtml(String(t.number))}${t.is_busy ? ' (dolu)' : ''}</option>`,
+            )
+            .join('');
+
+        fromSel.innerHTML = `<option value="">Kaynak masa</option>${options}`;
+        toSel.innerHTML = `<option value="">Hedef masa (boş)</option>${(tables || [])
+            .filter((t) => t.is_active && !t.is_busy)
+            .map((t) => `<option value="${t.id}">${escapeHtml(String(t.number))}</option>`)
+            .join('')}`;
+
+        btn.onclick = async () => {
+            const fromId = Number(fromSel.value);
+            const toId = Number(toSel.value);
+            if (!fromId || !toId) {
+                showAdminToast({ title: 'Eksik seçim', message: 'Kaynak ve boş hedef masa seçin.', type: 'warning' });
+                return;
+            }
+            btn.disabled = true;
+            try {
+                const data = await transferTable(fromId, toId);
+                showAdminToast({ title: 'Masa taşındı', message: data.message, type: 'success' });
+                await poll();
+            } catch (err) {
+                showAdminToast({ title: 'Transfer', message: err.message || 'Başarısız.', type: 'error' });
+            } finally {
+                btn.disabled = false;
+            }
+        };
+    }
+
     feedEl?.addEventListener('click', (e) => {
+        const approveBtn = e.target.closest('[data-approve-order]');
+        if (approveBtn) {
+            const card = approveBtn.closest('[data-feed-kind]');
+            if (card?.dataset.feedKind === 'order') {
+                approveOrder(Number(card.dataset.feedId), approveBtn);
+            }
+            return;
+        }
+
         const claimBtn = e.target.closest('[data-claim]');
         if (claimBtn) {
             const card = claimBtn.closest('[data-feed-kind]');

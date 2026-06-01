@@ -48,6 +48,16 @@
     </div>
 </div>
 
+<section class="waiter-transfer-section" aria-label="Masa taşıma">
+    <h2 class="waiter-feed-section__title">Masa Taşıma</h2>
+    <p class="waiter-transfer-section__hint">Dolu masadaki aktif siparişleri boş bir masaya aktarın.</p>
+    <div class="waiter-transfer-form">
+        <select id="transferFromTable" class="waiter-transfer-select"></select>
+        <select id="transferToTable" class="waiter-transfer-select"></select>
+        <button type="button" id="transferTableBtn" class="waiter-transfer-btn">Aktar</button>
+    </div>
+</section>
+
 <section class="waiter-feed-section" aria-label="Canlı akış">
     <div class="waiter-feed-section__head">
         <h2 class="waiter-feed-section__title">Canlı Akış</h2>
@@ -67,6 +77,8 @@ window.HSP_WAITER = {
     feedUrl: @json(route('live-orders.api')),
     completeUrl: @json(route('waiter.complete')),
     claimCallUrl: @json(url('/api/waiter/call')),
+    approveOrderUrl: @json(url('/api/waiter/order')),
+    transferTableUrl: @json(route('waiter.tables.transfer')),
     userId: @json(session('admin_user_id')),
     pollMs: 3000,
     restaurantId: @json(session('admin_restaurant_id')),

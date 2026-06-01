@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\Setting;
 use App\Models\TableCall;
 use App\Services\TableStatusService;
+use App\Services\TableTransferService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -23,6 +24,51 @@ class WaiterDashboardController extends Controller
             'venueName' => $settings['venue_name'] ?? 'Human',
             'venueTagline' => $settings['venue_tagline'] ?? 'Human Social People',
             'waiterName' => session('admin_name'),
+        ]);
+    }
+
+    /** QR siparişini onayla → mutfağa düşer (preparing). */
+    public function approveOrder(Order $order): JsonResponse
+    {
+        if ($order->status !== Order::STATUS_PENDING_APPROVAL) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Yalnızca onay bekleyen siparişler onaylanabilir.',
+            ], 422);
+        }
+
+        $order->update(['status' => Order::STATUS_PREPARING]);
+        $order->refresh();
+        event(OrderStatusUpdated::fromOrder($order));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Sipariş onaylandı, mutfağa iletildi.',
+            'order' => [
+                'id' => $order->id,
+                'status' => $order->status,
+                'status_label' => $order->status_label,
+            ],
+        ]);
+    }
+
+    /** Aktif masadaki siparişleri boş masaya taşır. */
+    public function transferTable(Request $request, TableTransferService $transfer): JsonResponse
+    {
+        $validated = $request->validate([
+            'from_table_id' => 'required|integer|min:1',
+            'to_table_id' => 'required|integer|min:1',
+        ]);
+
+        $moved = $transfer->transfer(
+            (int) $validated['from_table_id'],
+            (int) $validated['to_table_id'],
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => "{$moved} sipariş yeni masaya aktarıldı.",
+            'moved_count' => $moved,
         ]);
     }
 

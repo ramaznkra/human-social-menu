@@ -1,14 +1,14 @@
 /**
- * Admin ürün listesi — stok / menü görünürlüğü toggle (AJAX).
+ * Admin ürün listesi — menü görünürlüğü + stok toggle (AJAX).
  */
-function initProductAvailabilityToggles() {
+function bindProductToggle(selector, labelSelector, onSuccess) {
     const csrf = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
-    document.querySelectorAll('[data-product-toggle]').forEach((input) => {
+    document.querySelectorAll(selector).forEach((input) => {
         input.addEventListener('change', async () => {
             const url = input.dataset.toggleUrl;
             const row = input.closest('[data-product-item]');
-            const label = row?.querySelector('[data-availability-label]');
+            const label = row?.querySelector(labelSelector);
             const prev = !input.checked;
 
             input.disabled = true;
@@ -31,14 +31,7 @@ function initProductAvailabilityToggles() {
                     return;
                 }
 
-                input.checked = data.is_available;
-                if (label) {
-                    label.textContent = data.label;
-                    label.classList.toggle('text-emerald-600', data.is_available);
-                    label.classList.toggle('text-gray-400', !data.is_available);
-                }
-                row?.classList.toggle('opacity-50', !data.is_available);
-                row?.classList.toggle('admin-tray-card--hidden', !data.is_available);
+                onSuccess({ input, row, label, data });
             } catch {
                 input.checked = prev;
                 alert('Bağlantı hatası.');
@@ -49,8 +42,30 @@ function initProductAvailabilityToggles() {
     });
 }
 
+function initProductToggles() {
+    bindProductToggle('[data-product-toggle]', '[data-availability-label]', ({ input, row, label, data }) => {
+        input.checked = data.is_available;
+        if (label) {
+            label.textContent = data.label;
+            label.classList.toggle('text-emerald-600', data.is_available);
+            label.classList.toggle('text-gray-400', !data.is_available);
+        }
+        row?.classList.toggle('opacity-50', !data.is_available);
+        row?.classList.toggle('admin-tray-card--hidden', !data.is_available);
+    });
+
+    bindProductToggle('[data-product-stock-toggle]', '[data-stock-label]', ({ input, label, data }) => {
+        input.checked = data.in_stock;
+        if (label) {
+            label.textContent = data.label;
+            label.classList.toggle('text-emerald-600', data.in_stock);
+            label.classList.toggle('text-red-500', !data.in_stock);
+        }
+    });
+}
+
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initProductAvailabilityToggles);
+    document.addEventListener('DOMContentLoaded', initProductToggles);
 } else {
-    initProductAvailabilityToggles();
+    initProductToggles();
 }

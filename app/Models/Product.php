@@ -18,7 +18,7 @@ class Product extends Model
 
     protected $fillable = [
         'restaurant_id', 'category_id', 'type', 'name', 'description',
-        'price', 'image', 'badge', 'sort_order', 'is_available',
+        'price', 'image', 'badge', 'sort_order', 'is_available', 'in_stock',
     ];
 
     protected function casts(): array
@@ -26,6 +26,7 @@ class Product extends Model
         return [
             'price' => 'decimal:2',
             'is_available' => 'boolean',
+            'in_stock' => 'boolean',
         ];
     }
 
@@ -77,5 +78,10 @@ class Product extends Model
     public function scopeAvailable($query)
     {
         return $query->where('is_available', true)->orderBy('sort_order');
+    }
+
+    public function scopeInStock($query)
+    {
+        return $query->where('in_stock', true);
     }
 }

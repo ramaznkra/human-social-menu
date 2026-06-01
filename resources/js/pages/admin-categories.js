@@ -1,6 +1,5 @@
 /**
- * Admin kategoriler — aktif / pasif toggle (AJAX, kalıcı).
- * Değişiklik anında DB'ye yazılır; F5 sonrası durum korunur.
+ * Admin kategoriler — aktif/pasif toggle + sıra güncelleme (drag-and-drop hazırlığı).
  */
 function initCategoryActiveToggles() {
     const csrf = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
@@ -30,7 +29,6 @@ function initCategoryActiveToggles() {
                     return;
                 }
 
-                // Aynı kategoriye ait tüm görünümleri (liste + tepsi) güncelle.
                 document
                     .querySelectorAll(`[data-category-toggle][data-toggle-url="${url}"]`)
                     .forEach((el) => {
@@ -64,8 +62,70 @@ function initCategoryActiveToggles() {
     }
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initCategoryActiveToggles);
-} else {
+function initCategorySortOrder() {
+    const cfg = window.HSP_ADMIN_CATEGORIES;
+    const saveBtn = document.querySelector('[data-save-category-sort]');
+    if (!cfg?.sortUrl || !saveBtn) return;
+
+    const inputs = () => document.querySelectorAll('[data-category-sort-input]');
+
+    inputs().forEach((input) => {
+        input.addEventListener('input', () => {
+            saveBtn.classList.remove('hidden');
+        });
+    });
+
+    saveBtn.addEventListener('click', async () => {
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+        const categories = [];
+        const seen = new Set();
+
+        document.querySelectorAll('[data-category-item]').forEach((item) => {
+            const id = item.dataset.categoryId;
+            const input = item.querySelector('[data-category-sort-input]');
+            if (!id || !input || seen.has(id)) return;
+            seen.add(id);
+            categories.push({ id: Number(id), sort_order: Number(input.value) || 0 });
+        });
+
+        if (!categories.length) return;
+
+        saveBtn.disabled = true;
+        const original = saveBtn.textContent;
+        saveBtn.textContent = 'Kaydediliyor…';
+
+        try {
+            const res = await fetch(cfg.sortUrl, {
+                method: 'PATCH',
+                headers: {
+                    'X-CSRF-TOKEN': csrf,
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ categories }),
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                alert(data?.message || 'Sıra güncellenemedi.');
+                return;
+            }
+            saveBtn.classList.add('hidden');
+        } catch {
+            alert('Bağlantı hatası.');
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.textContent = original;
+        }
+    });
+}
+
+function initAdminCategories() {
     initCategoryActiveToggles();
+    initCategorySortOrder();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAdminCategories);
+} else {
+    initAdminCategories();
 }

@@ -41,6 +41,9 @@ return [
     'wifi_label' => 'Wi-Fi Password',
     'wifi_copy' => 'Copy',
     'wifi_copied' => 'Copied ✓',
+    'sold_out' => 'Sold out',
+    'call_cooldown' => 'Your request was sent',
+    'call_cooldown_timer' => 'You can call again in: :time',
     'total' => 'Total',
     'back_menu' => '← Back to Menu',
     'order_progress_title' => 'Your order',
@@ -65,6 +68,7 @@ return [
         'connection' => 'Connection error. Please try again.',
     ],
     'order_msg' => [
+        'pending_approval' => 'Your order was received. Waiting for waiter approval.',
         'pending' => 'Order received. Waiting for confirmation.',
         'preparing' => 'Your order is being prepared in the kitchen.',
         'ready' => 'Your order is ready and on the way to your table.',
@@ -73,6 +77,7 @@ return [
         'cancelled' => 'Your order was cancelled.',
     ],
     'order_label' => [
+        'pending_approval' => 'Awaiting Approval',
         'pending' => 'Order Received',
         'preparing' => 'Preparing',
         'ready' => 'On the Way',

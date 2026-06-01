@@ -41,6 +41,9 @@ return [
     'wifi_label' => 'Пароль Wi-Fi',
     'wifi_copy' => 'Копировать',
     'wifi_copied' => 'Скопировано ✓',
+    'sold_out' => 'Нет в наличии',
+    'call_cooldown' => 'Ваш запрос отправлен',
+    'call_cooldown_timer' => 'Повторный вызов через: :time',
     'total' => 'Итого',
     'back_menu' => '← В меню',
     'order_progress_title' => 'Ваш заказ',
@@ -65,6 +68,7 @@ return [
         'connection' => 'Ошибка сети. Повторите.',
     ],
     'order_msg' => [
+        'pending_approval' => 'Заказ принят. Ожидаем подтверждения официанта.',
         'pending' => 'Заказ принят. Ожидаем подтверждение.',
         'preparing' => 'Заказ готовится на кухне.',
         'ready' => 'Заказ готов, официант несёт к столу.',
@@ -73,6 +77,7 @@ return [
         'cancelled' => 'Заказ отменён.',
     ],
     'order_label' => [
+        'pending_approval' => 'Ожидает подтверждения',
         'pending' => 'Заказ принят',
         'preparing' => 'Готовится',
         'ready' => 'В пути',

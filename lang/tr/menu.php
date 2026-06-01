@@ -41,6 +41,9 @@ return [
     'wifi_label' => 'Wi-Fi Şifresi',
     'wifi_copy' => 'Kopyala',
     'wifi_copied' => 'Kopyalandı ✓',
+    'sold_out' => 'Tükendi',
+    'call_cooldown' => 'Çağrınız iletildi',
+    'call_cooldown_timer' => 'Tekrar çağırabilirsiniz: :time',
     'total' => 'Toplam',
     'back_menu' => '← Menüye Dön',
     'order_progress_title' => 'Siparişiniz',
@@ -65,6 +68,7 @@ return [
         'connection' => 'Bağlantı hatası, tekrar deneyin.',
     ],
     'order_msg' => [
+        'pending_approval' => 'Siparişiniz alındı. Garson onayı bekleniyor.',
         'pending' => 'Siparişiniz alındı. Kasa onayı bekleniyor.',
         'preparing' => 'Kasa siparişinizi kabul etti, mutfakta hazırlanıyor.',
         'ready' => 'Siparişiniz hazır, garson masanıza getiriyor.',
@@ -73,6 +77,7 @@ return [
         'cancelled' => 'Siparişiniz iptal edildi.',
     ],
     'order_label' => [
+        'pending_approval' => 'Onay Bekleniyor',
         'pending' => 'Sipariş Alındı',
         'preparing' => 'Hazırlanıyor',
         'ready' => 'Masanıza Geliyor',

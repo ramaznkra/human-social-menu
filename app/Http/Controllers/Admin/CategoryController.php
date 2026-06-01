@@ -73,6 +73,27 @@ class CategoryController extends Controller
         ]);
     }
 
+    /** Kategori sıralamasını toplu günceller (drag-and-drop için hazır). */
+    public function updateSortOrder(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $validated = $request->validate([
+            'categories' => 'required|array|min:1',
+            'categories.*.id' => ['required', 'integer', 'exists:categories,id'],
+            'categories.*.sort_order' => 'required|integer|min:0',
+        ]);
+
+        foreach ($validated['categories'] as $row) {
+            Category::query()
+                ->whereKey($row['id'])
+                ->update(['sort_order' => (int) $row['sort_order']]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Kategori sırası güncellendi.',
+        ]);
+    }
+
     private function validated(Request $request, ?Category $category = null): array
     {
         $translations = MenuTranslations::validated($request, maxName: 100);

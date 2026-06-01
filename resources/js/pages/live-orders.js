@@ -73,6 +73,7 @@ function formatRelativeAge(iso) {
 }
 
 function isOverdueOrder(order) {
+    if (order.status === 'pending_approval') return false;
     if (!['pending', 'preparing'].includes(order.status)) return false;
     const d = parseIso(order.created_at_iso || order.updated_at);
     if (!d) return false;
@@ -81,10 +82,11 @@ function isOverdueOrder(order) {
 
 function filterOrders(orders, tab) {
     if (tab === 'all' || tab === 'calls') return orders;
-    if (tab === 'kitchen') return orders.filter((o) => o.has_kitchen);
-    if (tab === 'bar') return orders.filter((o) => o.has_bar);
-    if (tab === 'prepared') return orders.filter((o) => o.status === 'ready');
-    return orders;
+    const visible = orders.filter((o) => o.status !== 'pending_approval');
+    if (tab === 'kitchen') return visible.filter((o) => o.has_kitchen);
+    if (tab === 'bar') return visible.filter((o) => o.has_bar);
+    if (tab === 'prepared') return visible.filter((o) => o.status === 'ready');
+    return visible;
 }
 
 function itemsForTab(order, tab) {
@@ -103,6 +105,16 @@ function itemBorderClass(type) {
 
 function statusActions(status, paymentMethod = null, isWaiterOrder = false) {
     const buttons = [];
+
+    if (status === 'pending_approval') {
+        buttons.push({
+            status: 'pending_approval',
+            label: 'Garson Onayı Bekleniyor',
+            cls: 'live-ops-btn-secondary',
+            disabled: true,
+        });
+        return buttons;
+    }
 
     if (status === 'pending') {
         buttons.push({
@@ -457,6 +469,21 @@ if (root) {
         const order = normalizeRealtimeOrder(payload?.order);
         if (!order) {
             poll(true);
+            return;
+        }
+
+        if (order.status === 'pending_approval') {
+            upsertOrder(order);
+            knownOrderIds.add(order.id);
+            dataFingerprint = '';
+            paint();
+            updateStatusLine();
+            showAdminToast({
+                title: 'Onay Bekleyen Sipariş',
+                message: `#${order.order_number} · Masa ${order.table ?? '—'} · Garson onayı`,
+                type: 'warning',
+                durationMs: 3200,
+            });
             return;
         }
 

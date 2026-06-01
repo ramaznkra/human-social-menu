@@ -39,6 +39,7 @@
                         <th>Kategori</th>
                         <th>Fiyat</th>
                         <th>Menüde</th>
+                        <th>Stok</th>
                         <th class="text-right">İşlem</th>
                     </tr>
                 </thead>
@@ -59,6 +60,9 @@
                     <td>
                         @include('admin.partials.product-availability-toggle', ['product' => $p])
                     </td>
+                    <td>
+                        @include('admin.partials.product-in-stock-toggle', ['product' => $p])
+                    </td>
                     <td class="text-right">
                         <div class="inline-flex flex-wrap items-center justify-end gap-1">
                             <a href="{{ route('admin.products.edit', $p) }}" class="btn btn-sm btn-secondary">Düzenle</a>
@@ -68,7 +72,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" class="py-12 text-center text-gray-500">Ürün bulunamadı.</td>
+                    <td colspan="7" class="py-12 text-center text-gray-500">Ürün bulunamadı.</td>
                 </tr>
                 @endforelse
                 </tbody>
@@ -102,6 +106,9 @@
                     <p class="admin-tray-card__price">{{ number_format($p->price, 0, ',', '.') }} ₺</p>
                     <div class="admin-tray-card__toggle">
                         @include('admin.partials.product-availability-toggle', ['product' => $p, 'compact' => true])
+                    </div>
+                    <div class="admin-tray-card__toggle mt-1">
+                        @include('admin.partials.product-in-stock-toggle', ['product' => $p, 'compact' => true])
                     </div>
                     <div class="admin-tray-card__actions">
                         <a href="{{ route('admin.products.edit', $p) }}" class="btn btn-sm btn-secondary w-full">Düzenle</a>

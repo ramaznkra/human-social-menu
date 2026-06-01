@@ -25,7 +25,7 @@ class BarScreenController extends Controller
                 'items.product:id,category_id',
                 'items.product.category:id,slug,name',
             ])
-            ->whereIn('status', ['pending', 'preparing'])
+            ->whereIn('status', ['preparing', 'ready'])
             ->whereHas('items', function ($q) {
                 $q->whereHas('product.category', fn ($c) => $c->where('slug', 'icecek'));
             })
@@ -57,7 +57,7 @@ class BarScreenController extends Controller
 
     public function markReady(Order $order): JsonResponse
     {
-        if (! in_array($order->status, ['pending', 'preparing'], true)) {
+        if (! in_array($order->status, ['preparing'], true)) {
             return response()->json(['success' => false, 'message' => 'Sipariş zaten işlendi.'], 422);
         }
 

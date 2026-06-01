@@ -56,6 +56,11 @@
             @if($product->image)<img src="{{ $product->image_url }}" class="mt-2 h-16 w-16 rounded-lg object-cover">@endif
         </div>
         <div><label class="form-label">Sıra</label><input type="number" name="sort_order" value="{{ old('sort_order', $product->sort_order ?? 0) }}" class="form-input"></div>
+        <label class="flex items-center gap-2 text-sm text-gray-700">
+            <input type="hidden" name="in_stock" value="0">
+            <input type="checkbox" name="in_stock" value="1" {{ old('in_stock', $product->in_stock ?? true) ? 'checked' : '' }}>
+            Stokta (kapalıysa menüde «Tükendi» görünür)
+        </label>
         @if($product->exists)
         <p class="text-xs text-gray-500">Ürünün menüde görünürlüğünü <a href="{{ route('admin.products.index') }}" class="font-medium text-[#E67E22] hover:underline">Ürünler</a> listesindeki anahtardan değiştirebilirsiniz.</p>
         @endif

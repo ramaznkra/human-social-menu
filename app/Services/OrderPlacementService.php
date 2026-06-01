@@ -59,11 +59,15 @@ class OrderPlacementService
                 ]);
             }
 
+            $initialStatus = $source === Order::SOURCE_QR
+                ? Order::STATUS_PENDING_APPROVAL
+                : Order::STATUS_PREPARING;
+
             $order = Order::create([
                 'restaurant_id' => $restaurantId,
                 'table_id' => $tableId,
                 'order_number' => $this->generateOrderNumber(),
-                'status' => Order::STATUS_PENDING,
+                'status' => $initialStatus,
                 'source' => $source,
                 'notes' => $notes,
                 'total' => 0,
@@ -74,7 +78,7 @@ class OrderPlacementService
 
             foreach ($items as $item) {
                 $product = Product::query()->find($item['product_id'] ?? null);
-                if (! $product || ! $product->is_available) {
+                if (! $product || ! $product->is_available || ! $product->in_stock) {
                     continue;
                 }
 

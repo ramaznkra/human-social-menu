@@ -53,6 +53,7 @@ class ProductController extends Controller
             $data['image'] = $this->images->storeProduct($request->file('image'));
         }
         $data['is_available'] = true;
+        $data['in_stock'] = true;
 
         DB::transaction(function () use ($request, $data) {
             $product = Product::create($data);
@@ -133,6 +134,18 @@ class ProductController extends Controller
         ]);
     }
 
+    public function toggleInStock(Product $product): JsonResponse
+    {
+        $product->update(['in_stock' => ! $product->in_stock]);
+
+        return response()->json([
+            'success' => true,
+            'product_id' => $product->id,
+            'in_stock' => $product->in_stock,
+            'label' => $product->in_stock ? 'Stokta' : 'Tükendi',
+        ]);
+    }
+
     private function validated(Request $request): array
     {
         $translations = MenuTranslations::validated($request);
@@ -143,6 +156,7 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0',
             'badge' => 'nullable|string|max:30',
             'sort_order' => 'nullable|integer|min:0',
+            'in_stock' => 'nullable|boolean',
             'image' => 'nullable|image|max:2048',
             'option_groups' => 'nullable|array',
             'option_groups.*.id' => 'nullable|integer',
@@ -165,6 +179,10 @@ class ProductController extends Controller
         ]);
 
         unset($data['option_groups']);
+
+        if ($request->has('in_stock')) {
+            $data['in_stock'] = $request->boolean('in_stock');
+        }
 
         return array_merge($data, $translations);
     }
