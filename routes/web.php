@@ -32,8 +32,12 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', fn () => redirect()->route('menu.index'));
 
 Route::middleware(ResolveRestaurantFromTable::class)->group(function () {
-    Route::get('/menu/{token?}', [MenuController::class, 'index'])->name('menu.index');
-    Route::get('/r/{restaurant}/menu/{token?}', [MenuController::class, 'index'])->name('menu.restaurant');
+    Route::get('/menu', [MenuController::class, 'index'])->name('menu.index');
+    Route::get('/table/{uuid}', [MenuController::class, 'table'])->name('menu.table');
+    Route::get('/menu/{token}', [MenuController::class, 'legacyTableRedirect'])->name('menu.legacy');
+    Route::get('/r/{restaurant}/menu', [MenuController::class, 'index'])->name('menu.restaurant');
+    Route::get('/r/{restaurant}/table/{uuid}', [MenuController::class, 'table'])->name('menu.restaurant.table');
+    Route::get('/r/{restaurant}/menu/{token}', [MenuController::class, 'legacyTableRedirect'])->name('menu.restaurant.legacy');
     Route::post('/siparis', [OrderController::class, 'store'])->name('order.store');
     Route::get('/siparis/{orderToken}/durum', [OrderController::class, 'status'])->name('order.status');
     Route::get('/api/siparis/{orderToken}/durum', [OrderController::class, 'statusApi'])->name('order.status.api');
@@ -57,6 +61,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/giris', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/giris', [AuthController::class, 'login']);
 });
+
+Route::get('/manifest-waiter.json', [\App\Http\Controllers\Waiter\WaiterPwaController::class, 'manifest'])
+    ->name('waiter.manifest');
 
 Route::middleware([AdminMiddleware::class, SetStaffRestaurantContext::class])->group(function () {
     Route::post('/admin/cikis', [AuthController::class, 'logout'])->name('admin.logout');

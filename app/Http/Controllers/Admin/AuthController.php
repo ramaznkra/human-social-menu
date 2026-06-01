@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Scopes\RestaurantScope;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,7 +28,9 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::withoutGlobalScope(RestaurantScope::NAME)
+            ->where('email', $request->email)
+            ->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
             return back()->with('error', 'E-posta veya şifre hatalı.');

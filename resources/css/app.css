@@ -123,6 +123,11 @@
         @apply flex min-w-0 items-center gap-2.5;
     }
 
+    .product-option-choice input[type='radio'],
+    .product-option-choice input[type='checkbox'] {
+        @apply sr-only;
+    }
+
     .product-option-choice__label {
         @apply text-sm text-gray-100;
     }
@@ -388,19 +393,19 @@
     }
 
     .product-row-card {
-        @apply relative flex gap-3 rounded-2xl border border-white/5 bg-[#262220]/50 p-3 shadow-lg backdrop-blur-md transition-all duration-300;
+        @apply relative flex gap-3 rounded-2xl border border-white/5 bg-[#262220]/50 p-3 shadow-lg transition-all duration-300;
     }
 
     .product-row-thumb-wrap {
-        @apply relative shrink-0;
+        @apply relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-xl;
     }
 
     .product-sold-out-badge {
-        @apply absolute inset-0 flex items-center justify-center rounded-xl bg-black/55 text-xs font-bold uppercase tracking-wide text-white;
+        @apply pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-black/50 text-xs font-bold uppercase tracking-wide text-white;
     }
 
-    .product-row-card--sold-out {
-        @apply opacity-80;
+    .product-row-card--sold-out .product-row-thumb {
+        @apply grayscale;
     }
 
     .btn-siparis--disabled {
@@ -1121,12 +1126,26 @@
         @apply flex min-w-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm;
     }
 
-    .admin-tray-card--hidden {
-        @apply opacity-50;
+    .admin-tray-card--hidden .admin-tray-card__body {
+        @apply opacity-60;
+    }
+
+    .admin-tray-card--hidden .admin-tray-card__media::after {
+        content: '';
+        @apply pointer-events-none absolute inset-0 z-[1] bg-white/35;
     }
 
     .admin-tray-card__media {
         @apply relative aspect-square w-full shrink-0 overflow-hidden bg-gray-100;
+    }
+
+    .admin-tray-card__media--sold-out .admin-tray-card__img {
+        @apply grayscale;
+    }
+
+    .admin-tray-card__media--sold-out::after {
+        content: '';
+        @apply pointer-events-none absolute inset-0 z-[1] bg-black/40;
     }
 
     .admin-tray-card__media--category {

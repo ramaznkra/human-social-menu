@@ -5,12 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Table;
 use App\Services\TableQrCodeService;
+use App\Support\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use App\Support\CurrentRestaurant;
-use App\Support\TenantRules;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 class TableController extends Controller
 {
@@ -35,9 +33,7 @@ class TableController extends Controller
                 'required',
                 'string',
                 'max:20',
-                Rule::unique('tables', 'number')->where(
-                    fn ($query) => $query->where('restaurant_id', CurrentRestaurant::resolveId()),
-                ),
+                TenantRules::uniqueModel(Table::class, 'number'),
             ],
         ]);
         $data['qr_token'] = Table::generateToken();
@@ -61,9 +57,7 @@ class TableController extends Controller
                 'required',
                 'string',
                 'max:20',
-                Rule::unique('tables', 'number')
-                    ->where(fn ($query) => $query->where('restaurant_id', CurrentRestaurant::resolveId()))
-                    ->ignore($table->id),
+                TenantRules::uniqueModel(Table::class, 'number', $table->id),
             ],
         ]);
 

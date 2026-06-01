@@ -5,7 +5,8 @@ function bindProductToggle(selector, labelSelector, onSuccess) {
     const csrf = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
     document.querySelectorAll(selector).forEach((input) => {
-        input.addEventListener('change', async () => {
+        input.addEventListener('change', async (event) => {
+            event.stopPropagation();
             const url = input.dataset.toggleUrl;
             const row = input.closest('[data-product-item]');
             const label = row?.querySelector(labelSelector);
@@ -50,17 +51,27 @@ function initProductToggles() {
             label.classList.toggle('text-emerald-600', data.is_available);
             label.classList.toggle('text-gray-400', !data.is_available);
         }
-        row?.classList.toggle('opacity-50', !data.is_available);
         row?.classList.toggle('admin-tray-card--hidden', !data.is_available);
+        if (row?.tagName === 'TR') {
+            row.classList.toggle('opacity-50', !data.is_available);
+        }
     });
 
-    bindProductToggle('[data-product-stock-toggle]', '[data-stock-label]', ({ input, label, data }) => {
+    bindProductToggle('[data-product-stock-toggle]', '[data-stock-label]', ({ input, row, label, data }) => {
         input.checked = data.in_stock;
         if (label) {
             label.textContent = data.label;
             label.classList.toggle('text-emerald-600', data.in_stock);
             label.classList.toggle('text-red-500', !data.in_stock);
         }
+
+        row?.classList.toggle('admin-tray-card--sold-out', !data.in_stock);
+        row?.classList.toggle('admin-product-row--sold-out', !data.in_stock);
+        row?.querySelector('.admin-tray-card__media')?.classList.toggle('admin-tray-card__media--sold-out', !data.in_stock);
+
+        row?.querySelectorAll('.admin-tray-card__img, td img').forEach((img) => {
+            img.classList.toggle('grayscale', !data.in_stock);
+        });
     });
 }
 

@@ -4,7 +4,11 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "dev:stack": "node scripts/dev.mjs",
+        "dev:stack:run": "concurrently -c \"#93c5fd,#34d399,#c4b5fd,#fdba74\" -n server,reverb,queue,vite -k --handle-input \"php artisan serve --host=0.0.0.0 --port=8000\" \"php artisan reverb:start --host=0.0.0.0 --port=8080\" \"php artisan queue:work --tries=1 --timeout=0\" \"npm run dev\"",
+        "phone:stack": "node scripts/phone.mjs",
+        "phone:stack:run": "concurrently -c \"#93c5fd,#34d399,#c4b5fd\" -n server,reverb,queue -k --handle-input \"php artisan serve --host=0.0.0.0 --port=8000\" \"php artisan reverb:start --host=0.0.0.0 --port=8080\" \"php artisan queue:work --tries=1 --timeout=0\""
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",

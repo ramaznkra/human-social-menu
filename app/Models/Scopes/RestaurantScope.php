@@ -8,8 +8,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 
 /**
- * SaaS tenant izolasyonu: aktif restoran bağlamındaki kayıtları otomatik filtreler.
- * Bağlam yoksa fail-safe olarak hiçbir satır döndürülmez (veri sızıntısı engeli).
+ * SaaS tenant izolasyonu — tüm sorgulara otomatik restaurant_id filtresi.
+ *
+ * Bağlam kaynakları (CurrentRestaurant::resolveId):
+ * - Personel oturumu: session admin_restaurant_id / auth kullanıcısı
+ * - Müşteri QR menü: ResolveRestaurantFromTable middleware
+ * - Mutfak kiosk: session kiosk_restaurant_id
+ *
+ * Bağlam yoksa fail-safe: hiçbir satır dönmez (veri sızıntısı engeli).
+ * Route model binding + global scope: başka restoranın ID'si → 404.
  */
 class RestaurantScope implements Scope
 {

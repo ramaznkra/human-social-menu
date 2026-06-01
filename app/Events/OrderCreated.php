@@ -32,7 +32,8 @@ class OrderCreated implements ShouldBroadcast
         $order = $this->order->loadMissing([
             'table:id,number',
             'items:id,order_id,product_id,product_name,quantity,notes',
-            'items.product:id,type',
+            'items.product:id,type,category_id',
+            'items.product.category:id,type',
         ]);
 
         $items = $order->items->map(fn ($item) => [
@@ -40,7 +41,7 @@ class OrderCreated implements ShouldBroadcast
             'name' => $item->product_name,
             'quantity' => $item->quantity,
             'notes' => $item->notes,
-            'type' => $item->product?->type ?? 'kitchen',
+            'type' => $item->product?->stationType() ?? 'kitchen',
         ]);
 
         $types = $items->pluck('type')->unique();
@@ -57,7 +58,7 @@ class OrderCreated implements ShouldBroadcast
                 'payment_method' => $order->payment_method,
                 'table' => $order->table?->number,
                 'notes' => $order->notes,
-                'total' => (float) $order->total,
+                'total' => $order->total,
                 'created_at' => $order->created_at?->format('H:i'),
                 'created_at_iso' => $order->created_at?->toIso8601String(),
                 'updated_at' => $order->updated_at?->toIso8601String(),

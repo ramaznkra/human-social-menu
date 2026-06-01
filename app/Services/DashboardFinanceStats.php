@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\TableCall;
+use App\Support\Money;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -17,7 +18,7 @@ class DashboardFinanceStats
             ->whereDate('created_at', $day)
             ->where('status', Order::STATUS_DELIVERED);
 
-        $dailyRevenue = (float) (clone $completedQuery)->sum('total');
+        $dailyRevenue = Money::normalize((clone $completedQuery)->sum('total'));
         $completedCount = (clone $completedQuery)->count();
 
         $liveTableIds = Order::query()
@@ -72,7 +73,7 @@ class DashboardFinanceStats
 
         return [
             'daily_revenue' => $dailyRevenue,
-            'daily_revenue_formatted' => number_format($dailyRevenue, 0, ',', '.').' ₺',
+            'daily_revenue_formatted' => number_format(Money::toFloat($dailyRevenue), 0, ',', '.').' ₺',
             'active_tables' => $activeTables,
             'completed_orders' => $completedCount,
             'payment_split' => $paymentSplit,

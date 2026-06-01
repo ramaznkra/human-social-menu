@@ -7,6 +7,7 @@ use App\Models\ProductOption;
 use App\Models\ProductOptionGroup;
 use App\Support\CurrentRestaurant;
 use App\Support\MenuTranslations;
+use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -101,7 +102,7 @@ class ProductOptionSyncService
 
         $attrs = [
             'name' => $name,
-            'price_modifier' => max(0, (float) ($data['price_modifier'] ?? 0)),
+            'price_modifier' => Money::max('0', $data['price_modifier'] ?? 0),
             'is_default' => filter_var($data['is_default'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'sort_order' => (int) ($data['sort_order'] ?? $sortOrder),
         ];

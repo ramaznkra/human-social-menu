@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use App\Models\Concerns\BelongsToRestaurant;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -68,7 +69,7 @@ class Order extends Model
 
     protected function casts(): array
     {
-        return ['total' => 'decimal:2'];
+        return ['total' => MoneyCast::class];
     }
 
     protected static function booted(): void

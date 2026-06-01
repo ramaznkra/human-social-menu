@@ -13,6 +13,7 @@
         data-reverb-scheme="{{ env('REVERB_SCHEME', 'http') }}"
         data-restaurant-id="{{ \App\Support\CurrentRestaurant::id() ?? session('admin_restaurant_id') ?? session('kiosk_restaurant_id') }}"
         data-default-tab="{{ $defaultStation ?? 'all' }}"
+        data-show-pending-approval="{{ ($showPendingApproval ?? true) ? '1' : '0' }}"
     >
         <header class="sticky top-0 z-40 border-b border-white/5 bg-[#121110]/95 px-4 py-4 backdrop-blur-md md:px-6">
             <div class="flex flex-wrap items-center justify-between gap-3">
@@ -31,11 +32,11 @@
             <nav class="mt-4 flex gap-2 overflow-x-auto pb-1" id="liveOrdersTabs" role="tablist">
                 <button type="button" class="live-ops-tab is-active" data-tab="all" role="tab">Tümü</button>
                 <button type="button" class="live-ops-tab relative" data-tab="kitchen" role="tab">
-                    Mutfak / Yemek
+                    Mutfak (Yemekler)
                     <span class="live-ops-badge hidden" data-badge="kitchen">0</span>
                 </button>
                 <button type="button" class="live-ops-tab relative" data-tab="bar" role="tab">
-                    Bar / İçecek
+                    Bar (İçecekler)
                     <span class="live-ops-badge hidden" data-badge="bar">0</span>
                 </button>
                 <button type="button" class="live-ops-tab" data-tab="prepared" role="tab">Hazırlanan</button>

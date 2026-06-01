@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Product;
 use App\Models\ProductOption;
 use App\Models\ProductOptionGroup;
+use App\Support\Money;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
@@ -13,8 +14,8 @@ class ProductOptionPricing
     /**
      * @param  array<int, array{group_id?: int, option_id?: int}>  $selectedOptions
      * @return array{
-     *     unit_price: float,
-     *     options: array<int, array{group_id: int, group_name: string, option_id: int, name: string, price: float}>,
+     *     unit_price: string,
+     *     options: array<int, array{group_id: int, group_name: string, option_id: int, name: string, price: string}>,
      *     display_name_suffix: string
      * }
      */
@@ -28,7 +29,7 @@ class ProductOptionPricing
 
         if ($groups->isEmpty()) {
             return [
-                'unit_price' => (float) $product->price,
+                'unit_price' => Money::normalize($product->price),
                 'options' => [],
                 'display_name_suffix' => '',
             ];
@@ -95,10 +96,10 @@ class ProductOptionPricing
             ]);
         }
 
-        $optionsTotal = collect($resolved)->sum('price');
+        $optionsTotal = Money::sum(array_column($resolved, 'price'));
 
         return [
-            'unit_price' => (float) $product->price + $optionsTotal,
+            'unit_price' => Money::add($product->price, $optionsTotal),
             'options' => $resolved,
             'display_name_suffix' => $suffixParts !== [] ? ' ('.implode(', ', $suffixParts).')' : '',
         ];
@@ -118,7 +119,7 @@ class ProductOptionPricing
     }
 
     /**
-     * @return array{group_id: int, group_name: string, option_id: int, name: string, price: float}
+     * @return array{group_id: int, group_name: string, option_id: int, name: string, price: string}
      */
     private function formatOption(ProductOptionGroup $group, ProductOption $option, string $locale): array
     {
@@ -127,7 +128,7 @@ class ProductOptionPricing
             'group_name' => $group->localizedName($locale),
             'option_id' => $option->id,
             'name' => $option->localizedName($locale),
-            'price' => (float) $option->price_modifier,
+            'price' => Money::normalize($option->price_modifier),
         ];
     }
 }

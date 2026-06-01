@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\Translatable\HasTranslations;
@@ -23,7 +24,7 @@ class ProductOption extends Model
     protected function casts(): array
     {
         return [
-            'price_modifier' => 'decimal:2',
+            'price_modifier' => MoneyCast::class,
             'is_default' => 'boolean',
         ];
     }

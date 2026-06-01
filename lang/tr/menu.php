@@ -60,6 +60,7 @@ return [
     'redirect_menu' => ':seconds sn içinde menüye yönlendiriliyorsunuz…',
     'call' => [
         'waiter_sent' => 'Garsonumuz masanıza yönlendirildi…',
+        'waiter_on_the_way' => 'Garson :name masanıza geliyor',
         'waiter_active' => 'Garsonumuz masanıza yönlendirildi. İhtiyacınız olursa tekrar çağırabilirsiniz.',
         'bill_cash_sent' => 'Nakit hesap talebiniz iletildi. Garsonumuz geliyor…',
         'bill_card_sent' => 'Kart ile ödeme talebiniz iletildi. Pos getiriliyor…',

@@ -13,6 +13,7 @@
         'tables' => $tables,
         'busyTableIds' => $busyTableIds,
         'defaultStation' => $defaultStation ?? 'all',
+        'showPendingApproval' => false,
     ])
 </body>
 </html>

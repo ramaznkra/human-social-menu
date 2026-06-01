@@ -11,7 +11,8 @@ function escapeHtml(text) {
 
 function initWaiterDashboard() {
     const cfg = window.HSP_WAITER;
-    if (!cfg) return;
+    if (!cfg || window.__HSP_WAITER_INIT__) return;
+    window.__HSP_WAITER_INIT__ = true;
 
     const feedEl = document.getElementById('waiterFeed');
     const statusEl = document.getElementById('waiterFeedStatus');
@@ -24,6 +25,8 @@ function initWaiterDashboard() {
     let pollTimer = null;
     let completing = false;
     let echoClient = null;
+    let echoAvailable = false;
+    let realtimeConnected = false;
     let audioCtx = null;
     let soundEnabled = localStorage.getItem('waiter_sound_enabled') === '1';
     let deferredInstallPrompt = null;
@@ -33,6 +36,29 @@ function initWaiterDashboard() {
     let hasBootstrappedCalls = false;
     const readyAlertIds = new Set();
     const recentlyCompletedIds = new Set();
+    /** @type {Set<string>} */
+    const recentNotificationKeys = new Set();
+
+    function isBillCallType(type) {
+        return ['bill_cash', 'bill_card', 'bill'].includes(String(type));
+    }
+
+    /** Aynı olay için Echo + poll çift bildirimini engeller. */
+    function notifyOnce(key, toastOptions, ttlMs = 8000) {
+        if (recentNotificationKeys.has(key)) return false;
+        recentNotificationKeys.add(key);
+        setTimeout(() => recentNotificationKeys.delete(key), ttlMs);
+        showAdminToast(toastOptions);
+        return true;
+    }
+
+    function shouldShowCallInFeed(call) {
+        if (!waiterShouldShowCall(call)) return false;
+        if (isBillCallType(call?.type) && !call?.forwarded_to_waiter) {
+            return false;
+        }
+        return true;
+    }
 
     function setLive(ok) {
         if (!liveBadge) return;
@@ -49,7 +75,7 @@ function initWaiterDashboard() {
         const items = [];
 
         (calls || [])
-            .filter(waiterShouldShowCall)
+            .filter(shouldShowCallInFeed)
             .forEach((c) => {
             items.push({
                 kind: 'call',
@@ -452,34 +478,54 @@ function initWaiterDashboard() {
 
     function initRealtimeOrders() {
         echoClient = createEchoClient(cfg.reverb || {});
+        echoAvailable = !!echoClient;
         if (!echoClient) return;
 
         const ordersChannelName = cfg.restaurantId ? `orders.${cfg.restaurantId}` : 'orders';
+        const channel = echoClient.channel(ordersChannelName);
+        const connection = echoClient.connector?.pusher?.connection;
+
+        if (connection) {
+            connection.bind('connected', () => {
+                realtimeConnected = true;
+            });
+            connection.bind('disconnected', () => {
+                realtimeConnected = false;
+            });
+            if (connection.state === 'connected') {
+                realtimeConnected = true;
+            }
+        }
 
         // Hem garson çağrısı hem hesap (POS) çağrısı garsona anında düşer (kasayla eş zamanlı).
-        echoClient.channel(ordersChannelName).listen('.TableCallReceived', (payload) => {
+        channel.listen('.TableCallReceived', (payload) => {
+            const call = payload?.call;
+            if (!call?.id) return;
+            knownCallIds.add(Number(call.id));
+
+            // Hesap çağrısı: kasa yönlendirene kadar garsona bildirim gitmesin.
+            if (isBillCallType(call.type)) {
+                return;
+            }
+
+            prependRealtimeCall(call);
+            playCallBell();
+            notifyOnce(`call:${call.id}:received`, {
+                title: 'Garson çağrısı',
+                message: call.headline || `Masa ${call.table ?? '—'} · ${call.type_label ?? ''}`,
+                type: 'warning',
+                durationMs: 4200,
+            });
+        });
+
+        // Kasa hesap çağrısını garsona yönlendirdiğinde tek bildirim.
+        channel.listen('.TableCallForwarded', (payload) => {
             const call = payload?.call;
             if (!call?.id) return;
             knownCallIds.add(Number(call.id));
             prependRealtimeCall(call);
             playCallBell();
-            const isBill = ['bill_cash', 'bill_card', 'bill'].includes(String(call.type));
-            showAdminToast({
-                title: isBill ? 'Hesap İstendi · Masaya Git' : 'Garson çağrısı',
-                message: call.headline || `Masa ${call.table ?? '—'} · ${call.type_label ?? ''}`,
-                type: 'warning',
-                durationMs: isBill ? 5000 : 4200,
-            });
-        });
-
-        // Kasa hesap çağrısını ayrıca yönlendirdiğinde POS hatırlatması.
-        echoClient.channel(ordersChannelName).listen('.TableCallForwarded', (payload) => {
-            const call = payload?.call;
-            if (!call?.id) return;
-            knownCallIds.add(Number(call.id));
-            updateCallCardInFeed(call);
-            playReadyRing();
-            showAdminToast({
+            notifyOnce(`call:${call.id}:forwarded`, {
                 title: 'POS · Masaya Git',
                 message: `Masa ${call.table ?? '—'} · ${call.type_label ?? 'Hesap'} · POS hazır`,
                 type: 'warning',
@@ -487,7 +533,7 @@ function initWaiterDashboard() {
             });
         });
 
-        echoClient.channel(ordersChannelName).listen('.TableCallUpdated', (payload) => {
+        channel.listen('.TableCallUpdated', (payload) => {
             const call = payload?.call;
             if (!call?.id) return;
             if (isCallClosed(call)) {
@@ -503,12 +549,13 @@ function initWaiterDashboard() {
             updateCallCardInFeed(call);
         });
 
-        echoClient.channel(ordersChannelName).listen('.OrderCreated', (payload) => {
+        channel.listen('.OrderCreated', (payload) => {
             const order = payload?.order;
-            if (!order) return;
+            if (!order?.id) return;
+            knownOrderIds.add(Number(order.id));
             prependRealtimeOrder(order);
             playBip();
-            showAdminToast({
+            notifyOnce(`order:${order.id}:created`, {
                 title: 'Yeni sipariş',
                 message: `#${order.order_number ?? order.id} · Masa ${order.table ?? '—'}`,
                 type: 'info',
@@ -516,7 +563,7 @@ function initWaiterDashboard() {
             });
         });
 
-        echoClient.channel(ordersChannelName).listen('.OrderStatusUpdated', (payload) => {
+        channel.listen('.OrderStatusUpdated', (payload) => {
             const orderId = Number(payload?.order_id);
             const status = String(payload?.status || '');
             if (!Number.isFinite(orderId)) return;
@@ -526,6 +573,7 @@ function initWaiterDashboard() {
                 const existingCard = feedEl?.querySelector(`[data-feed-kind="order"][data-feed-id="${orderId}"]`);
 
                 if (status === 'preparing') {
+                    knownOrderIds.delete(orderId);
                     existingCard?.classList.add('waiter-feed-card--out');
                     setTimeout(() => {
                         existingCard?.remove();
@@ -554,11 +602,10 @@ function initWaiterDashboard() {
                             : '';
                     const closedTitle = status === 'cancelled' ? 'Sipariş iptal edildi' : 'Sipariş kapatıldı';
 
-                    // Garson kartı görüyorduysa sesli + görsel bildir.
                     if (existingCard) {
                         playBip();
                     }
-                    showAdminToast({
+                    notifyOnce(`order:${orderId}:${status}`, {
                         title: closedTitle,
                         message: `Masa ${payload?.table ?? '—'} · #${payload?.order_number ?? orderId}${paymentText}`,
                         type: status === 'cancelled' ? 'error' : 'success',
@@ -584,13 +631,14 @@ function initWaiterDashboard() {
             }
 
             readyAlertIds.add(orderId);
+            knownOrderIds.add(orderId);
             playReadyRing();
             const itemsText = (payload?.items || [])
                 .slice(0, 3)
                 .map((i) => `${i.quantity}x ${i.name}`)
                 .join(', ');
             const more = (payload?.items || []).length > 3 ? '…' : '';
-            showAdminToast({
+            notifyOnce(`order:${orderId}:ready`, {
                 title: 'Mutfakta Hazir!',
                 message: `Masa ${payload?.table ?? '—'} · ${itemsText || `#${payload?.order_number ?? orderId}`}${more}`,
                 type: 'success',
@@ -614,6 +662,25 @@ function initWaiterDashboard() {
 
     function initInstallPrompt() {
         if (!installBtn) return;
+
+        const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+        const isStandalone =
+            window.matchMedia('(display-mode: standalone)').matches ||
+            window.navigator.standalone === true;
+
+        if (isIos && !isStandalone) {
+            installBtn.hidden = false;
+            installBtn.textContent = '📲 Ana Ekrana Ekle (iPhone)';
+            installBtn.addEventListener('click', () => {
+                showAdminToast({
+                    title: 'iPhone / iPad',
+                    message: 'Safari alt menü → Paylaş (kare ok) → Ana Ekrana Ekle',
+                    type: 'info',
+                    durationMs: 6000,
+                });
+            });
+            return;
+        }
 
         window.addEventListener('beforeinstallprompt', (event) => {
             event.preventDefault();
@@ -651,15 +718,18 @@ function initWaiterDashboard() {
             );
             const nextOrderIds = new Set(orders.map((o) => Number(o.id)).filter((id) => Number.isFinite(id)));
 
-            const calls = (data.calls || []).filter(waiterShouldShowCall);
+            const calls = (data.calls || []).filter(shouldShowCallInFeed);
             const nextCallIds = new Set(calls.map((c) => Number(c.id)).filter((id) => Number.isFinite(id)));
 
-            if (hasBootstrappedOrders) {
+            // Reverb açıksa bildirimler yalnızca Echo'dan; poll yalnızca yedek senkron.
+            const pollNotifies = !echoAvailable || !realtimeConnected;
+
+            if (pollNotifies && hasBootstrappedOrders) {
                 const newOrders = orders.filter((o) => !knownOrderIds.has(Number(o.id)));
                 if (newOrders.length) {
                     playBip();
                     const first = newOrders[0];
-                    showAdminToast({
+                    notifyOnce(`order:${first.id}:created`, {
                         title: 'Yeni sipariş',
                         message: `#${first.order_number ?? first.id} · Masa ${first.table ?? '—'}`,
                         type: 'info',
@@ -668,12 +738,12 @@ function initWaiterDashboard() {
                 }
             }
 
-            if (hasBootstrappedCalls) {
+            if (pollNotifies && hasBootstrappedCalls) {
                 const newCalls = calls.filter((c) => !knownCallIds.has(Number(c.id)));
                 if (newCalls.length) {
                     playCallBell();
                     const first = newCalls[0];
-                    showAdminToast({
+                    notifyOnce(`call:${first.id}:received`, {
                         title: 'Masa çağrısı',
                         message: first.headline || `Masa ${first.table ?? '—'} · ${first.type_label ?? ''}`,
                         type: 'warning',
@@ -806,11 +876,16 @@ function initWaiterDashboard() {
             if (data.call) {
                 updateCallCardInFeed(data.call);
             }
+
+            const isConflict = res.status === 409 || data.conflict;
             showAdminToast({
                 title: 'Üstlenilemedi',
-                message: data.message || 'Başka bir garson ilgileniyor.',
+                message: data.message
+                    || (isConflict
+                        ? 'Bu çağrı başka bir personel tarafından zaten kabul edildi!'
+                        : 'Başka bir garson ilgileniyor.'),
                 type: 'warning',
-                durationMs: 3200,
+                durationMs: 4000,
             });
         } catch {
             showAdminToast({
@@ -860,10 +935,22 @@ function initWaiterDashboard() {
                 return;
             }
 
+            const isConflict = res.status === 409 || data.conflict;
+            if (isConflict) {
+                const card = btn.closest('[data-feed-kind]');
+                card?.classList.add('waiter-feed-card--out');
+                setTimeout(() => card?.remove(), 280);
+                await poll();
+            }
+
             showAdminToast({
                 title: 'Onaylanamadı',
-                message: data.message || 'Tekrar deneyin.',
-                type: 'error',
+                message: data.message
+                    || (isConflict
+                        ? 'Bu sipariş başka bir personel tarafından zaten kabul edildi!'
+                        : 'Tekrar deneyin.'),
+                type: isConflict ? 'warning' : 'error',
+                durationMs: 4000,
             });
         } catch {
             showAdminToast({ title: 'Bağlantı hatası', message: 'Tekrar deneyin.', type: 'error' });

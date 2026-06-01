@@ -56,6 +56,9 @@ function playCallAlert() {
 
 const OVERDUE_MINUTES = 15;
 
+/** Admin birleşik ekranda onay bekleyen siparişler görünür; mutfak/bar tableti görmez. */
+let liveOpsShowPendingApproval = true;
+
 function parseIso(iso) {
     if (!iso) return null;
     const d = new Date(iso);
@@ -81,8 +84,11 @@ function isOverdueOrder(order) {
 }
 
 function filterOrders(orders, tab) {
-    if (tab === 'all' || tab === 'calls') return orders;
-    const visible = orders.filter((o) => o.status !== 'pending_approval');
+    if (tab === 'calls') return orders;
+    const visible = tab === 'all' && liveOpsShowPendingApproval
+        ? orders
+        : orders.filter((o) => o.status !== 'pending_approval');
+    if (tab === 'all') return visible;
     if (tab === 'kitchen') return visible.filter((o) => o.has_kitchen);
     if (tab === 'bar') return visible.filter((o) => o.has_bar);
     if (tab === 'prepared') return visible.filter((o) => o.status === 'ready');
@@ -183,7 +189,7 @@ function buildViewFingerprint(orders, calls, completedOrders, tab) {
         return `completed:${JSON.stringify(completedOrders.map((o) => [o.id, o.status, o.payment_method, o.updated_at]))}`;
     }
     if (tab === 'all') {
-        const feed = buildMixedFeed(orders, calls);
+        const feed = buildMixedFeed(filterOrders(orders, 'all'), calls);
         return `all:${JSON.stringify(feed.map((f) => [f.kind, f.sort_at, f.data.id, f.data.updated_at ?? f.data.status, f.data.forwarded_to_waiter]))}`;
     }
     return `orders:${buildOrdersFingerprint(orders, tab)}`;
@@ -316,7 +322,7 @@ function renderGrid(orders, calls, completedOrders, tab) {
     }
 
     if (tab === 'all') {
-        const feed = buildMixedFeed(orders, calls);
+        const feed = buildMixedFeed(filterOrders(orders, 'all'), calls);
         if (!feed.length) {
             return '<p class="py-20 text-center text-[#D4C5B9]">Aktif sipariş veya çağrı yok ✨</p>';
         }
@@ -354,6 +360,7 @@ if (root) {
     const resolveCallUrlBase = root.dataset.resolveCallUrl;
     const csrf = root.dataset.csrf;
     const baseTitle = root.dataset.pageTitle || document.title;
+    liveOpsShowPendingApproval = root.dataset.showPendingApproval !== '0';
     const restaurantId = root.dataset.restaurantId || '';
     const ordersChannelName = restaurantId ? `orders.${restaurantId}` : 'orders';
     const reverbCfg = {
@@ -473,6 +480,9 @@ if (root) {
         }
 
         if (order.status === 'pending_approval') {
+            if (!liveOpsShowPendingApproval) {
+                return;
+            }
             upsertOrder(order);
             knownOrderIds.add(order.id);
             dataFingerprint = '';
@@ -1007,9 +1017,18 @@ if (root) {
                 });
             }
 
-            if (!applyOrderStatusUpdate(payload)) {
+            const updated = applyOrderStatusUpdate(payload);
+
+            if (!updated) {
                 poll(true);
+                if (status === 'preparing' && !liveOpsShowPendingApproval && initialized) {
+                    playOrderDing();
+                }
                 return;
+            }
+
+            if (status === 'preparing' && !liveOpsShowPendingApproval && initialized) {
+                playOrderDing();
             }
 
             if (status === 'delivered' || status === 'cancelled') {

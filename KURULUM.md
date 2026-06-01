@@ -64,7 +64,7 @@ npm -v
 
 | Ekran | URL | Açıklama |
 |-------|-----|----------|
-| QR Menü | `/menu` veya `/menu/{masa-token}` | Müşteri menüsü + sipariş (normal mobil web) |
+| QR Menü | `/menu` (genel) veya `/table/{uuid}` | Müşteri menüsü + sipariş (masa UUID ile; sıralı id kullanılmaz) |
 | Sipariş Durumu | `/siparis/{id}/durum` | Müşteri sipariş takibi |
 | TV Ekranı | `/ekran` | Tam ekran görsel slider |
 | Mutfak | `/mutfak` | Sipariş takip paneli |
@@ -100,7 +100,7 @@ php artisan storage:link   # symlink kopyalanmadıysa
 composer dev
 ```
 
-Tarayıcı: http://127.0.0.1:8000
+Tarayıcı: http://127.0.0.1:8000 — telefon için terminaldeki **Ağ (LAN)** adresi.
 
 > Sunumdan önce bu işlemi bir kez deneyin: kopyaladıktan sonra `composer dev` ile uçtan uca test edin (sipariş → kasa → garson → hesap kapatma).
 
@@ -127,17 +127,43 @@ npm run build
 composer dev
 ```
 
-Tarayıcı: http://127.0.0.1:8000
+Tarayıcı: http://127.0.0.1:8000 — aynı Wi-Fi'deki telefon/tablet için terminalde yazdırılan **Ağ (LAN)** adresini kullanın.
+
+> **Ctrl+C ile kapattığınızda** Composer kırmızı “exit code 1” gösterebilirdi; artık normal kapanışta temiz çıkış yapılır. Kendiliğinden kapanırsa port çakışması olabilir (aşağıdaki Sorun Giderme).
 
 ### Sunum için kritik ipuçları
 
 1. **Realtime için `reverb` + `queue` şart.** `composer dev` ikisini de açar. Kapalıysa bildirimler ~3 sn'lik yedek (polling) ile yine düşer ama anlık olmaz.
 2. **Ses:** Tarayıcı autoplay politikası gereği garson/kasa ekranında **bir kez tıklamadan** bildirim sesi çıkmaz. Sunum öncesi her ekrana bir kez tıklayın.
 3. **Telefonu garson olarak kullanacaksanız** (aynı Wi-Fi):
-   - `php artisan serve --host=0.0.0.0 --port=8000`
-   - `.env` içinde `APP_URL` ve `REVERB_HOST`'u laptopun yerel IP'sine ayarlayın (ör. `192.168.1.20`), sonra `npm run build`.
-   - Telefondan `http://192.168.1.20:8000` açın.
+   - **`composer phone` kullanın** (`composer dev` değil!) — Vite kapalı, CSS telefonda çalışır.
+   - `.env` → `APP_URL=http://192.168.1.20:8000` ve `REVERB_HOST=192.168.1.20` (kendi IP'niz).
+   - Telefondan `http://192.168.1.20:8000` açın. Güvenlik duvarı 8000 + 8080 portlarına izin vermeli.
+   - PC'de kod değiştirdiyseniz tekrar `composer phone` (içinde `npm run build` var).
 4. **Temiz demo için veri sıfırlama:** `php artisan migrate:fresh --seed` (DİKKAT: tüm veriyi siler).
+
+### Garson PWA (telefona uygulama gibi ekleme)
+
+> **Önemli:** Garson telefonunda `npm run build` **çalıştırılmaz**. Derleme yalnızca sunucuda (sizin PC'nizde veya canlı sunucuda) yapılır; garson sadece tarayıcıdan veya ana ekran kısayolundan siteyi açar.
+
+**Telefonda tasarım bozuksa (düz metin, CSS yok):**
+- **`composer dev` ile telefon testi yapmayın** — `public/hot` dosyası CSS'i `127.0.0.1:5173`'e yönlendirir, telefon erişemez.
+- Bunun yerine: **`composer phone`** (Vite yok, build kullanır).
+- `.env` → `APP_URL` laptop IP'niz olmalı (`http://192.168.1.x:8000`), `localhost` olmamalı.
+- `public/hot` varsa silin: `del public\\hot` → sayfayı **Ctrl+F5** / telefonda önbelleği temizleyin.
+
+**iPhone / iPad (Safari):**
+- Android'deki “Yükle” düğmesi iOS'ta **yoktur** (Apple kısıtı).
+- Garson panelinde **「Ana Ekrana Ekle (iPhone)」** düğmesine basın veya: Safari → **Paylaş (⎙)** → **Ana Ekrana Ekle**.
+- Ana ekrandan açınca tam ekran (standalone) çalışır.
+
+**Android (Chrome):**
+- **「Uygulamayı Yükle」** düğmesi görünür; veya Chrome menü → Uygulamayı yükle.
+
+**Canlıya alınca (production):**
+- Domain + **HTTPS** (Let's Encrypt vb.) — iOS PWA için önerilir.
+- Sunucuda deploy sırasında bir kez: `npm run build` → `public/build/` dosyaları yayına gider.
+- Garson: `https://sizin-domain.com/admin/giris` → giriş → garson paneli → Ana ekrana ekle.
 
 ---
 
@@ -166,14 +192,14 @@ npm install
 composer dev
 ```
 
-Şunları aynı anda çalıştırır: `php artisan serve` + `reverb:start` + `queue:work` + `npm run dev`.
+Şunları aynı anda çalıştırır: `serve` (0.0.0.0:8000) + `reverb` (0.0.0.0:8080) + `queue:work` + `vite` (LAN erişimi açık).
 Tarayıcı: http://127.0.0.1:8000 — değişiklik sonrası gerekirse **Ctrl+F5**.
 
 **Ayrı terminallerde çalıştırmak isterseniz:**
 
 ```powershell
-php artisan serve
-php artisan reverb:start --host=127.0.0.1 --port=8080
+php artisan serve --host=0.0.0.0 --port=8000
+php artisan reverb:start --host=0.0.0.0 --port=8080
 php artisan queue:work --tries=1 --timeout=0
 npm run dev
 ```
@@ -195,6 +221,30 @@ npm run dev
 - **Garson PWA**: aynı `OrderCreated` event'ini dinler; sayfa yenilemeden kart ekler.
 - Livewire kullanılmaz — tüm canlı güncellemeler Echo + vanilla JS ile yapılır.
 
+### SaaS tenant izolasyonu (RestaurantScope)
+
+Çoklu restoran ortamında veri sızıntısını önlemek için Eloquent **global scope** kullanılır; controller'larda manuel `where('restaurant_id', …)` yazmaya gerek kalmaz.
+
+| Bileşen | Dosya / rol |
+|---------|-------------|
+| Global scope | `App\Models\Scopes\RestaurantScope` |
+| Trait | `App\Models\Concerns\BelongsToRestaurant` |
+| Aktif restoran bağlamı | `App\Support\CurrentRestaurant` |
+| Doğrulama kuralları | `App\Support\TenantRules` (`existsModel`, `uniqueModel`) |
+| Route binding | `AppServiceProvider` — başka restoranın ID'si **404** |
+
+**Scope'lu modeller:** `Product`, `Category`, `Order`, `Table`, `TableCall`, `User` (+ `Setting`, `DisplaySlide`, `CafeGallery` vb.)
+
+**Bağlam nasıl set edilir?**
+
+- **Personel (admin/garson):** `SetStaffRestaurantContext` middleware → `session('admin_restaurant_id')`
+- **Müşteri QR menü:** `ResolveRestaurantFromTable` → masa UUID'sinden restoran
+- **Mutfak kiosk:** `AuthenticateKitchenScreen` → `session('kiosk_restaurant_id')`
+
+**Güvenlik davranışı:** Scope aktifken başka restoranın kaynağına ID ile erişim denendiğinde sorgu sonuç dönmez → route model binding **404**. Bağlam yoksa fail-safe: `WHERE 1=0` (hiç satır dönmez).
+
+**İstisnalar (kasıtlı):** Giriş ekranı (`AuthController`) ve public sipariş takibi (`Order::withoutGlobalScopes()` + `public_token`) scope dışında çalışır.
+
 ### Sipariş & hesap akışı
 
 1. Müşteri sipariş verir → **kasaya** düşer.
@@ -206,6 +256,69 @@ npm run dev
 
 > Kasa, hesap çağrısında **➜ Garsona Yönlendir (POS)** ile garsona ekstra POS hatırlatması da gönderebilir.
 
+### Müşteri sepeti (localStorage)
+
+Müşteri menüsünde sepet **sunucu oturumunda tutulmaz** (Livewire yok). Zayıf internet veya sayfa yenilemesinde sepetin kaybolmaması için tarayıcı `localStorage` ile senkronize edilir.
+
+| Konu | Detay |
+|------|-------|
+| Anahtar | `restaurant_cart` |
+| Dosyalar | `resources/js/lib/restaurant-cart-storage.js`, `resources/js/pages/menu-cart.js` |
+| Kayıt zamanı | Ürün ekleme/çıkarma, adet değişimi, varyasyonlu ekleme, sipariş notu yazılırken, sayfa kapanmadan önce |
+| Yükleme (hydrate) | Sayfa açılışında bellekte sepet boşsa `localStorage` okunur ve UI güncellenir |
+| Temizleme | Sipariş sunucuya başarıyla kaydedildiğinde anahtar silinir |
+| Kapsam | `restaurantId` + `tableToken` eşleşmezse sepet yüklenmez (yanlış masa/restoran karışması önlenir) |
+
+**JSON yapısı (özet):**
+
+```json
+{
+  "v": 2,
+  "restaurantId": "1",
+  "tableToken": "abc-uuid",
+  "locale": "tr",
+  "items": { "...": { "productId", "name", "price", "options", "qty" } },
+  "orderNotes": "",
+  "savedAt": 1710000000000
+}
+```
+
+**Ek davranışlar:**
+
+- Eski anahtar `hsp_cart_v1_{restaurant}_{masa}_{locale}` varsa ilk yüklemede `restaurant_cart`'a taşınır.
+- Geri/ileri önbellek (`pageshow` + bfcache) ve başka sekmedeki değişiklikler (`storage` event) UI'ı günceller.
+- JS değişikliğinden sonra `npm run build` (veya geliştirmede `npm run dev`) gerekir.
+
+**Test:** Menüye ürün ekleyin → DevTools → Application → Local Storage → `restaurant_cart` görünmeli. Sayfayı yenileyin — sepet korunmalı. Sipariş verdikten sonra anahtar silinmeli.
+
+### Ürün varyasyonları (seçenekler)
+
+Admin → **Ürünler** → düzenle → **Varyasyon grupları** bölümünden ekstra malzeme, sos, porsiyon vb. tanımlanır.
+
+| Konu | Detay |
+|------|-------|
+| Admin UI | `admin/partials/product-option-groups.blade.php`, `admin-product-options.js` |
+| Müşteri modal | Varyasyonlu üründe «+» → modal; fiyat anlık güncellenir → «Sepete Ekle (X ₺)» |
+| Sepet satırı | `group_id`, `option_id`, isim ve fiyat JSON olarak saklanır |
+| Sunucu fiyat | `ProductOptionPricing::resolve()` — sipariş anında `unit_price` snapshot |
+
+Varyasyon tipleri: **tek seçim** (radio, örn. porsiyon) ve **çoklu seçim** (checkbox, örn. ekstra malzemeler).
+
+### Masa UUID güvenliği
+
+Müşteri menüsünde masa **sıralı veritabanı id'si ile değil**, tahmin edilemez `tables.uuid` ile açılır:
+
+| Konu | Detay |
+|------|-------|
+| URL | `/table/{uuid}` (eski `/menu/{token}` → 301 yönlendirme) |
+| Model | `Table` → `HasUuids` trait, `uniqueIds(): ['uuid']` |
+| Migration | `2026_06_01_220000_add_uuid_to_tables_table.php` |
+| QR kod | `TableQrCodeService` yalnızca `/table/{uuid}` linki üretir |
+
+### Fiyat snapshot (order_items.unit_price)
+
+Sipariş satırlarında `unit_price DECIMAL(10,2)` alanı, **sipariş anındaki** ürün + varyasyon fiyatını saklar. Admin panelden ürün fiyatı sonradan değişse bile geçmiş siparişlerin `total` ve rapor cirosu etkilenmez. Kayıt: `OrderPlacementService` → `ProductOptionPricing::resolve()`.
+
 ### Menü / içerik yönetimi (admin)
 
 | Bölüm | İşlev |
@@ -213,7 +326,7 @@ npm run dev
 | Social Spotted | Menü üstündeki fotoğraf carousel |
 | Kategoriler | Kapak görseli (yalnızca admin görür) + örnek görseller, aktif/pasif toggle |
 | Ürünler | Görsel, fiyat, rozet (hazır chip önerileri), aktif/pasif toggle |
-| Masalar & QR | Yeni masa → otomatik QR (PNG/SVG), `/menu/{uuid}` |
+| Masalar & QR | Yeni masa → otomatik UUID + QR (PNG/SVG), `/table/{uuid}` |
 | Ayarlar | Günün mottosu + Wi-Fi şifresi (menü banner) |
 | Ekran Slaytları | TV ekranı görselleri |
 
@@ -359,7 +472,7 @@ RewriteBase /human-qr-menu/public/
 ## QR Kod Oluşturma
 
 1. Admin → **Masalar & QR**
-2. Her masanın linkini kopyalayın (ör. `https://domain.com/menu/abc123token`)
+2. Her masanın linkini kopyalayın (ör. `https://domain.com/table/550e8400-e29b-41d4-a716-446655440000`)
 3. QR üretip masaya yapıştırın. Genel menü için: `https://domain.com/menu`
 
 ## TV Ekranı
@@ -373,6 +486,10 @@ RewriteBase /human-qr-menu/public/
 
 | Belirti | Çözüm |
 |---------|-------|
+| `composer dev` kapanınca exit code 1 | **Ctrl+C ile kapattıysanız** artık normal mesaj görünür. **Kendiliğinden kapandıysa** port çakışması — aşağıdaki satıra bakın. |
+| Tasarım / CSS tamamen bozuk | `public/hot` kalmış → `del public\\hot`. Telefon için **`composer phone`** kullanın, `composer dev` değil. |
+| Telefondan IP ile açılmıyor | `composer dev` çalışıyor mu? `.env` → `APP_URL` + `REVERB_HOST` = laptop IP; `npm run build`. Güvenlik duvarında 8000/8080 açık olsun. |
+| Port meşgul / yeniden başlamıyor | `netstat -ano \| findstr ":8000 :8080 :5173"` → `taskkill /PID <numara> /F` → tekrar `composer dev`. |
 | Bildirimler anlık gelmiyor | `reverb:start` + `queue:work` çalışıyor mu? `composer dev` kullanın. |
 | Ses çıkmıyor | Ekrana bir kez tıklayın (tarayıcı autoplay engeli). |
 | Görseller görünmüyor | `php artisan storage:link` çalıştırın. |
@@ -380,6 +497,7 @@ RewriteBase /human-qr-menu/public/
 | `no such table` hatası | `database/database.sqlite` oluşturup `php artisan migrate --seed`. |
 | QR PNG üretilmiyor | PHP `ext-gd` kapalı; SVG otomatik üretilir, sorun değil. |
 | Ürün/kategori görselleri WebP'ye dönüşmüyor | PHP `ext-gd` kapalı veya WebP desteği yok — aşağıdaki **GD / WebP** bölümüne bakın. |
+| Müşteri sepeti sıfırlanıyor | Zayıf bağlantıda sayfa yenilenmiş olabilir; `restaurant_cart` localStorage'da var mı kontrol edin. Gizli mod / depolama doluysa kayıt yapılamaz. |
 | Windows `composer dev:logs` hatası | `pcntl` Windows'ta yok; `storage/logs/laravel.log` izleyin. |
 
 ### GD / WebP — görsel optimizasyonu

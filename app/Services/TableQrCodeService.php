@@ -28,7 +28,7 @@ class TableQrCodeService
 
     public function menuUrl(Table $table): string
     {
-        return route('menu.index', ['token' => $table->uuid]);
+        return route('menu.table', ['uuid' => $table->uuid]);
     }
 
     public function generateFor(Table $table): void

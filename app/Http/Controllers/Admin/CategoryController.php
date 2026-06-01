@@ -100,6 +100,7 @@ class CategoryController extends Controller
 
         $data = $request->validate([
             'slug' => 'nullable|string|max:100',
+            'type' => 'required|in:kitchen,bar',
             'icon' => 'nullable|string|max:50',
             'image' => 'nullable|image|max:3072',
             'preset_image' => 'nullable|string|in:images/categories/samples/yiyecek.svg,images/categories/samples/icecek.svg,images/categories/samples/nargile.svg,images/categories/samples/okey.svg',

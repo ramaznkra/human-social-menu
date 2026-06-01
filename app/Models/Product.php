@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use App\Models\Concerns\BelongsToRestaurant;
 use App\Models\Concerns\HasMenuTranslations;
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -24,7 +26,7 @@ class Product extends Model
     protected function casts(): array
     {
         return [
-            'price' => 'decimal:2',
+            'price' => MoneyCast::class,
             'is_available' => 'boolean',
             'in_stock' => 'boolean',
         ];
@@ -56,7 +58,7 @@ class Product extends Model
                 'options' => $group->options->map(fn (ProductOption $option) => [
                     'id' => $option->id,
                     'name' => $option->localizedName($locale),
-                    'price' => (float) $option->price_modifier,
+                    'price' => Money::normalize($option->price_modifier),
                     'default' => $option->is_default,
                 ])->values()->all(),
             ])
@@ -83,5 +85,20 @@ class Product extends Model
     public function scopeInStock($query)
     {
         return $query->where('in_stock', true);
+    }
+
+    /** Mutfak/bar istasyonu — öncelik kategori tipi, yedek ürün tipi. */
+    public function stationType(): string
+    {
+        $this->loadMissing('category:id,type');
+
+        $fromCategory = $this->category?->type;
+        if (in_array($fromCategory, [Category::TYPE_KITCHEN, Category::TYPE_BAR], true)) {
+            return $fromCategory;
+        }
+
+        return in_array($this->type, [Category::TYPE_KITCHEN, Category::TYPE_BAR], true)
+            ? $this->type
+            : Category::TYPE_KITCHEN;
     }
 }

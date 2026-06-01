@@ -28,7 +28,8 @@ class CurrentRestaurant
 
     /**
      * Global scope ve tenant doğrulamaları için restoran kimliği.
-     * Öncelik: bağlam → oturum → kiosk → auth kullanıcı.
+     *
+     * Öncelik: istek bağlamı → personel oturumu → kiosk → auth()->user()->restaurant_id
      */
     public static function resolveId(): ?int
     {

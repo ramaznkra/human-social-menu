@@ -76,7 +76,7 @@ class ManualOrderController extends Controller
             'products' => $products->map(fn (Product $p) => [
                 'id' => $p->id,
                 'name' => $p->getTranslation('name', 'tr'),
-                'price' => (float) $p->price,
+                'price' => $p->price,
                 'type' => $p->type ?? 'kitchen',
                 'category' => $p->category?->getTranslation('name', 'tr'),
             ]),
@@ -110,7 +110,7 @@ class ManualOrderController extends Controller
             'order' => [
                 'id' => $order->id,
                 'order_number' => $order->order_number,
-                'total' => (float) $order->total,
+                'total' => $order->total,
                 'table' => $order->table?->number,
                 'source' => $order->source,
             ],

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\Setting;
+use App\Support\Money;
 use App\Support\OrderArchiveFilter;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -19,9 +20,9 @@ class OrderArchiveExportService
             ->where('status', Order::STATUS_DELIVERED)
             ->whereNotNull('payment_method');
 
-        $netRevenue = (float) (clone $paid)->sum('total');
-        $cashRevenue = (float) (clone $paid)->where('payment_method', Order::PAYMENT_CASH)->sum('total');
-        $cardRevenue = (float) (clone $paid)->where('payment_method', Order::PAYMENT_CARD)->sum('total');
+        $netRevenue = Money::normalize((clone $paid)->sum('total'));
+        $cashRevenue = Money::normalize((clone $paid)->where('payment_method', Order::PAYMENT_CASH)->sum('total'));
+        $cardRevenue = Money::normalize((clone $paid)->where('payment_method', Order::PAYMENT_CARD)->sum('total'));
 
         return [
             'total_records' => (clone $query)->count(),
@@ -111,8 +112,8 @@ class OrderArchiveExportService
         return 'Tüm arşiv';
     }
 
-    private function formatMoney(float $amount): string
+    private function formatMoney(string|float $amount): string
     {
-        return number_format($amount, 0, ',', '.').' ₺';
+        return number_format(Money::toFloat($amount), 2, ',', '.').' ₺';
     }
 }

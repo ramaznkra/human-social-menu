@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('order_id')->constrained()->cascadeOnDelete();
             $table->foreignId('product_id')->constrained();
             $table->unsignedInteger('quantity')->default(1);
-            $table->decimal('unit_price', 10, 2);
+            $table->decimal('unit_price', 10, 2); // Sipariş anındaki birim fiyat (snapshot)
             $table->string('product_name');
             $table->text('notes')->nullable();
             $table->timestamps();

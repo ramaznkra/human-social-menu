@@ -12,6 +12,7 @@ use App\Services\TableStatusService;
 use App\Services\TableTransferService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class WaiterDashboardController extends Controller
@@ -30,26 +31,34 @@ class WaiterDashboardController extends Controller
     /** QR siparişini onayla → mutfağa düşer (preparing). */
     public function approveOrder(Order $order): JsonResponse
     {
-        if ($order->status !== Order::STATUS_PENDING_APPROVAL) {
+        return DB::transaction(function () use ($order) {
+            $order = Order::query()
+                ->whereKey($order->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($order->status !== Order::STATUS_PENDING_APPROVAL) {
+                return response()->json([
+                    'success' => false,
+                    'conflict' => true,
+                    'message' => 'Bu sipariş başka bir personel tarafından zaten kabul edildi!',
+                ], 409);
+            }
+
+            $order->update(['status' => Order::STATUS_PREPARING]);
+            $order->refresh();
+            event(OrderStatusUpdated::fromOrder($order));
+
             return response()->json([
-                'success' => false,
-                'message' => 'Yalnızca onay bekleyen siparişler onaylanabilir.',
-            ], 422);
-        }
-
-        $order->update(['status' => Order::STATUS_PREPARING]);
-        $order->refresh();
-        event(OrderStatusUpdated::fromOrder($order));
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Sipariş onaylandı, mutfağa iletildi.',
-            'order' => [
-                'id' => $order->id,
-                'status' => $order->status,
-                'status_label' => $order->status_label,
-            ],
-        ]);
+                'success' => true,
+                'message' => 'Sipariş onaylandı, mutfağa iletildi.',
+                'order' => [
+                    'id' => $order->id,
+                    'status' => $order->status,
+                    'status_label' => $order->status_label,
+                ],
+            ]);
+        });
     }
 
     /** Aktif masadaki siparişleri boş masaya taşır. */
@@ -75,34 +84,60 @@ class WaiterDashboardController extends Controller
     /** Garson çağrısını üstlenir — diğer garsonlar anında görür. */
     public function claimCall(TableCall $call): JsonResponse
     {
-        if ($call->status === TableCall::STATUS_COMPLETED) {
-            return response()->json(['success' => false, 'message' => 'Çağrı zaten kapatılmış.'], 422);
-        }
-
         $userId = (int) session('admin_user_id');
 
-        if ($call->status === TableCall::STATUS_IN_PROGRESS && (int) $call->waiter_id !== $userId) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Garson '.($call->waiter?->name ?? 'başka bir personel').' ilgileniyor.',
-                'call' => TableCallUpdated::callPayload($call->loadMissing(['linkedTable:id,number', 'waiter:id,name'])),
-            ], 422);
-        }
+        return DB::transaction(function () use ($call, $userId) {
+            $call = TableCall::query()
+                ->whereKey($call->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        if ($call->status === TableCall::STATUS_PENDING) {
+            if ($call->status === TableCall::STATUS_COMPLETED) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Çağrı zaten kapatılmış.',
+                ], 422);
+            }
+
+            if ($call->status === TableCall::STATUS_IN_PROGRESS) {
+                if ((int) $call->waiter_id === $userId) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Çağrı size atandı.',
+                        'call' => TableCallUpdated::callPayload($call->loadMissing(['linkedTable:id,number', 'waiter:id,name'])),
+                    ]);
+                }
+
+                return response()->json([
+                    'success' => false,
+                    'conflict' => true,
+                    'message' => 'Bu çağrı başka bir personel tarafından zaten kabul edildi!',
+                    'call' => TableCallUpdated::callPayload($call->loadMissing(['linkedTable:id,number', 'waiter:id,name'])),
+                ], 409);
+            }
+
+            if ($call->status !== TableCall::STATUS_PENDING) {
+                return response()->json([
+                    'success' => false,
+                    'conflict' => true,
+                    'message' => 'Bu çağrı başka bir personel tarafından zaten kabul edildi!',
+                    'call' => TableCallUpdated::callPayload($call->loadMissing(['linkedTable:id,number', 'waiter:id,name'])),
+                ], 409);
+            }
+
             $call->update([
                 'status' => TableCall::STATUS_IN_PROGRESS,
                 'waiter_id' => $userId,
             ]);
             $call->refresh();
             event(new TableCallUpdated($call));
-        }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Çağrı size atandı.',
-            'call' => TableCallUpdated::callPayload($call->loadMissing(['linkedTable:id,number', 'waiter:id,name'])),
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Çağrı size atandı.',
+                'call' => TableCallUpdated::callPayload($call->loadMissing(['linkedTable:id,number', 'waiter:id,name'])),
+            ]);
+        });
     }
 
     /**

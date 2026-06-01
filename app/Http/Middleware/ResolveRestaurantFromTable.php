@@ -20,7 +20,8 @@ class ResolveRestaurantFromTable
             return $next($request);
         }
 
-        $token = $request->route('token')
+        $token = $request->route('uuid')
+            ?? $request->route('token')
             ?? $request->input('table_token')
             ?? $request->query('table_token');
 

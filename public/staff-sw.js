@@ -1,4 +1,4 @@
-const CACHE_NAME = 'human-staff-v3';
+const CACHE_NAME = 'human-staff-v4';
 const STATIC_ASSETS = [
     '/manifest-waiter.json',
     '/icons/waiter-app-icon.svg',

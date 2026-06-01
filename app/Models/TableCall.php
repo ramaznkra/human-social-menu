@@ -86,6 +86,22 @@ class TableCall extends Model
             : ($this->table_id ? (string) $this->table_id : null);
     }
 
+    public function customerMessage(): string
+    {
+        $this->loadMissing('waiter:id,name');
+
+        if ($this->status === self::STATUS_IN_PROGRESS && $this->waiter) {
+            return __('menu.call.waiter_on_the_way', ['name' => $this->waiter->name]);
+        }
+
+        return match ($this->type) {
+            'waiter' => __('menu.call.waiter_sent'),
+            'bill_cash' => __('menu.call.bill_cash_sent'),
+            'bill_card' => __('menu.call.bill_card_sent'),
+            default => __('menu.table_call.default'),
+        };
+    }
+
     public function getHeadlineAttribute(): string
     {
         $table = $this->tableNumber() ?? '?';

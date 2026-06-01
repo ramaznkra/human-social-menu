@@ -11,18 +11,30 @@ use Spatie\Translatable\HasTranslations;
 
 class Category extends Model
 {
+    public const TYPE_KITCHEN = 'kitchen';
+
+    public const TYPE_BAR = 'bar';
+
     /** @use BelongsToRestaurant — App\Models\Scopes\RestaurantScope tenant izolasyonu */
     use BelongsToRestaurant, HasMenuTranslations, HasTranslations;
 
     public array $translatable = ['name', 'description'];
 
     protected $fillable = [
-        'restaurant_id', 'name', 'description', 'slug', 'icon', 'image', 'sort_order', 'is_active',
+        'restaurant_id', 'name', 'description', 'slug', 'type', 'icon', 'image', 'sort_order', 'is_active',
     ];
 
     protected function casts(): array
     {
         return ['is_active' => 'boolean'];
+    }
+
+    public function typeLabel(): string
+    {
+        return match ($this->type) {
+            self::TYPE_BAR => 'Bar / İçecek',
+            default => 'Mutfak / Yemek',
+        };
     }
 
     public function products(): HasMany

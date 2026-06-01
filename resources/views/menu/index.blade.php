@@ -298,6 +298,12 @@ window.HSP_MENU = {
     locale: @json($locale),
     orderStoreUrl: @json(route('order.store')),
     callApiUrl: @json(route('table.call.api')),
+    reverb: {
+        key: @json(config('broadcasting.connections.reverb.key', env('REVERB_APP_KEY'))),
+        host: @json(config('broadcasting.connections.reverb.options.host', env('REVERB_HOST', '127.0.0.1'))),
+        port: @json((int) config('broadcasting.connections.reverb.options.port', env('REVERB_PORT', 8080))),
+        scheme: @json(config('broadcasting.connections.reverb.options.scheme', env('REVERB_SCHEME', 'http'))),
+    },
     i18n: {
         cartItems: @json(__('menu.cart_items', ['count' => ':count'])),
         cartRemove: @json(__('menu.cart_remove')),
@@ -310,6 +316,7 @@ window.HSP_MENU = {
         basePrice: @json(__('menu.base_price')),
         optionRequired: @json(__('menu.option_required')),
         callWaiterSent: @json(__('menu.call.waiter_sent')),
+        waiterOnTheWay: @json(__('menu.call.waiter_on_the_way', ['name' => ':name'])),
         callWaiterActive: @json(__('menu.call.waiter_active')),
         callBillCash: @json(__('menu.call.bill_cash_sent')),
         callBillCard: @json(__('menu.call.bill_card_sent')),

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Support\CurrentRestaurant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,7 +16,6 @@ class WaiterController extends Controller
     {
         $waiters = User::query()
             ->where('role', User::ROLE_WAITER)
-            ->where('restaurant_id', CurrentRestaurant::resolveId())
             ->orderBy('name')
             ->get();
 
@@ -42,7 +40,6 @@ class WaiterController extends Controller
             'email' => $data['email'],
             'password' => $data['password'],
             'role' => User::ROLE_WAITER,
-            'restaurant_id' => CurrentRestaurant::resolveId(),
             'is_active' => true,
         ]);
 

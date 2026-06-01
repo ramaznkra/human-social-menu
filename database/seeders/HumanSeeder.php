@@ -74,10 +74,10 @@ class HumanSeeder extends Seeder
             }
 
             $categories = [
-                ['name' => ['tr' => 'Yiyecek', 'en' => 'Food', 'ru' => 'Еда'], 'slug' => 'yiyecek', 'image' => 'images/categories/samples/yiyecek.svg', 'sort_order' => 1],
-                ['name' => ['tr' => 'İçecek', 'en' => 'Drinks', 'ru' => 'Напитки'], 'slug' => 'icecek', 'image' => 'images/categories/samples/icecek.svg', 'sort_order' => 2],
-                ['name' => ['tr' => 'Nargile', 'en' => 'Shisha', 'ru' => 'Кальян'], 'slug' => 'nargile', 'image' => 'images/categories/samples/nargile.svg', 'sort_order' => 3],
-                ['name' => ['tr' => 'Okey', 'en' => 'Okey', 'ru' => 'Окей'], 'slug' => 'okey', 'image' => 'images/categories/samples/okey.svg', 'sort_order' => 4],
+                ['name' => ['tr' => 'Yiyecek', 'en' => 'Food', 'ru' => 'Еда'], 'slug' => 'yiyecek', 'type' => 'kitchen', 'image' => 'images/categories/samples/yiyecek.svg', 'sort_order' => 1],
+                ['name' => ['tr' => 'İçecek', 'en' => 'Drinks', 'ru' => 'Напитки'], 'slug' => 'icecek', 'type' => 'bar', 'image' => 'images/categories/samples/icecek.svg', 'sort_order' => 2],
+                ['name' => ['tr' => 'Nargile', 'en' => 'Shisha', 'ru' => 'Кальян'], 'slug' => 'nargile', 'type' => 'kitchen', 'image' => 'images/categories/samples/nargile.svg', 'sort_order' => 3],
+                ['name' => ['tr' => 'Okey', 'en' => 'Okey', 'ru' => 'Окей'], 'slug' => 'okey', 'type' => 'kitchen', 'image' => 'images/categories/samples/okey.svg', 'sort_order' => 4],
             ];
 
             foreach ($categories as $cat) {

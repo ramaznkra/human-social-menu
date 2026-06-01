@@ -26,6 +26,7 @@
                         <th>Ad (TR)</th>
                         <th>EN / RU</th>
                         <th>Slug</th>
+                        <th>İstasyon</th>
                         <th>Ürün</th>
                         <th>Durum</th>
                         <th></th>
@@ -59,6 +60,7 @@
                     </td>
                     <td class="text-xs text-gray-500">{{ $cat->getTranslation('name', 'en', false) ?: '—' }} · {{ $cat->getTranslation('name', 'ru', false) ?: '—' }}</td>
                     <td class="text-gray-500">{{ $cat->slug }}</td>
+                    <td class="text-xs text-gray-600">{{ $cat->typeLabel() }}</td>
                     <td>{{ $cat->products_count }}</td>
                     <td>@include('admin.partials.category-active-toggle', ['category' => $cat])</td>
                     <td class="space-x-1 whitespace-nowrap">
@@ -67,7 +69,7 @@
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="8" class="py-12 text-center text-gray-500">Kategori yok.</td></tr>
+                <tr><td colspan="9" class="py-12 text-center text-gray-500">Kategori yok.</td></tr>
                 @endforelse
                 </tbody>
             </table>
@@ -103,7 +105,7 @@
                         <input type="number" min="0" class="form-input w-16 py-1 text-xs" data-category-sort-input value="{{ $cat->sort_order }}" aria-label="Sıra">
                         <span>· {{ $cat->products_count }} ürün</span>
                     </p>
-                    <p class="admin-tray-card__meta text-[11px]">{{ $cat->slug }}</p>
+                    <p class="admin-tray-card__meta text-[11px]">{{ $cat->slug }} · {{ $cat->typeLabel() }}</p>
                     @if($cat->getTranslation('name', 'en', false) || $cat->getTranslation('name', 'ru', false))
                     <p class="admin-tray-card__meta text-[10px] text-gray-400">{{ $cat->getTranslation('name', 'en', false) ?: '—' }} / {{ $cat->getTranslation('name', 'ru', false) ?: '—' }}</p>
                     @endif

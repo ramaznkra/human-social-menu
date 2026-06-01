@@ -24,6 +24,10 @@ return new class extends Migration
         Schema::table('tables', function (Blueprint $table) {
             $table->unique('uuid');
         });
+
+        if (Schema::getConnection()->getDriverName() !== 'sqlite') {
+            DB::statement('ALTER TABLE tables MODIFY uuid CHAR(36) NOT NULL');
+        }
     }
 
     public function down(): void

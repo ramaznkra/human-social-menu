@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\Table;
 use App\Services\TableStatusService;
 use App\Support\CurrentRestaurant;
+use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -43,16 +44,6 @@ class OrderPlacementService
         return DB::transaction(function () use ($tableId, $items, $source, $notes, $tableStatus) {
             $restaurantId = CurrentRestaurant::resolveId();
 
-            if ($tableId !== null) {
-                $table = Table::query()->find($tableId);
-                if (! $table) {
-                    throw ValidationException::withMessages([
-                        'table_id' => 'Geçerli ve aktif bir masa seçin.',
-                    ]);
-                }
-                $restaurantId = (int) $table->restaurant_id;
-            }
-
             if ($restaurantId === null) {
                 throw ValidationException::withMessages([
                     'restaurant' => 'Sipariş için restoran bağlamı bulunamadı.',
@@ -70,10 +61,10 @@ class OrderPlacementService
                 'status' => $initialStatus,
                 'source' => $source,
                 'notes' => $notes,
-                'total' => 0,
+                'total' => '0.00',
             ]);
 
-            $total = 0;
+            $total = '0.00';
             $added = 0;
 
             foreach ($items as $item) {
@@ -94,6 +85,7 @@ class OrderPlacementService
                     ?: $product->getTranslation('name', 'tr');
                 $productName .= $pricing['display_name_suffix'];
 
+                // Güncel fiyat snapshot — sonradan ürün fiyatı değişse geçmiş sipariş cirosu bozulmaz.
                 $order->items()->create([
                     'product_id' => $product->id,
                     'quantity' => $qty,
@@ -102,7 +94,7 @@ class OrderPlacementService
                     'notes' => $item['notes'] ?? null,
                     'options' => $pricing['options'] !== [] ? $pricing['options'] : null,
                 ]);
-                $total += $pricing['unit_price'] * $qty;
+                $total = Money::add($total, Money::mul($pricing['unit_price'], $qty));
                 $added++;
             }
 
@@ -112,9 +104,13 @@ class OrderPlacementService
                 ]);
             }
 
-            $order->update(['total' => $total]);
+            $order->update(['total' => Money::normalize($total)]);
 
-            $order = $order->load(['items.product:id,type', 'table:id,number']);
+            $order = $order->load([
+                'items.product:id,type,category_id',
+                'items.product.category:id,type',
+                'table:id,number',
+            ]);
 
             if ($tableId !== null) {
                 $tableStatus->markOccupied($tableId);

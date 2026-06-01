@@ -7,8 +7,11 @@
     <meta name="theme-color" content="#121110">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="manifest" href="{{ asset('manifest-waiter.json') }}">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Human Garson">
+    <link rel="manifest" href="{{ route('waiter.manifest') }}">
     <link rel="icon" href="{{ asset('icons/waiter-app-icon.svg') }}" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="{{ asset('icons/apple-touch-icon.png') }}" sizes="180x180">
     <title>@yield('title', 'Garson') — {{ $settings['venue_name'] ?? 'Human' }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,7 +35,7 @@
     <script>
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function () {
-            navigator.serviceWorker.register('{{ asset('staff-sw.js') }}?v=3', { scope: '/waiter/' })
+            navigator.serviceWorker.register('{{ asset('staff-sw.js') }}?v=4', { scope: '/waiter/' })
                 .catch(function () {});
         });
     }

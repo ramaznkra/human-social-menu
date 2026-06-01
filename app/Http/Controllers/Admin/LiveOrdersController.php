@@ -53,7 +53,7 @@ class LiveOrdersController extends Controller
     {
         $mapOrder = function (Order $order): array {
             $items = $order->items->map(function ($item) {
-                $type = $item->product?->type ?? 'kitchen';
+                $type = $item->product?->stationType() ?? 'kitchen';
 
                 return [
                     'id' => $item->id,
@@ -77,7 +77,7 @@ class LiveOrdersController extends Controller
                 'payment_method' => $order->payment_method,
                 'table' => $order->table?->number,
                 'notes' => $order->notes,
-                'total' => (float) $order->total,
+                'total' => $order->total,
                 'created_at' => $order->created_at->format('H:i'),
                 'created_at_iso' => $order->created_at->toIso8601String(),
                 'updated_at' => $order->updated_at->toIso8601String(),
@@ -93,6 +93,7 @@ class LiveOrdersController extends Controller
                 'table:id,number',
                 'items' => fn ($q) => $q->select(['id', 'order_id', 'product_id', 'product_name', 'quantity', 'notes']),
                 'items.product:id,type,category_id',
+                'items.product.category:id,type',
             ])
             ->live()
             ->orderByDesc('created_at')
@@ -106,6 +107,7 @@ class LiveOrdersController extends Controller
                 'table:id,number',
                 'items' => fn ($q) => $q->select(['id', 'order_id', 'product_id', 'product_name', 'quantity', 'notes']),
                 'items.product:id,type,category_id',
+                'items.product.category:id,type',
             ])
             ->where(function ($q) {
                 $q->where(function ($q2) {

@@ -1,6 +1,9 @@
 /**
  * QR menü: sepet (localStorage), ürün varyasyon modalı, sipariş, garson çağrı.
  */
+import { createRestaurantCartStorage } from '../lib/restaurant-cart-storage.js';
+import { createEchoClient } from '../echo.js';
+
 function initMenuCart() {
     const cfg = window.HSP_MENU;
     if (!cfg) return;
@@ -10,13 +13,11 @@ function initMenuCart() {
     let activeProduct = null;
     let modalSelections = {};
 
-    const CART_STORAGE_VERSION = 1;
-    const cartStorageKey = () => {
-        const restaurant = cfg.restaurantId ?? '0';
-        const table = cfg.tableToken ?? 'guest';
-        const locale = cfg.locale ?? 'tr';
-        return `hsp_cart_v${CART_STORAGE_VERSION}_${restaurant}_${table}_${locale}`;
-    };
+    const cartStorage = createRestaurantCartStorage({
+        restaurantId: cfg.restaurantId,
+        tableToken: cfg.tableToken,
+        locale: cfg.locale,
+    });
 
     const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content ?? '';
     const t = cfg.i18n || {};
@@ -157,24 +158,108 @@ function initMenuCart() {
         }
     }
 
+    function pendingCallMessage(type) {
+        const waiting = {
+            waiter: t.callWaiterSent,
+            bill_cash: t.callBillCash,
+            bill_card: t.callBillCard,
+        };
+        return waiting[type] || t.callCooldown || '';
+    }
+
+    function updateCallStatusMessage(message) {
+        const msg = document.getElementById('callSuccessMsg');
+        if (msg && message) {
+            msg.textContent = message;
+            msg.classList.remove('hidden');
+        }
+
+        const stored = readCallCooldown();
+        if (stored && message) {
+            stored.message = message;
+            try {
+                localStorage.setItem(callCooldownKey(), JSON.stringify(stored));
+            } catch {
+                /* gizli mod */
+            }
+        }
+    }
+
+    function applyServerCallStatus(data) {
+        if (!data?.active) {
+            stopCallStatusPoll();
+            if (!readCallCooldown()) {
+                resetCallButtons();
+                const msg = document.getElementById('callSuccessMsg');
+                if (msg) {
+                    msg.textContent = t.callWaiterActive || '';
+                    msg.classList.remove('hidden');
+                    setTimeout(() => msg.classList.add('hidden'), 5000);
+                }
+            }
+            return;
+        }
+
+        const message =
+            data.message ||
+            (data.status === 'in_progress' && data.waiter_name
+                ? (t.waiterOnTheWay || 'Garson :name masanıza geliyor').replace(':name', data.waiter_name)
+                : pendingCallMessage(data.type));
+
+        if (readCallCooldown()) {
+            updateCallStatusMessage(message);
+        } else {
+            showCallSent(message);
+        }
+    }
+
+    function callMatchesTable(call) {
+        if (!call || !cfg.tableToken) return false;
+        const token = String(cfg.tableToken);
+        return (
+            String(call.table_uuid ?? '') === token ||
+            String(call.table_token ?? '') === token
+        );
+    }
+
+    function initCallRealtime() {
+        if (!cfg.reverb?.key || !cfg.restaurantId || !cfg.tableToken) return;
+
+        const echoClient = createEchoClient(cfg.reverb);
+        if (!echoClient) return;
+
+        echoClient.channel(`orders.${cfg.restaurantId}`).listen('.TableCallUpdated', (payload) => {
+            const call = payload?.call;
+            if (!callMatchesTable(call)) return;
+
+            if (call.status === 'completed' || call.status === 'resolved') {
+                applyServerCallStatus({ active: false });
+                return;
+            }
+
+            applyServerCallStatus({
+                active: true,
+                type: call.type,
+                status: call.status,
+                waiter_name: call.waiter_name,
+                message:
+                    call.status === 'in_progress' && call.waiter_name
+                        ? (t.waiterOnTheWay || 'Garson :name masanıza geliyor').replace(
+                              ':name',
+                              call.waiter_name,
+                          )
+                        : pendingCallMessage(call.type),
+            });
+        });
+    }
+
     async function checkCallStatus() {
         if (!callStatusUrl || !cfg.tableToken) return;
         try {
             const res = await fetch(`${callStatusUrl}?${callQueryParams()}`, { headers: { Accept: 'application/json' } });
             if (!res.ok) return;
             const data = await res.json();
-            if (!data.active) {
-                stopCallStatusPoll();
-                if (!readCallCooldown()) {
-                    resetCallButtons();
-                    const msg = document.getElementById('callSuccessMsg');
-                    if (msg) {
-                        msg.textContent = t.callWaiterActive || '';
-                        msg.classList.remove('hidden');
-                        setTimeout(() => msg.classList.add('hidden'), 5000);
-                    }
-                }
-            }
+            applyServerCallStatus(data);
         } catch {
             /* sessiz */
         }
@@ -214,26 +299,29 @@ function initMenuCart() {
     }
 
     async function syncCallBarOnLoad() {
-        if (applyCallCooldownUI()) return;
+        if (applyCallCooldownUI()) {
+            if (callStatusUrl && cfg.tableToken) {
+                checkCallStatus();
+            }
+            return;
+        }
         if (!callStatusUrl || !cfg.tableToken) return;
         try {
             const res = await fetch(`${callStatusUrl}?${callQueryParams()}`, { headers: { Accept: 'application/json' } });
             if (!res.ok) return;
             const data = await res.json();
             if (data.active) {
-                const waiting = {
-                    waiter: t.callWaiterSent,
-                    bill_cash: t.callBillCash,
-                    bill_card: t.callBillCard,
-                };
-                showCallSent(waiting[data.type] || '');
+                applyServerCallStatus(data);
             }
         } catch {
             /* sessiz */
         }
     }
 
-    if (callStatusUrl) syncCallBarOnLoad();
+    if (callStatusUrl) {
+        syncCallBarOnLoad();
+        initCallRealtime();
+    }
 
     document.getElementById('callWaiter')?.addEventListener('click', async () => {
         const btn = document.getElementById('callWaiter');
@@ -415,42 +503,42 @@ function initMenuCart() {
     }
 
     function saveCartToStorage() {
-        try {
-            localStorage.setItem(
-                cartStorageKey(),
-                JSON.stringify({
-                    v: CART_STORAGE_VERSION,
-                    items: cart,
-                    savedAt: Date.now(),
-                }),
-            );
-        } catch {
-            /* depolama dolu veya gizli mod */
+        const notes = document.getElementById('orderNotes')?.value ?? '';
+        cartStorage.save(cart, notes);
+    }
+
+    function hydrateCartFromStorage() {
+        const stored = cartStorage.load();
+        if (!stored) {
+            return;
+        }
+
+        Object.keys(cart).forEach((key) => delete cart[key]);
+
+        Object.entries(stored.items).forEach(([key, item]) => {
+            if (!item || !item.productId) {
+                return;
+            }
+
+            cart[key] = {
+                lineKey: key,
+                productId: String(item.productId),
+                name: item.name,
+                basePrice: Number(item.basePrice) || 0,
+                price: Number(item.price) || 0,
+                options: Array.isArray(item.options) ? item.options : [],
+                qty: Number(item.qty) || 1,
+            };
+        });
+
+        const notesEl = document.getElementById('orderNotes');
+        if (notesEl && stored.orderNotes) {
+            notesEl.value = stored.orderNotes;
         }
     }
 
-    function loadCartFromStorage() {
-        try {
-            const raw = localStorage.getItem(cartStorageKey());
-            if (!raw) return;
-            const data = JSON.parse(raw);
-            if (!data || data.v !== CART_STORAGE_VERSION || !data.items) return;
-            Object.keys(cart).forEach((key) => delete cart[key]);
-            Object.entries(data.items).forEach(([key, item]) => {
-                if (!item || !item.productId) return;
-                cart[key] = {
-                    lineKey: key,
-                    productId: String(item.productId),
-                    name: item.name,
-                    basePrice: Number(item.basePrice) || 0,
-                    price: Number(item.price) || 0,
-                    options: Array.isArray(item.options) ? item.options : [],
-                    qty: Number(item.qty) || 1,
-                };
-            });
-        } catch {
-            /* bozuk kayıt */
-        }
+    function clearCartStorage() {
+        cartStorage.clear();
     }
 
     function persistCart() {
@@ -850,7 +938,7 @@ function initMenuCart() {
 
             if (res.ok && data?.success) {
                 Object.keys(cart).forEach((key) => delete cart[key]);
-                saveCartToStorage();
+                clearCartStorage();
                 window.location.href = data.redirect;
                 return;
             }
@@ -869,8 +957,41 @@ function initMenuCart() {
         btn.textContent = t.send || 'Send';
     });
 
-    loadCartFromStorage();
+    hydrateCartFromStorage();
     updateCartUI();
+
+    document.getElementById('orderNotes')?.addEventListener('input', () => {
+        saveCartToStorage();
+    });
+
+    window.addEventListener('beforeunload', () => {
+        saveCartToStorage();
+    });
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            saveCartToStorage();
+        }
+    });
+
+    window.addEventListener('pageshow', (event) => {
+        if (event.persisted) {
+            hydrateCartFromStorage();
+            updateCartUI();
+        }
+    });
+
+    window.addEventListener('storage', (event) => {
+        if (event.key !== cartStorage.key) {
+            return;
+        }
+        hydrateCartFromStorage();
+        updateCartUI();
+        const modal = document.getElementById('cartModal');
+        if (modal?.classList.contains('open')) {
+            renderCartModal();
+        }
+    });
 }
 
 if (document.readyState === 'loading') {

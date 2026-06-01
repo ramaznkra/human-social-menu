@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToRestaurant;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
@@ -11,7 +12,7 @@ use Illuminate\Support\Str;
 class Table extends Model
 {
     /** @use BelongsToRestaurant — App\Models\Scopes\RestaurantScope tenant izolasyonu */
-    use BelongsToRestaurant;
+    use BelongsToRestaurant, HasUuids;
 
     public const STATUS_AVAILABLE = 'available';
 
@@ -24,14 +25,10 @@ class Table extends Model
         return ['is_active' => 'boolean'];
     }
 
-    protected static function booted(): void
+    /** @return array<int, string> */
+    public function uniqueIds(): array
     {
-        // Her yeni masaya tahmin edilemez bir UUID atanır (sıralı id'yi gizlemek için).
-        static::creating(function (Table $table) {
-            if (empty($table->uuid)) {
-                $table->uuid = (string) Str::uuid();
-            }
-        });
+        return ['uuid'];
     }
 
     public function orders(): HasMany
@@ -64,7 +61,7 @@ class Table extends Model
 
     public function getMenuUrlAttribute(): string
     {
-        return route('menu.index', ['token' => $this->uuid]);
+        return route('menu.table', ['uuid' => $this->uuid]);
     }
 
     /** @deprecated Use menu_url — kept for compatibility */

@@ -9,8 +9,7 @@ class OrderPolicy extends TenantPolicy
 {
     public function view(User $user, Order $order): bool
     {
-        return $this->belongsToCurrentRestaurant($order)
-            && (int) $user->restaurant_id === (int) $order->restaurant_id;
+        return $this->belongsToCurrentRestaurant($order);
     }
 
     public function update(User $user, Order $order): bool

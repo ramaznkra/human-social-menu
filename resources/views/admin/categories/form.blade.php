@@ -21,6 +21,14 @@
         @include('admin.partials.locale-tabs', compact('names', 'descriptions'))
 
         <div><label class="form-label">Slug</label><input type="text" name="slug" value="{{ old('slug', $category->slug) }}" placeholder="otomatik" class="form-input"></div>
+        <div>
+            <label class="form-label">İstasyon Tipi</label>
+            <select name="type" class="form-input">
+                <option value="kitchen" @selected(old('type', $category->type ?? 'kitchen') === 'kitchen')>Mutfak (Yemekler)</option>
+                <option value="bar" @selected(old('type', $category->type ?? 'kitchen') === 'bar')>Bar (İçecekler)</option>
+            </select>
+            <p class="text-xs text-gray-500">Şef ve bar ekranında sipariş kalemleri bu tipe göre filtrelenir.</p>
+        </div>
         <div class="space-y-2">
             <label class="form-label">Kategori Görseli (Sadece Admin)</label>
             @if($category->image_url)

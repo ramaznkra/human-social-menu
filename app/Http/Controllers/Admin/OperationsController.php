@@ -25,7 +25,7 @@ class OperationsController extends Controller
                 'status' => $o->status,
                 'status_label' => $o->status_label,
                 'table' => $o->table?->number,
-                'total' => (float) $o->total,
+                'total' => $o->total,
                 'created_at' => $o->created_at->format('H:i'),
                 'updated_at' => $o->updated_at->toIso8601String(),
             ]);

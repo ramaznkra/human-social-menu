@@ -69,9 +69,11 @@ class TableCallController extends Controller
         ]);
     }
 
-    /** Müşteri menüsü: aktif çağrı hâlâ bekliyor mu? (personel kapattıysa butonlar geri gelir) */
+    /** Müşteri menüsü: aktif çağrı durumu (garson üstlendi mi?). */
     public function status(Request $request): JsonResponse
     {
+        MenuLocale::apply($request, MenuLocale::resolve($request));
+
         $table = $this->resolveTable([
             'table_token' => $request->query('table_token'),
         ]);
@@ -83,11 +85,19 @@ class TableCallController extends Controller
         $call = TableCall::query()
             ->where('table_id', $table->id)
             ->open()
+            ->with('waiter:id,name')
             ->first();
 
+        if (! $call) {
+            return response()->json(['active' => false]);
+        }
+
         return response()->json([
-            'active' => $call !== null,
-            'type' => $call?->type,
+            'active' => true,
+            'type' => $call->type,
+            'status' => $call->status,
+            'waiter_name' => $call->waiter?->name,
+            'message' => $call->customerMessage(),
         ]);
     }
 

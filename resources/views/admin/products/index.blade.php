@@ -45,10 +45,10 @@
                 </thead>
                 <tbody>
                 @forelse($products as $p)
-                <tr data-product-item class="{{ $p->is_available ? '' : 'opacity-50' }}">
+                <tr data-product-item class="{{ $p->is_available ? '' : 'opacity-50' }} {{ $p->in_stock ? '' : 'admin-product-row--sold-out' }}">
                     <td>
                         @if($p->image)
-                        <img src="{{ $p->image_url }}" alt="" class="h-12 w-12 rounded-lg object-cover">
+                        <img src="{{ $p->image_url }}" alt="" class="h-12 w-12 rounded-lg object-cover {{ $p->in_stock ? '' : 'grayscale' }}">
                         @endif
                     </td>
                     <td class="font-medium text-gray-800">
@@ -88,9 +88,9 @@
             @foreach($products as $p)
             <article
                 data-product-item
-                class="admin-tray-card {{ $p->is_available ? '' : 'admin-tray-card--hidden' }}"
+                class="admin-tray-card {{ $p->is_available ? '' : 'admin-tray-card--hidden' }} {{ $p->in_stock ? '' : 'admin-tray-card--sold-out' }}"
             >
-                <div class="admin-tray-card__media">
+                <div class="admin-tray-card__media {{ $p->in_stock ? '' : 'admin-tray-card__media--sold-out' }}">
                     @if($p->image)
                     <img src="{{ $p->image_url }}" alt="" class="admin-tray-card__img" loading="lazy">
                     @else

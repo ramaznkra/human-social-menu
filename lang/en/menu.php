@@ -60,6 +60,7 @@ return [
     'redirect_menu' => 'Returning to menu in :seconds s…',
     'call' => [
         'waiter_sent' => 'Waiter is on the way…',
+        'waiter_on_the_way' => 'Waiter :name is coming to your table',
         'waiter_active' => 'Waiter notified. Call again if you need anything.',
         'bill_cash_sent' => 'Cash bill request sent. Staff is coming…',
         'bill_card_sent' => 'Card payment request sent. POS is on the way…',
