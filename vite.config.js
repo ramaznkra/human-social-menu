@@ -16,6 +16,8 @@ export default defineConfig({
                 'resources/js/pages/menu-cart.js',
                 'resources/js/pages/admin-products.js',
                 'resources/js/pages/admin-product-form.js',
+                'resources/js/pages/admin-product-options.js',
+                'resources/js/pages/admin-locale-tabs.js',
                 'resources/js/pages/admin-tables.js',
                 'resources/js/pages/admin-waiters.js',
                 'resources/js/pages/admin-categories.js',

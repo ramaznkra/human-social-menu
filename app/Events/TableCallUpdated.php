@@ -30,7 +30,7 @@ class TableCallUpdated implements ShouldBroadcast
     public function broadcastWith(): array
     {
         return [
-            'call' => $this->callPayload($this->call->loadMissing(['linkedTable:id,number', 'assignedUser:id,name'])),
+            'call' => self::callPayload($this->call->loadMissing(['linkedTable:id,number', 'waiter:id,name'])),
         ];
     }
 
@@ -39,7 +39,7 @@ class TableCallUpdated implements ShouldBroadcast
      */
     public static function callPayload(TableCall $call): array
     {
-        $call->loadMissing(['linkedTable:id,number', 'assignedUser:id,name']);
+        $call->loadMissing(['linkedTable:id,number', 'waiter:id,name']);
 
         return [
             'id' => $call->id,
@@ -51,8 +51,8 @@ class TableCallUpdated implements ShouldBroadcast
             'status' => $call->status,
             'is_bill' => $call->isBill(),
             'forwarded_to_waiter' => (bool) $call->forwarded_to_waiter,
-            'assigned_user_id' => $call->assigned_user_id,
-            'assigned_user_name' => $call->assignedUser?->name,
+            'waiter_id' => $call->waiter_id,
+            'waiter_name' => $call->waiter?->name,
             'created_at' => $call->created_at?->format('H:i'),
             'updated_at' => $call->updated_at?->toIso8601String(),
             'sort_at' => $call->updated_at?->toIso8601String(),

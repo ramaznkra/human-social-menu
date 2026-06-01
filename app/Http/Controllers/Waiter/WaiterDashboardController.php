@@ -22,30 +22,31 @@ class WaiterDashboardController extends Controller
         return view('waiter.dashboard', [
             'venueName' => $settings['venue_name'] ?? 'Human',
             'venueTagline' => $settings['venue_tagline'] ?? 'Human Social People',
+            'waiterName' => session('admin_name'),
         ]);
     }
 
     /** Garson çağrısını üstlenir — diğer garsonlar anında görür. */
     public function claimCall(TableCall $call): JsonResponse
     {
-        if ($call->status === TableCall::STATUS_RESOLVED) {
+        if ($call->status === TableCall::STATUS_COMPLETED) {
             return response()->json(['success' => false, 'message' => 'Çağrı zaten kapatılmış.'], 422);
         }
 
         $userId = (int) session('admin_user_id');
 
-        if ($call->status === TableCall::STATUS_IN_PROGRESS && (int) $call->assigned_user_id !== $userId) {
+        if ($call->status === TableCall::STATUS_IN_PROGRESS && (int) $call->waiter_id !== $userId) {
             return response()->json([
                 'success' => false,
-                'message' => ($call->assignedUser?->name ?? 'Başka bir garson').' ilgileniyor.',
-                'call' => TableCallUpdated::callPayload($call->loadMissing(['linkedTable:id,number', 'assignedUser:id,name'])),
+                'message' => 'Garson '.($call->waiter?->name ?? 'başka bir personel').' ilgileniyor.',
+                'call' => TableCallUpdated::callPayload($call->loadMissing(['linkedTable:id,number', 'waiter:id,name'])),
             ], 422);
         }
 
-        if ($call->status === TableCall::STATUS_ACTIVE) {
+        if ($call->status === TableCall::STATUS_PENDING) {
             $call->update([
                 'status' => TableCall::STATUS_IN_PROGRESS,
-                'assigned_user_id' => $userId,
+                'waiter_id' => $userId,
             ]);
             $call->refresh();
             event(new TableCallUpdated($call));
@@ -54,7 +55,7 @@ class WaiterDashboardController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Çağrı size atandı.',
-            'call' => TableCallUpdated::callPayload($call->loadMissing(['linkedTable:id,number', 'assignedUser:id,name'])),
+            'call' => TableCallUpdated::callPayload($call->loadMissing(['linkedTable:id,number', 'waiter:id,name'])),
         ]);
     }
 
@@ -70,15 +71,30 @@ class WaiterDashboardController extends Controller
         ]);
 
         $tableStatus = app(TableStatusService::class);
+        $userId = (int) session('admin_user_id');
 
         if ($validated['type'] === 'call') {
             $call = TableCall::query()->findOrFail($validated['id']);
 
-            if ($call->status === TableCall::STATUS_RESOLVED) {
+            if ($call->status === TableCall::STATUS_COMPLETED) {
                 return response()->json(['success' => true, 'message' => 'Zaten kapatılmış.']);
             }
 
-            $call->update(['status' => TableCall::STATUS_RESOLVED]);
+            if ($call->status === TableCall::STATUS_PENDING) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Önce «İlgileniyorum» ile çağrıyı üstlenin.',
+                ], 422);
+            }
+
+            if ((int) $call->waiter_id !== $userId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bu çağrıyı yalnızca üstlenen garson tamamlayabilir.',
+                ], 422);
+            }
+
+            $call->update(['status' => TableCall::STATUS_COMPLETED]);
             $tableStatus->sync($call->table_id);
             $call->refresh();
             event(new TableCallUpdated($call));

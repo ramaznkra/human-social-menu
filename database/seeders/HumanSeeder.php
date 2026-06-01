@@ -5,6 +5,8 @@ namespace Database\Seeders;
 use App\Models\Category;
 use App\Models\CafeGallery;
 use App\Models\Product;
+use App\Models\ProductOption;
+use App\Models\ProductOptionGroup;
 use App\Models\Restaurant;
 use App\Models\Setting;
 use App\Models\Table;
@@ -72,10 +74,10 @@ class HumanSeeder extends Seeder
             }
 
             $categories = [
-                ['name' => 'Yiyecek', 'slug' => 'yiyecek', 'image' => 'images/categories/samples/yiyecek.svg', 'sort_order' => 1],
-                ['name' => 'İçecek', 'slug' => 'icecek', 'image' => 'images/categories/samples/icecek.svg', 'sort_order' => 2],
-                ['name' => 'Nargile', 'slug' => 'nargile', 'image' => 'images/categories/samples/nargile.svg', 'sort_order' => 3],
-                ['name' => 'Okey', 'slug' => 'okey', 'image' => 'images/categories/samples/okey.svg', 'sort_order' => 4],
+                ['name' => ['tr' => 'Yiyecek', 'en' => 'Food', 'ru' => 'Еда'], 'slug' => 'yiyecek', 'image' => 'images/categories/samples/yiyecek.svg', 'sort_order' => 1],
+                ['name' => ['tr' => 'İçecek', 'en' => 'Drinks', 'ru' => 'Напитки'], 'slug' => 'icecek', 'image' => 'images/categories/samples/icecek.svg', 'sort_order' => 2],
+                ['name' => ['tr' => 'Nargile', 'en' => 'Shisha', 'ru' => 'Кальян'], 'slug' => 'nargile', 'image' => 'images/categories/samples/nargile.svg', 'sort_order' => 3],
+                ['name' => ['tr' => 'Okey', 'en' => 'Okey', 'ru' => 'Окей'], 'slug' => 'okey', 'image' => 'images/categories/samples/okey.svg', 'sort_order' => 4],
             ];
 
             foreach ($categories as $cat) {
@@ -117,27 +119,32 @@ class HumanSeeder extends Seeder
             }
 
             $products = [
-                ['category' => 'yiyecek', 'name' => 'Human Burger', 'description' => 'Özel soslu, cheddar peynirli burger', 'price' => 320, 'badge' => 'Popüler'],
-                ['category' => 'yiyecek', 'name' => 'Sosyal Tabağı', 'description' => 'Paylaşımlık atıştırmalık tabağı', 'price' => 280],
-                ['category' => 'yiyecek', 'name' => 'Nachos', 'description' => 'Guacamole ve salsa ile', 'price' => 195],
-                ['category' => 'icecek', 'name' => 'Espresso', 'description' => 'Tek shot', 'price' => 75],
-                ['category' => 'icecek', 'name' => 'Latte', 'description' => 'Sütlü kahve', 'price' => 95],
-                ['category' => 'icecek', 'name' => 'Limonada', 'description' => 'Taze sıkılmış', 'price' => 85],
-                ['category' => 'icecek', 'name' => 'Mojito', 'description' => 'Alkolsüz ferah içecek', 'price' => 120, 'badge' => 'Yeni'],
-                ['category' => 'nargile', 'name' => 'Elma Nargile', 'description' => 'Klasik elma aroması', 'price' => 450],
-                ['category' => 'nargile', 'name' => 'Üzüm Nargile', 'description' => 'Yoğun üzüm aroması', 'price' => 450],
-                ['category' => 'nargile', 'name' => 'Karışık Nargile', 'description' => 'İki aroma seçeneği', 'price' => 500],
-                ['category' => 'okey', 'name' => 'Okey Masası (Saatlik)', 'description' => '4 kişilik masa kiralama', 'price' => 200],
-                ['category' => 'okey', 'name' => 'Okey + İçecek Paketi', 'description' => '2 saat okey + 4 içecek', 'price' => 550, 'badge' => 'Paket'],
+                ['category' => 'yiyecek', 'name' => ['tr' => 'Human Burger', 'en' => 'Human Burger', 'ru' => 'Бургер Human'], 'description' => ['tr' => 'Özel soslu, cheddar peynirli burger', 'en' => 'Signature sauce and cheddar burger', 'ru' => 'Фирменный соус и сыр чеддер'], 'price' => 320, 'badge' => 'Popüler'],
+                ['category' => 'yiyecek', 'name' => ['tr' => 'Sosyal Tabağı', 'en' => 'Social Platter', 'ru' => 'Социальная тарелка'], 'description' => ['tr' => 'Paylaşımlık atıştırmalık tabağı', 'en' => 'Sharing snack platter', 'ru' => 'Закуски для компании'], 'price' => 280],
+                ['category' => 'yiyecek', 'name' => ['tr' => 'Nachos', 'en' => 'Nachos', 'ru' => 'Начос'], 'description' => ['tr' => 'Guacamole ve salsa ile', 'en' => 'With guacamole and salsa', 'ru' => 'С гуакамоле и сальсой'], 'price' => 195],
+                ['category' => 'icecek', 'name' => ['tr' => 'Espresso', 'en' => 'Espresso', 'ru' => 'Эспрессо'], 'description' => ['tr' => 'Tek shot', 'en' => 'Single shot', 'ru' => 'Один шот'], 'price' => 75],
+                ['category' => 'icecek', 'name' => ['tr' => 'Latte', 'en' => 'Latte', 'ru' => 'Латте'], 'description' => ['tr' => 'Sütlü kahve', 'en' => 'Milky coffee', 'ru' => 'Кофе с молоком'], 'price' => 95],
+                ['category' => 'icecek', 'name' => ['tr' => 'Limonada', 'en' => 'Lemonade', 'ru' => 'Лимонад'], 'description' => ['tr' => 'Taze sıkılmış', 'en' => 'Freshly squeezed', 'ru' => 'Свежевыжатый'], 'price' => 85],
+                ['category' => 'icecek', 'name' => ['tr' => 'Mojito', 'en' => 'Mojito', 'ru' => 'Мохито'], 'description' => ['tr' => 'Alkolsüz ferah içecek', 'en' => 'Non-alcoholic refreshment', 'ru' => 'Безалкогольный освежающий напиток'], 'price' => 120, 'badge' => 'Yeni'],
+                ['category' => 'nargile', 'name' => ['tr' => 'Elma Nargile', 'en' => 'Apple Shisha', 'ru' => 'Кальян яблоко'], 'description' => ['tr' => 'Klasik elma aroması', 'en' => 'Classic apple flavor', 'ru' => 'Классический яблочный вкус'], 'price' => 450],
+                ['category' => 'nargile', 'name' => ['tr' => 'Üzüm Nargile', 'en' => 'Grape Shisha', 'ru' => 'Кальян виноград'], 'description' => ['tr' => 'Yoğun üzüm aroması', 'en' => 'Rich grape flavor', 'ru' => 'Насыщенный виноградный вкус'], 'price' => 450],
+                ['category' => 'nargile', 'name' => ['tr' => 'Karışık Nargile', 'en' => 'Mixed Shisha', 'ru' => 'Кальян микс'], 'description' => ['tr' => 'İki aroma seçeneği', 'en' => 'Two flavor options', 'ru' => 'Два варианта вкуса'], 'price' => 500],
+                ['category' => 'okey', 'name' => ['tr' => 'Okey Masası (Saatlik)', 'en' => 'Okey Table (Hourly)', 'ru' => 'Стол для окей (почасово)'], 'description' => ['tr' => '4 kişilik masa kiralama', 'en' => '4-player table rental', 'ru' => 'Аренда стола на 4 человека'], 'price' => 200],
+                ['category' => 'okey', 'name' => ['tr' => 'Okey + İçecek Paketi', 'en' => 'Okey + Drinks Pack', 'ru' => 'Окей + напитки'], 'description' => ['tr' => '2 saat okey + 4 içecek', 'en' => '2 hours okey + 4 drinks', 'ru' => '2 часа окей + 4 напитка'], 'price' => 550, 'badge' => 'Paket'],
             ];
 
             $sort = 0;
             foreach ($products as $p) {
                 $cat = Category::where('slug', $p['category'])->first();
                 Product::updateOrCreate(
-                    ['restaurant_id' => $restaurant->id, 'category_id' => $cat->id, 'name' => $p['name']],
+                    [
+                        'restaurant_id' => $restaurant->id,
+                        'category_id' => $cat->id,
+                        'name->tr' => $p['name']['tr'],
+                    ],
                     [
                         'type' => $p['category'] === 'icecek' ? 'bar' : 'kitchen',
+                        'name' => $p['name'],
                         'description' => $p['description'],
                         'price' => $p['price'],
                         'badge' => $p['badge'] ?? null,
@@ -147,6 +154,8 @@ class HumanSeeder extends Seeder
                 );
             }
 
+            $this->seedProductOptions($restaurant);
+
             for ($i = 1; $i <= 8; $i++) {
                 Table::updateOrCreate(
                     ['restaurant_id' => $restaurant->id, 'number' => (string) $i],
@@ -154,5 +163,108 @@ class HumanSeeder extends Seeder
                 );
             }
         });
+    }
+
+    private function seedProductOptions(Restaurant $restaurant): void
+    {
+        $burger = Product::query()
+            ->where('restaurant_id', $restaurant->id)
+            ->where('name->tr', 'Human Burger')
+            ->first();
+
+        if ($burger) {
+            $sizeGroup = ProductOptionGroup::updateOrCreate(
+                ['product_id' => $burger->id, 'name->tr' => 'Boy'],
+                [
+                    'restaurant_id' => $restaurant->id,
+                    'name' => ['tr' => 'Boy', 'en' => 'Size', 'ru' => 'Размер'],
+                    'type' => ProductOptionGroup::TYPE_SINGLE,
+                    'required' => true,
+                    'sort_order' => 1,
+                ],
+            );
+
+            $extrasGroup = ProductOptionGroup::updateOrCreate(
+                ['product_id' => $burger->id, 'name->tr' => 'Ekstralar'],
+                [
+                    'restaurant_id' => $restaurant->id,
+                    'name' => ['tr' => 'Ekstralar', 'en' => 'Extras', 'ru' => 'Дополнения'],
+                    'type' => ProductOptionGroup::TYPE_MULTIPLE,
+                    'required' => false,
+                    'sort_order' => 2,
+                ],
+            );
+
+            $sizeOptions = [
+                ['tr' => 'Normal', 'en' => 'Regular', 'ru' => 'Обычный', 'price' => 0, 'default' => true, 'sort' => 1],
+                ['tr' => 'Büyük Boy', 'en' => 'Large', 'ru' => 'Большой', 'price' => 40, 'default' => false, 'sort' => 2],
+            ];
+
+            foreach ($sizeOptions as $opt) {
+                ProductOption::updateOrCreate(
+                    ['product_option_group_id' => $sizeGroup->id, 'name->tr' => $opt['tr']],
+                    [
+                        'name' => ['tr' => $opt['tr'], 'en' => $opt['en'], 'ru' => $opt['ru']],
+                        'price_modifier' => $opt['price'],
+                        'is_default' => $opt['default'],
+                        'sort_order' => $opt['sort'],
+                    ],
+                );
+            }
+
+            $extraOptions = [
+                ['tr' => 'Ekstra Cheddar', 'en' => 'Extra Cheddar', 'ru' => 'Доп. чеддер', 'price' => 35, 'sort' => 1],
+                ['tr' => 'Ekstra Sos', 'en' => 'Extra Sauce', 'ru' => 'Доп. соус', 'price' => 15, 'sort' => 2],
+                ['tr' => 'Jalapeño', 'en' => 'Jalapeño', 'ru' => 'Халапеньо', 'price' => 20, 'sort' => 3],
+            ];
+
+            foreach ($extraOptions as $opt) {
+                ProductOption::updateOrCreate(
+                    ['product_option_group_id' => $extrasGroup->id, 'name->tr' => $opt['tr']],
+                    [
+                        'name' => ['tr' => $opt['tr'], 'en' => $opt['en'], 'ru' => $opt['ru']],
+                        'price_modifier' => $opt['price'],
+                        'is_default' => false,
+                        'sort_order' => $opt['sort'],
+                    ],
+                );
+            }
+        }
+
+        $latte = Product::query()
+            ->where('restaurant_id', $restaurant->id)
+            ->where('name->tr', 'Latte')
+            ->first();
+
+        if ($latte) {
+            $sizeGroup = ProductOptionGroup::updateOrCreate(
+                ['product_id' => $latte->id, 'name->tr' => 'Boy'],
+                [
+                    'restaurant_id' => $restaurant->id,
+                    'name' => ['tr' => 'Boy', 'en' => 'Size', 'ru' => 'Размер'],
+                    'type' => ProductOptionGroup::TYPE_SINGLE,
+                    'required' => true,
+                    'sort_order' => 1,
+                ],
+            );
+
+            $latteSizes = [
+                ['tr' => 'Küçük', 'en' => 'Small', 'ru' => 'Маленький', 'price' => 0, 'default' => true, 'sort' => 1],
+                ['tr' => 'Orta', 'en' => 'Medium', 'ru' => 'Средний', 'price' => 10, 'default' => false, 'sort' => 2],
+                ['tr' => 'Büyük', 'en' => 'Large', 'ru' => 'Большой', 'price' => 20, 'default' => false, 'sort' => 3],
+            ];
+
+            foreach ($latteSizes as $opt) {
+                ProductOption::updateOrCreate(
+                    ['product_option_group_id' => $sizeGroup->id, 'name->tr' => $opt['tr']],
+                    [
+                        'name' => ['tr' => $opt['tr'], 'en' => $opt['en'], 'ru' => $opt['ru']],
+                        'price_modifier' => $opt['price'],
+                        'is_default' => $opt['default'],
+                        'sort_order' => $opt['sort'],
+                    ],
+                );
+            }
+        }
     }
 }

@@ -159,7 +159,7 @@ function buildOrdersFingerprint(orders, tab) {
 
 function buildCallsFingerprint(calls) {
     return JSON.stringify(
-        calls.map((c) => [c.id, c.updated_at, c.type, c.forwarded_to_waiter, c.status, c.assigned_user_id]),
+        calls.map((c) => [c.id, c.updated_at, c.type, c.forwarded_to_waiter, c.status, c.waiter_id]),
     );
 }
 
@@ -245,8 +245,8 @@ function isBillCall(call) {
 }
 
 function callAssigneeHtml(call) {
-    if (call.status === 'in_progress' && call.assigned_user_name) {
-        return `<span class="live-ops-call-assignee">👤 ${escapeHtml(call.assigned_user_name)} ilgileniyor</span>`;
+    if (call.status === 'in_progress' && call.waiter_name) {
+        return `<span class="live-ops-call-assignee">👤 Garson ${escapeHtml(call.waiter_name)} ilgileniyor</span>`;
     }
     return '';
 }
@@ -280,7 +280,7 @@ function renderCallCard(call) {
         <div class="flex flex-col gap-3">
             <div class="min-w-0 flex-1">
                 <p class="text-2xl font-black leading-tight tracking-wide text-[#E67E22] sm:text-3xl">${call.headline || `MASA ${call.table ?? '?'}`}</p>
-                <p class="mt-2 text-xs text-[#D4C5B9]">Masa ${call.table ?? '—'} · ${call.type_label} · ${call.created_at}${forwarded ? ' · Garson yolda' : ''}${call.status === 'in_progress' && call.assigned_user_name ? ` · ${escapeHtml(call.assigned_user_name)}` : ''}</p>
+                <p class="mt-2 text-xs text-[#D4C5B9]">Masa ${call.table ?? '—'} · ${call.type_label} · ${call.created_at}${forwarded ? ' · Garson yolda' : ''}${call.status === 'in_progress' && call.waiter_name ? ` · Garson ${escapeHtml(call.waiter_name)}` : ''}</p>
             </div>
             ${callActionsHtml(call)}
         </div>
@@ -737,7 +737,7 @@ if (root) {
             return;
         }
 
-        if (call.status === 'resolved') {
+        if (call.status === 'completed') {
             callsState = callsState.filter((c) => c.id !== call.id);
             callNotifications.delete(Number(call.id));
         } else {

@@ -54,7 +54,7 @@ class OperationsController extends Controller
 
     public function acknowledgeCall(TableCall $call): JsonResponse
     {
-        $call->update(['status' => TableCall::STATUS_RESOLVED]);
+        $call->update(['status' => TableCall::STATUS_COMPLETED]);
 
         return response()->json(['success' => true]);
     }

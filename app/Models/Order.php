@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Order extends Model
 {
+    /** @use BelongsToRestaurant — App\Models\Scopes\RestaurantScope tenant izolasyonu */
     use BelongsToRestaurant;
 
     public const STATUS_PENDING = 'pending';

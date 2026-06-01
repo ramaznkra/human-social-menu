@@ -26,6 +26,32 @@ class CurrentRestaurant
         return self::$restaurant?->id;
     }
 
+    /**
+     * Global scope ve tenant doğrulamaları için restoran kimliği.
+     * Öncelik: bağlam → oturum → kiosk → auth kullanıcı.
+     */
+    public static function resolveId(): ?int
+    {
+        if ($id = self::id()) {
+            return $id;
+        }
+
+        if ($id = session('admin_restaurant_id')) {
+            return (int) $id;
+        }
+
+        if ($id = session('kiosk_restaurant_id')) {
+            return (int) $id;
+        }
+
+        $user = auth()->user();
+        if ($user !== null && ! empty($user->restaurant_id)) {
+            return (int) $user->restaurant_id;
+        }
+
+        return null;
+    }
+
     public static function has(): bool
     {
         return self::$restaurant !== null;

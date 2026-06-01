@@ -17,7 +17,7 @@ class WaiterController extends Controller
     {
         $waiters = User::query()
             ->where('role', User::ROLE_WAITER)
-            ->where('restaurant_id', CurrentRestaurant::id())
+            ->where('restaurant_id', CurrentRestaurant::resolveId())
             ->orderBy('name')
             ->get();
 
@@ -42,7 +42,7 @@ class WaiterController extends Controller
             'email' => $data['email'],
             'password' => $data['password'],
             'role' => User::ROLE_WAITER,
-            'restaurant_id' => CurrentRestaurant::id(),
+            'restaurant_id' => CurrentRestaurant::resolveId(),
             'is_active' => true,
         ]);
 

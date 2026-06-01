@@ -2,21 +2,27 @@
 
 namespace App\Models\Concerns;
 
+use App\Support\MenuLocale;
+
 trait HasMenuTranslations
 {
     public function localizedName(?string $locale = null): string
     {
         $locale = $locale ?? app()->getLocale();
 
-        if ($locale !== 'tr') {
-            $key = 'name_'.$locale;
-            $value = $this->{$key} ?? null;
+        if (method_exists($this, 'getTranslation')) {
+            $value = $this->getTranslation('name', $locale, false);
+
             if (filled($value)) {
-                return $value;
+                return (string) $value;
             }
+
+            $fallback = $this->getTranslation('name', MenuLocale::DEFAULT, false);
+
+            return filled($fallback) ? (string) $fallback : '';
         }
 
-        return (string) $this->name;
+        return (string) ($this->name ?? '');
     }
 
     public function localizedDescription(?string $locale = null): ?string
@@ -27,14 +33,18 @@ trait HasMenuTranslations
 
         $locale = $locale ?? app()->getLocale();
 
-        if ($locale !== 'tr') {
-            $key = 'description_'.$locale;
-            $value = $this->{$key} ?? null;
+        if (method_exists($this, 'getTranslation')) {
+            $value = $this->getTranslation('description', $locale, false);
+
             if (filled($value)) {
-                return $value;
+                return (string) $value;
             }
+
+            $fallback = $this->getTranslation('description', MenuLocale::DEFAULT, false);
+
+            return filled($fallback) ? (string) $fallback : null;
         }
 
-        return $this->description;
+        return filled($this->description) ? (string) $this->description : null;
     }
 }

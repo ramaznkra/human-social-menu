@@ -38,6 +38,16 @@
     </form>
 </div>
 
+<div id="waiterSoundGate" class="waiter-sound-gate" hidden>
+    <div class="waiter-sound-gate__card">
+        <p class="waiter-sound-gate__title">🔔 Masa çağrılarını kaçırmayın</p>
+        <p class="waiter-sound-gate__text">Tarayıcı ses politikası nedeniyle bir kez onay vermeniz gerekir. Yeni çağrı geldiğinde yüksek sesli zil çalar.</p>
+        <button type="button" id="waiterSoundEnableBtn" class="waiter-sound-gate__btn">
+            Sesli Bildirimleri Aktif Et
+        </button>
+    </div>
+</div>
+
 <section class="waiter-feed-section" aria-label="Canlı akış">
     <div class="waiter-feed-section__head">
         <h2 class="waiter-feed-section__title">Canlı Akış</h2>

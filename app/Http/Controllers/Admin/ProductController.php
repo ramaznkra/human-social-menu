@@ -3,18 +3,24 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Services\MenuImageOptimizer;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductOptionGroup;
+use App\Services\MenuImageOptimizer;
+use App\Services\ProductOptionSyncService;
+use App\Support\MenuTranslations;
+use App\Support\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class ProductController extends Controller
 {
     public function __construct(
         private readonly MenuImageOptimizer $images,
+        private readonly ProductOptionSyncService $optionSync,
     ) {}
 
     public function index(Request $request): View
@@ -47,13 +53,18 @@ class ProductController extends Controller
             $data['image'] = $this->images->storeProduct($request->file('image'));
         }
         $data['is_available'] = true;
-        Product::create($data);
+
+        DB::transaction(function () use ($request, $data) {
+            $product = Product::create($data);
+            $this->optionSync->sync($product, $request->input('option_groups'));
+        });
 
         return redirect()->route('admin.products.index')->with('success', 'Ürün eklendi.');
     }
 
     public function edit(Product $product): View
     {
+        $product->load(['optionGroups.options']);
         $categories = Category::orderBy('sort_order')->get();
 
         return view('admin.products.form', [
@@ -94,7 +105,11 @@ class ProductController extends Controller
         if ($request->hasFile('image')) {
             $data['image'] = $this->images->storeProduct($request->file('image'));
         }
-        $product->update($data);
+
+        DB::transaction(function () use ($request, $product, $data) {
+            $product->update($data);
+            $this->optionSync->sync($product, $request->input('option_groups'));
+        });
 
         return redirect()->route('admin.products.index')->with('success', 'Ürün güncellendi.');
     }
@@ -120,21 +135,37 @@ class ProductController extends Controller
 
     private function validated(Request $request): array
     {
+        $translations = MenuTranslations::validated($request);
+
         $data = $request->validate([
-            'category_id' => ['required', TenantRules::existsInCurrentRestaurant('categories', 'id')],
+            'category_id' => ['required', TenantRules::existsModel(Category::class)],
             'type' => 'required|in:kitchen,bar',
-            'name' => 'required|string|max:150',
-            'name_en' => 'nullable|string|max:150',
-            'name_ru' => 'nullable|string|max:150',
-            'description' => 'nullable|string',
-            'description_en' => 'nullable|string',
-            'description_ru' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'badge' => 'nullable|string|max:30',
             'sort_order' => 'nullable|integer|min:0',
             'image' => 'nullable|image|max:2048',
+            'option_groups' => 'nullable|array',
+            'option_groups.*.id' => 'nullable|integer',
+            'option_groups.*.name' => 'nullable|array',
+            'option_groups.*.name.tr' => 'nullable|string|max:80',
+            'option_groups.*.name.en' => 'nullable|string|max:80',
+            'option_groups.*.name.ru' => 'nullable|string|max:80',
+            'option_groups.*.type' => 'nullable|in:'.ProductOptionGroup::TYPE_SINGLE.','.ProductOptionGroup::TYPE_MULTIPLE,
+            'option_groups.*.required' => 'nullable|boolean',
+            'option_groups.*.sort_order' => 'nullable|integer|min:0',
+            'option_groups.*.options' => 'nullable|array',
+            'option_groups.*.options.*.id' => 'nullable|integer',
+            'option_groups.*.options.*.name' => 'nullable|array',
+            'option_groups.*.options.*.name.tr' => 'nullable|string|max:80',
+            'option_groups.*.options.*.name.en' => 'nullable|string|max:80',
+            'option_groups.*.options.*.name.ru' => 'nullable|string|max:80',
+            'option_groups.*.options.*.price_modifier' => 'nullable|numeric|min:0',
+            'option_groups.*.options.*.is_default' => 'nullable|boolean',
+            'option_groups.*.options.*.sort_order' => 'nullable|integer|min:0',
         ]);
 
-        return $data;
+        unset($data['option_groups']);
+
+        return array_merge($data, $translations);
     }
 }

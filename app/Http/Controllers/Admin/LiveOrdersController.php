@@ -119,7 +119,7 @@ class LiveOrdersController extends Controller
             ->map($mapOrder);
 
         $calls = TableCall::query()
-            ->with(['linkedTable', 'assignedUser:id,name'])
+            ->with(['linkedTable', 'waiter:id,name'])
             ->open()
             ->orderByDesc('created_at')
             ->limit(50)
@@ -150,7 +150,7 @@ class LiveOrdersController extends Controller
     /** Kasa: hesap (POS) çağrısını garsona yönlendirir. */
     public function forwardCall(TableCall $call): JsonResponse
     {
-        if ($call->status === TableCall::STATUS_RESOLVED) {
+        if ($call->status === TableCall::STATUS_COMPLETED) {
             return response()->json(['success' => false, 'message' => 'Çağrı kapatılmış.'], 422);
         }
 
@@ -171,11 +171,11 @@ class LiveOrdersController extends Controller
             'payment_method' => 'nullable|in:cash,card',
         ]);
 
-        if ($call->status === TableCall::STATUS_RESOLVED) {
+        if ($call->status === TableCall::STATUS_COMPLETED) {
             return response()->json(['success' => true, 'message' => 'Çağrı zaten kapatılmış.']);
         }
 
-        $call->update(['status' => TableCall::STATUS_RESOLVED]);
+        $call->update(['status' => TableCall::STATUS_COMPLETED]);
 
         $this->syncTable($call->table_id);
 

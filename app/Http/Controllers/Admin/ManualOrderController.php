@@ -58,8 +58,14 @@ class ManualOrderController extends Controller
             ->with('category:id,name')
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($sub) use ($q) {
-                    $sub->where('name', 'like', "%{$q}%")
-                        ->orWhereHas('category', fn ($c) => $c->where('name', 'like', "%{$q}%"));
+                    $sub->where('name->tr', 'like', "%{$q}%")
+                        ->orWhere('name->en', 'like', "%{$q}%")
+                        ->orWhere('name->ru', 'like', "%{$q}%")
+                        ->orWhereHas('category', function ($c) use ($q) {
+                            $c->where('name->tr', 'like', "%{$q}%")
+                                ->orWhere('name->en', 'like', "%{$q}%")
+                                ->orWhere('name->ru', 'like', "%{$q}%");
+                        });
                 });
             })
             ->limit(30)
@@ -68,10 +74,10 @@ class ManualOrderController extends Controller
         return response()->json([
             'products' => $products->map(fn (Product $p) => [
                 'id' => $p->id,
-                'name' => $p->name,
+                'name' => $p->getTranslation('name', 'tr'),
                 'price' => (float) $p->price,
                 'type' => $p->type ?? 'kitchen',
-                'category' => $p->category?->name,
+                'category' => $p->category?->getTranslation('name', 'tr'),
             ]),
         ]);
     }
@@ -83,10 +89,10 @@ class ManualOrderController extends Controller
         }
 
         $validated = $request->validate([
-            'table_id' => ['required', TenantRules::existsInCurrentRestaurant('tables', 'id')],
+            'table_id' => ['required', TenantRules::existsModel(Table::class)],
             'notes' => 'nullable|string|max:500',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => ['required', TenantRules::existsInCurrentRestaurant('products', 'id')],
+            'items.*.product_id' => ['required', TenantRules::existsModel(Product::class)],
             'items.*.quantity' => 'required|integer|min:1|max:20',
         ]);
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\Product;
 use App\Models\Table;
 use App\Services\OrderPlacementService;
 use App\Support\CurrentRestaurant;
@@ -26,9 +27,12 @@ class OrderController extends Controller
             'lang' => 'nullable|string|in:tr,en,ru',
             'notes' => 'nullable|string|max:500',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => ['required', TenantRules::existsInCurrentRestaurant('products', 'id')],
+            'items.*.product_id' => ['required', TenantRules::existsModel(Product::class)],
             'items.*.quantity' => 'required|integer|min:1|max:20',
             'items.*.notes' => 'nullable|string|max:200',
+            'items.*.options' => 'nullable|array',
+            'items.*.options.*.group_id' => 'required_with:items.*.options|integer',
+            'items.*.options.*.option_id' => 'required_with:items.*.options|integer',
         ]);
 
         $tableId = null;

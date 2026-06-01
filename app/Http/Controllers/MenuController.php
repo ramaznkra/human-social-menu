@@ -7,7 +7,6 @@ use App\Models\CafeGallery;
 use App\Models\OrderItem;
 use App\Models\Setting;
 use App\Models\Table;
-use App\Support\CurrentRestaurant;
 use App\Support\MenuLocale;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
@@ -32,7 +31,12 @@ class MenuController extends Controller
         }
 
         $categories = Category::active()
-            ->with(['products' => fn ($q) => $q->available()])
+            ->with([
+                'products' => fn ($q) => $q->available()->with([
+                    'optionGroups' => fn ($q) => $q->orderBy('sort_order'),
+                    'optionGroups.options' => fn ($q) => $q->orderBy('sort_order'),
+                ]),
+            ])
             ->get();
 
         $settings = Setting::allCached();
@@ -40,10 +44,8 @@ class MenuController extends Controller
         $spottedSliders = CafeGallery::active()->get();
 
         $productPopularity = OrderItem::query()
-            ->join('orders', 'orders.id', '=', 'order_items.order_id')
-            ->when(CurrentRestaurant::id(), fn ($q) => $q->where('orders.restaurant_id', CurrentRestaurant::id()))
-            ->whereDate('orders.created_at', today())
-            ->whereNotNull('order_items.product_id')
+            ->whereHas('order', fn ($q) => $q->whereDate('created_at', today()))
+            ->whereNotNull('product_id')
             ->select('order_items.product_id', DB::raw('SUM(order_items.quantity) as total_qty'))
             ->groupBy('order_items.product_id')
             ->pluck('total_qty', 'product_id');

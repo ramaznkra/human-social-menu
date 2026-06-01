@@ -127,11 +127,17 @@
             </div>
             @endif
             @foreach($cat->products as $product)
+            @php
+                $optionGroups = $product->cartOptionsPayload($locale);
+                $hasOptions = count($optionGroups) > 0;
+            @endphp
             <article
                 class="product-item product-row-card"
                 data-id="{{ $product->id }}"
                 data-name="{{ $product->localizedName() }}"
                 data-price="{{ $product->price }}"
+                data-has-options="{{ $hasOptions ? '1' : '0' }}"
+                data-options='@json($optionGroups)'
                 data-category-id="{{ $cat->id }}"
                 data-search="{{ strtolower($product->localizedName() . ' ' . ($product->localizedDescription() ?? '') . ' ' . $cat->localizedName()) }}"
             >
@@ -253,6 +259,21 @@
         </div>
     </div>
 </div>
+
+<div class="modal-overlay menu-modal z-[205]" id="productModal">
+    <div class="menu-fixed-panel p-6">
+        <div class="mb-4 flex items-start justify-between gap-3">
+            <div class="min-w-0">
+                <h2 id="productModalTitle" class="text-xl font-bold text-gray-100"></h2>
+                <p id="productModalBasePrice" class="mt-1 text-sm text-[#D4C5B9]"></p>
+            </div>
+            <button type="button" id="productModalClose" class="shrink-0 rounded-lg border border-white/10 px-3 py-1.5 text-sm text-[#D4C5B9]" aria-label="{{ __('menu.cancel') }}">×</button>
+        </div>
+        <div id="productModalOptions" class="product-modal-options space-y-4"></div>
+        <p id="productModalError" class="product-modal-error hidden mt-3 text-sm text-red-400"></p>
+        <button type="button" id="productModalAdd" class="mt-5 w-full rounded-xl bg-[#C6A046] py-3.5 text-sm font-semibold text-[#1B1714] transition hover:brightness-110"></button>
+    </div>
+</div>
 @endif
 @endpush
 
@@ -262,6 +283,7 @@
 <script>
 window.HSP_MENU = {
     tableToken: @json($table?->uuid),
+    restaurantId: @json(\App\Support\CurrentRestaurant::resolveId()),
     currency: @json($settings['currency'] ?? '₺'),
     locale: @json($locale),
     orderStoreUrl: @json(route('order.store')),
@@ -273,6 +295,10 @@ window.HSP_MENU = {
         cartIncrease: @json(__('menu.cart_increase')),
         send: @json(__('menu.send')),
         sending: @json(__('menu.sending')),
+        addToCart: @json(__('menu.add_to_cart')),
+        addToCartPrice: @json(__('menu.add_to_cart_price')),
+        basePrice: @json(__('menu.base_price')),
+        optionRequired: @json(__('menu.option_required')),
         callWaiterSent: @json(__('menu.call.waiter_sent')),
         callWaiterActive: @json(__('menu.call.waiter_active')),
         callBillCash: @json(__('menu.call.bill_cash_sent')),

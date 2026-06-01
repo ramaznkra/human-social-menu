@@ -42,10 +42,10 @@
                     <td class="font-medium">
                         <span class="inline-flex items-center gap-2">
                             <span class="table-status-dot {{ $cat->is_active ? 'table-status-dot--on' : 'table-status-dot--off' }}" data-category-dot aria-hidden="true"></span>
-                            {{ $cat->name }}
+                            {{ $cat->getTranslation('name', 'tr') }}
                         </span>
                     </td>
-                    <td class="text-xs text-gray-500">{{ $cat->name_en ?: '—' }} · {{ $cat->name_ru ?: '—' }}</td>
+                    <td class="text-xs text-gray-500">{{ $cat->getTranslation('name', 'en', false) ?: '—' }} · {{ $cat->getTranslation('name', 'ru', false) ?: '—' }}</td>
                     <td class="text-gray-500">{{ $cat->slug }}</td>
                     <td>{{ $cat->products_count }}</td>
                     <td>@include('admin.partials.category-active-toggle', ['category' => $cat])</td>
@@ -83,13 +83,13 @@
                 </div>
                 <div class="admin-tray-card__body">
                     <div class="flex items-start justify-between gap-2">
-                        <h3 class="admin-tray-card__title" title="{{ $cat->name }}">{{ $cat->name }}</h3>
+                        <h3 class="admin-tray-card__title" title="{{ $cat->getTranslation('name', 'tr') }}">{{ $cat->getTranslation('name', 'tr') }}</h3>
                         @include('admin.partials.category-active-toggle', ['category' => $cat])
                     </div>
                     <p class="admin-tray-card__meta">Sıra {{ $cat->sort_order }} · {{ $cat->products_count }} ürün</p>
                     <p class="admin-tray-card__meta text-[11px]">{{ $cat->slug }}</p>
-                    @if($cat->name_en || $cat->name_ru)
-                    <p class="admin-tray-card__meta text-[10px] text-gray-400">{{ $cat->name_en ?: '—' }} / {{ $cat->name_ru ?: '—' }}</p>
+                    @if($cat->getTranslation('name', 'en', false) || $cat->getTranslation('name', 'ru', false))
+                    <p class="admin-tray-card__meta text-[10px] text-gray-400">{{ $cat->getTranslation('name', 'en', false) ?: '—' }} / {{ $cat->getTranslation('name', 'ru', false) ?: '—' }}</p>
                     @endif
                     <div class="admin-tray-card__actions">
                         <a href="{{ route('admin.categories.edit', $cat) }}" class="btn btn-sm btn-secondary w-full">Düzenle</a>

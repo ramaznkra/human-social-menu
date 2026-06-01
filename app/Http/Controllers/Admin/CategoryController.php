@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Services\MenuImageOptimizer;
+use App\Support\MenuTranslations;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -74,10 +75,9 @@ class CategoryController extends Controller
 
     private function validated(Request $request, ?Category $category = null): array
     {
+        $translations = MenuTranslations::validated($request, maxName: 100);
+
         $data = $request->validate([
-            'name' => 'required|string|max:100',
-            'name_en' => 'nullable|string|max:100',
-            'name_ru' => 'nullable|string|max:100',
             'slug' => 'nullable|string|max:100',
             'icon' => 'nullable|string|max:50',
             'image' => 'nullable|image|max:3072',
@@ -86,7 +86,8 @@ class CategoryController extends Controller
             'sort_order' => 'nullable|integer|min:0',
         ]);
 
-        $data['slug'] = $data['slug'] ?? Str::slug($data['name']);
+        $data = array_merge($data, $translations);
+        $data['slug'] = $data['slug'] ?? Str::slug($data['name']['tr'] ?? $data['name']['en'] ?? '');
 
         return $data;
     }

@@ -13,6 +13,9 @@ use Illuminate\Validation\ValidationException;
 
 class OrderPlacementService
 {
+    public function __construct(
+        private readonly ProductOptionPricing $optionPricing,
+    ) {}
     public function generateOrderNumber(): string
     {
         $seq = Order::whereDate('created_at', today())->count() + 1;
@@ -21,7 +24,7 @@ class OrderPlacementService
     }
 
     /**
-     * @param  array<int, array{product_id: int, quantity: int, notes?: string|null}>  $items
+     * @param  array<int, array{product_id: int, quantity: int, notes?: string|null, options?: array<int, array{group_id: int, option_id: int}>}>  $items
      */
     public function createOrder(
         ?int $tableId,
@@ -38,7 +41,7 @@ class OrderPlacementService
         $tableStatus = app(TableStatusService::class);
 
         return DB::transaction(function () use ($tableId, $items, $source, $notes, $tableStatus) {
-            $restaurantId = CurrentRestaurant::id();
+            $restaurantId = CurrentRestaurant::resolveId();
 
             if ($tableId !== null) {
                 $table = Table::query()->find($tableId);
@@ -47,7 +50,7 @@ class OrderPlacementService
                         'table_id' => 'Geçerli ve aktif bir masa seçin.',
                     ]);
                 }
-                $restaurantId = $table->restaurant_id;
+                $restaurantId = (int) $table->restaurant_id;
             }
 
             if ($restaurantId === null) {
@@ -76,14 +79,26 @@ class OrderPlacementService
                 }
 
                 $qty = (int) ($item['quantity'] ?? 1);
+                $locale = app()->getLocale();
+                $pricing = $this->optionPricing->resolve(
+                    $product,
+                    $item['options'] ?? [],
+                    $locale,
+                );
+
+                $productName = $product->getTranslation('name', $locale, false)
+                    ?: $product->getTranslation('name', 'tr');
+                $productName .= $pricing['display_name_suffix'];
+
                 $order->items()->create([
                     'product_id' => $product->id,
                     'quantity' => $qty,
-                    'unit_price' => $product->price,
-                    'product_name' => $product->name,
+                    'unit_price' => $pricing['unit_price'],
+                    'product_name' => $productName,
                     'notes' => $item['notes'] ?? null,
+                    'options' => $pricing['options'] !== [] ? $pricing['options'] : null,
                 ]);
-                $total += $product->price * $qty;
+                $total += $pricing['unit_price'] * $qty;
                 $added++;
             }
 

@@ -42,7 +42,7 @@ class SeedProductSampleImages extends Command
         $fail = 0;
 
         foreach (self::IMAGES as $productName => $source) {
-            $product = Product::where('name', $productName)->first();
+            $product = Product::where('name->tr', $productName)->first();
 
             if (! $product) {
                 $this->warn("Ürün bulunamadı: {$productName}");

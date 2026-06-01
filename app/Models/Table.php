@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 
 class Table extends Model
 {
+    /** @use BelongsToRestaurant — App\Models\Scopes\RestaurantScope tenant izolasyonu */
     use BelongsToRestaurant;
 
     public const STATUS_AVAILABLE = 'available';

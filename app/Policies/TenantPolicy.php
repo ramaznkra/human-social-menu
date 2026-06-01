@@ -17,6 +17,6 @@ abstract class TenantPolicy
             return false;
         }
 
-        return (int) $model->restaurant_id === (int) CurrentRestaurant::id();
+        return (int) $model->restaurant_id === (int) CurrentRestaurant::resolveId();
     }
 }

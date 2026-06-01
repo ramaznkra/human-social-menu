@@ -36,7 +36,7 @@ class TableController extends Controller
                 'string',
                 'max:20',
                 Rule::unique('tables', 'number')->where(
-                    fn ($query) => $query->where('restaurant_id', CurrentRestaurant::id()),
+                    fn ($query) => $query->where('restaurant_id', CurrentRestaurant::resolveId()),
                 ),
             ],
         ]);
@@ -62,7 +62,7 @@ class TableController extends Controller
                 'string',
                 'max:20',
                 Rule::unique('tables', 'number')
-                    ->where(fn ($query) => $query->where('restaurant_id', CurrentRestaurant::id()))
+                    ->where(fn ($query) => $query->where('restaurant_id', CurrentRestaurant::resolveId()))
                     ->ignore($table->id),
             ],
         ]);

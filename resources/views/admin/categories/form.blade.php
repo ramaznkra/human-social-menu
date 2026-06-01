@@ -1,28 +1,30 @@
 @extends('layouts.admin')
 @section('title', $category->exists ? 'Kategori Düzenle' : 'Yeni Kategori')
 @section('content')
+@php
+    $names = old('name', $category->exists ? $category->getTranslations('name') : []);
+    $descriptions = old('description', $category->exists ? $category->getTranslations('description') : []);
+    $sampleImages = [
+        'images/categories/samples/yiyecek.svg' => 'Yiyecek',
+        'images/categories/samples/icecek.svg' => 'İçecek',
+        'images/categories/samples/nargile.svg' => 'Nargile',
+        'images/categories/samples/okey.svg' => 'Okey',
+    ];
+    $currentImage = old('preset_image', $category->image);
+@endphp
 <div class="mb-6"><h2 class="text-2xl font-semibold text-gray-800">{{ $category->exists ? 'Kategori Düzenle' : 'Yeni Kategori' }}</h2></div>
 <div class="admin-card max-w-xl">
-    @php
-        $sampleImages = [
-            'images/categories/samples/yiyecek.svg' => 'Yiyecek',
-            'images/categories/samples/icecek.svg' => 'İçecek',
-            'images/categories/samples/nargile.svg' => 'Nargile',
-            'images/categories/samples/okey.svg' => 'Okey',
-        ];
-        $currentImage = old('preset_image', $category->image);
-    @endphp
     <form method="POST" enctype="multipart/form-data" action="{{ $category->exists ? route('admin.categories.update', $category) : route('admin.categories.store') }}" class="space-y-4">
         @csrf
         @if($category->exists) @method('PUT') @endif
-        <div><label class="form-label">Ad (Türkçe) *</label><input type="text" name="name" value="{{ old('name', $category->name) }}" required class="form-input"></div>
-        <div><label class="form-label">Ad (English)</label><input type="text" name="name_en" value="{{ old('name_en', $category->name_en) }}" class="form-input" placeholder="Optional"></div>
-        <div><label class="form-label">Ad (Русский)</label><input type="text" name="name_ru" value="{{ old('name_ru', $category->name_ru) }}" class="form-input" placeholder="Необязательно"></div>
+
+        @include('admin.partials.locale-tabs', compact('names', 'descriptions'))
+
         <div><label class="form-label">Slug</label><input type="text" name="slug" value="{{ old('slug', $category->slug) }}" placeholder="otomatik" class="form-input"></div>
         <div class="space-y-2">
             <label class="form-label">Kategori Görseli (Sadece Admin)</label>
             @if($category->image_url)
-                <img src="{{ $category->image_url }}" alt="{{ $category->name }}" class="h-20 w-28 rounded-lg border border-gray-200 object-cover">
+                <img src="{{ $category->image_url }}" alt="{{ $category->getTranslation('name', 'tr') }}" class="h-20 w-28 rounded-lg border border-gray-200 object-cover">
             @endif
             <input type="file" name="image" accept="image/*" class="form-input">
             <p class="text-xs text-gray-500">JPG, PNG, WEBP veya GIF (maks. 3MB).</p>
@@ -54,3 +56,7 @@
     </form>
 </div>
 @endsection
+
+@push('scripts')
+@vite('resources/js/pages/admin-locale-tabs.js')
+@endpush

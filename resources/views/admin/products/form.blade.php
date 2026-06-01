@@ -1,8 +1,12 @@
 @extends('layouts.admin')
 @section('title', $product->exists ? 'Ürün Düzenle' : 'Yeni Ürün')
 @section('content')
+@php
+    $names = old('name', $product->exists ? $product->getTranslations('name') : []);
+    $descriptions = old('description', $product->exists ? $product->getTranslations('description') : []);
+@endphp
 <div class="mb-6"><h2 class="text-2xl font-semibold text-gray-800">{{ $product->exists ? 'Ürün Düzenle' : 'Yeni Ürün' }}</h2></div>
-<div class="admin-card max-w-xl">
+<div class="admin-card max-w-3xl">
     <form method="POST" action="{{ $product->exists ? route('admin.products.update', $product) : route('admin.products.store') }}" enctype="multipart/form-data" class="space-y-4">
         @csrf
         @if($product->exists) @method('PUT') @endif
@@ -17,17 +21,17 @@
             <label class="form-label">Kategori *</label>
             <select name="category_id" required class="form-input">
                 @foreach($categories as $c)
-                <option value="{{ $c->id }}" {{ old('category_id', $product->category_id) == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
+                <option value="{{ $c->id }}" {{ old('category_id', $product->category_id) == $c->id ? 'selected' : '' }}>{{ $c->getTranslation('name', 'tr') }}</option>
                 @endforeach
             </select>
         </div>
-        <div><label class="form-label">Ad (Türkçe) *</label><input type="text" name="name" value="{{ old('name', $product->name) }}" required class="form-input"></div>
-        <div><label class="form-label">Ad (English)</label><input type="text" name="name_en" value="{{ old('name_en', $product->name_en) }}" class="form-input"></div>
-        <div><label class="form-label">Ad (Русский)</label><input type="text" name="name_ru" value="{{ old('name_ru', $product->name_ru) }}" class="form-input"></div>
-        <div><label class="form-label">Açıklama (Türkçe)</label><textarea name="description" class="form-input min-h-[80px]">{{ old('description', $product->description) }}</textarea></div>
-        <div><label class="form-label">Açıklama (English)</label><textarea name="description_en" class="form-input min-h-[60px]">{{ old('description_en', $product->description_en) }}</textarea></div>
-        <div><label class="form-label">Açıklama (Русский)</label><textarea name="description_ru" class="form-input min-h-[60px]">{{ old('description_ru', $product->description_ru) }}</textarea></div>
+
+        @include('admin.partials.locale-tabs', compact('names', 'descriptions'))
+
         <div><label class="form-label">Fiyat (₺) *</label><input type="number" step="0.01" name="price" value="{{ old('price', $product->price) }}" required class="form-input"></div>
+
+        @include('admin.partials.product-option-groups', ['product' => $product])
+
         <div>
             <label class="form-label">Rozet (Popüler, Yeni...)</label>
             @php $currentBadge = old('badge', $product->badge); @endphp
@@ -64,5 +68,5 @@
 @endsection
 
 @push('scripts')
-@vite('resources/js/pages/admin-product-form.js')
+@vite(['resources/js/pages/admin-product-form.js', 'resources/js/pages/admin-product-options.js', 'resources/js/pages/admin-locale-tabs.js'])
 @endpush

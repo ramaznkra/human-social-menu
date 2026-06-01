@@ -10,11 +10,17 @@ class TableCall extends Model
 {
     use BelongsToRestaurant;
 
-    public const STATUS_ACTIVE = 'active';
+    public const STATUS_PENDING = 'pending';
 
     public const STATUS_IN_PROGRESS = 'in_progress';
 
-    public const STATUS_RESOLVED = 'resolved';
+    public const STATUS_COMPLETED = 'completed';
+
+    /** @deprecated use STATUS_PENDING */
+    public const STATUS_ACTIVE = self::STATUS_PENDING;
+
+    /** @deprecated use STATUS_COMPLETED */
+    public const STATUS_RESOLVED = self::STATUS_COMPLETED;
 
     protected $fillable = [
         'restaurant_id',
@@ -22,7 +28,7 @@ class TableCall extends Model
         'type',
         'status',
         'forwarded_to_waiter',
-        'assigned_user_id',
+        'waiter_id',
     ];
 
     protected function casts(): array
@@ -45,9 +51,15 @@ class TableCall extends Model
         return $this->belongsTo(Table::class, 'table_id');
     }
 
+    public function waiter(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'waiter_id');
+    }
+
+    /** @deprecated use waiter() */
     public function assignedUser(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'assigned_user_id');
+        return $this->waiter();
     }
 
     public function getTypeLabelAttribute(): string
@@ -87,25 +99,25 @@ class TableCall extends Model
         };
     }
 
+    public function scopePending($query)
+    {
+        return $query->where('status', self::STATUS_PENDING);
+    }
+
+    /** @deprecated use scopePending */
     public function scopeActive($query)
     {
-        return $query->where('status', self::STATUS_ACTIVE);
+        return $this->scopePending($query);
     }
 
     /** Aktif veya garson ilgileniyor — henüz kapanmamış çağrılar. */
     public function scopeOpen($query)
     {
-        return $query->whereIn('status', [self::STATUS_ACTIVE, self::STATUS_IN_PROGRESS]);
+        return $query->whereIn('status', [self::STATUS_PENDING, self::STATUS_IN_PROGRESS]);
     }
 
     public function isOpen(): bool
     {
-        return in_array($this->status, [self::STATUS_ACTIVE, self::STATUS_IN_PROGRESS], true);
-    }
-
-    /** @deprecated use scopeActive */
-    public function scopePending($query)
-    {
-        return $this->scopeActive($query);
+        return in_array($this->status, [self::STATUS_PENDING, self::STATUS_IN_PROGRESS], true);
     }
 }

@@ -48,7 +48,7 @@ class TableCallController extends Controller
             'restaurant_id' => $table->restaurant_id,
             'table_id' => $table->id,
             'type' => $validated['type'],
-            'status' => TableCall::STATUS_ACTIVE,
+            'status' => TableCall::STATUS_PENDING,
         ]);
 
         event(new TableCallReceived($call));

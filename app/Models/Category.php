@@ -7,12 +7,18 @@ use App\Models\Concerns\HasMenuTranslations;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Translatable\HasTranslations;
 
 class Category extends Model
 {
-    use BelongsToRestaurant, HasMenuTranslations;
+    /** @use BelongsToRestaurant — App\Models\Scopes\RestaurantScope tenant izolasyonu */
+    use BelongsToRestaurant, HasMenuTranslations, HasTranslations;
 
-    protected $fillable = ['restaurant_id', 'name', 'name_en', 'name_ru', 'slug', 'icon', 'image', 'sort_order', 'is_active'];
+    public array $translatable = ['name', 'description'];
+
+    protected $fillable = [
+        'restaurant_id', 'name', 'description', 'slug', 'icon', 'image', 'sort_order', 'is_active',
+    ];
 
     protected function casts(): array
     {
@@ -58,5 +64,4 @@ class Category extends Model
 
         return $fallback ? asset($fallback) : null;
     }
-
 }

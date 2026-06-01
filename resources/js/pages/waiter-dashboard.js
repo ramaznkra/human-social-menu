@@ -17,12 +17,15 @@ function initWaiterDashboard() {
     const statusEl = document.getElementById('waiterFeedStatus');
     const liveBadge = document.getElementById('waiterLiveBadge');
     const installBtn = document.getElementById('waiterInstallBtn');
+    const soundGate = document.getElementById('waiterSoundGate');
+    const soundEnableBtn = document.getElementById('waiterSoundEnableBtn');
     const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
     let pollTimer = null;
     let completing = false;
     let echoClient = null;
     let audioCtx = null;
+    let soundEnabled = localStorage.getItem('waiter_sound_enabled') === '1';
     let deferredInstallPrompt = null;
     let knownOrderIds = new Set();
     let knownCallIds = new Set();
@@ -76,61 +79,83 @@ function initWaiterDashboard() {
         return 'waiter-feed-card--call';
     }
 
+    function callWaiterName(call) {
+        return call.waiter_name || call.assigned_user_name || 'Garson';
+    }
+
+    function callWaiterId(call) {
+        return Number(call.waiter_id ?? call.assigned_user_id ?? 0);
+    }
+
+    function isCallClosed(call) {
+        return call.status === 'completed' || call.status === 'resolved';
+    }
+
+    function isCallPending(call) {
+        return call.status === 'pending' || call.status === 'active' || !call.status;
+    }
+
     function callActionsHtml(call) {
         const userId = Number(cfg.userId);
         const inProgress = call.status === 'in_progress';
-        const mine = inProgress && Number(call.assigned_user_id) === userId;
+        const mine = inProgress && callWaiterId(call) === userId;
         const taken = inProgress && !mine;
+        const waiterLabel = callWaiterName(call);
 
         let claimHtml = '';
-        if (call.status === 'active' || !call.status) {
+        if (isCallPending(call)) {
             claimHtml = `
                 <button type="button" class="waiter-feed-card__action waiter-feed-card__action--claim" data-claim="1">
                     👋 İlgileniyorum
                 </button>`;
         } else if (taken) {
-            claimHtml = `<p class="waiter-feed-card__assigned">${escapeHtml(call.assigned_user_name || 'Garson')} ilgileniyor</p>`;
+            claimHtml = `<p class="waiter-feed-card__assigned">Garson <strong>${escapeHtml(waiterLabel)}</strong> ilgileniyor</p>`;
         } else if (mine) {
             claimHtml = `<p class="waiter-feed-card__assigned waiter-feed-card__assigned--mine">Siz ilgileniyorsunuz</p>`;
         }
 
         const isBill = ['bill_cash', 'bill_card', 'bill'].includes(String(call.type));
+
         if (isBill) {
-            return `
-                ${claimHtml}
+            const completeBlock = mine
+                ? `
                 <p class="waiter-feed-card__pay-label">Hesabı kapat</p>
                 <div class="waiter-feed-card__pay-actions">
                     <button type="button" class="waiter-feed-card__action waiter-feed-card__action--cash" data-complete="1" data-payment="cash">
-                        💵 Nakit
+                        💵 Nakit · Tamamla
                     </button>
                     <button type="button" class="waiter-feed-card__action waiter-feed-card__action--card" data-complete="1" data-payment="card">
-                        💳 Kart
+                        💳 Kart · Tamamla
                     </button>
-                </div>`;
+                </div>`
+                : '';
+
+            return `${claimHtml}${completeBlock}`;
         }
 
-        return `
-            ${claimHtml}
-            <button type="button" class="waiter-feed-card__action" data-complete="1">
-                ✓ Tamamlandı / Kapat
-            </button>`;
+        const completeBtn = mine
+            ? `<button type="button" class="waiter-feed-card__action waiter-feed-card__action--done" data-complete="1">✓ Tamamla</button>`
+            : '';
+
+        return `${claimHtml}${completeBtn}`;
     }
 
     function renderCallCard(call) {
         const inProgress = call.status === 'in_progress';
-        const statusNote =
-            inProgress && call.assigned_user_name
-                ? ` · ${escapeHtml(call.assigned_user_name)} ilgileniyor`
-                : '';
+        const waiterLabel = callWaiterName(call);
+        const statusNote = inProgress
+            ? `<p class="waiter-feed-card__assignee">Garson <strong>${escapeHtml(waiterLabel)}</strong> ilgileniyor</p>`
+            : '';
 
         return `
-            <article class="waiter-feed-card ${callCardClass(call.type)}${inProgress ? ' waiter-feed-card--in-progress' : ''}" data-feed-kind="call" data-feed-id="${call.id}">
+            <article class="waiter-feed-card ${callCardClass(call.type)}${inProgress ? ' waiter-feed-card--in-progress' : ''}${isCallPending(call) ? ' waiter-feed-card--pending' : ''}" data-feed-kind="call" data-feed-id="${call.id}">
                 <div class="waiter-feed-card__top">
                     <span class="waiter-feed-card__badge">Çağrı</span>
                     <span class="waiter-feed-card__time">${escapeHtml(call.created_at || '')}</span>
                 </div>
                 <p class="waiter-feed-card__headline">${escapeHtml(call.headline || call.type_label || 'Masa çağrısı')}</p>
-                <p class="waiter-feed-card__meta">Masa ${escapeHtml(call.table ?? '—')} · ${escapeHtml(call.type_label || '')}${statusNote}</p>
+                <p class="waiter-feed-card__meta">Masa ${escapeHtml(call.table ?? '—')} · ${escapeHtml(call.type_label || '')}</p>
+                ${statusNote}
                 ${callActionsHtml(call)}
             </article>`;
     }
@@ -138,7 +163,7 @@ function initWaiterDashboard() {
     function updateCallCardInFeed(call) {
         if (!feedEl || !call?.id) return;
         const existing = feedEl.querySelector(`[data-feed-kind="call"][data-feed-id="${call.id}"]`);
-        if (call.status === 'resolved') {
+        if (isCallClosed(call)) {
             existing?.remove();
             return;
         }
@@ -214,31 +239,108 @@ function initWaiterDashboard() {
         }
     }
 
-    function initAudioUnlock() {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (!AudioCtx || audioCtx) return;
+    function initSoundGate() {
+        if (!soundGate || !soundEnableBtn) return;
 
-        const unlock = async () => {
-            if (!audioCtx) {
-                audioCtx = new AudioCtx();
-            }
-
-            if (audioCtx.state === 'suspended') {
-                try {
-                    await audioCtx.resume();
-                } catch {
-                    // no-op
-                }
-            }
-
-            if (audioCtx.state === 'running') {
-                document.removeEventListener('pointerdown', unlock);
-                document.removeEventListener('keydown', unlock);
-            }
+        const showGate = () => {
+            soundGate.hidden = false;
         };
 
-        document.addEventListener('pointerdown', unlock, { passive: true });
-        document.addEventListener('keydown', unlock);
+        const hideGate = () => {
+            soundGate.hidden = true;
+        };
+
+        if (!soundEnabled) {
+            showGate();
+        } else {
+            hideGate();
+            initAudioContext();
+        }
+
+        soundEnableBtn.addEventListener('click', async () => {
+            const ok = await initAudioContext(true);
+            if (!ok) return;
+            soundEnabled = true;
+            localStorage.setItem('waiter_sound_enabled', '1');
+            playCallBell();
+            hideGate();
+            showAdminToast({
+                title: 'Sesli bildirimler açık',
+                message: 'Yeni masa çağrılarında zil çalacak.',
+                type: 'success',
+                durationMs: 2800,
+            });
+        });
+    }
+
+    async function initAudioContext(playTest = false) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return false;
+
+        if (!audioCtx) {
+            audioCtx = new AudioCtx();
+        }
+
+        if (audioCtx.state === 'suspended') {
+            try {
+                await audioCtx.resume();
+            } catch {
+                return false;
+            }
+        }
+
+        if (playTest && audioCtx.state === 'running') {
+            return true;
+        }
+
+        return audioCtx.state === 'running';
+    }
+
+    /** Yüksek sesli zil — yalnızca garson çağrıları için */
+    function playCallBell() {
+        if (!soundEnabled) return;
+
+        try {
+            if (!audioCtx || audioCtx.state !== 'running') return;
+            const t = audioCtx.currentTime;
+            const pattern = [
+                { freq: 880, type: 'square', gain: 0.32, dur: 0.22 },
+                { freq: 1174, type: 'square', gain: 0.28, dur: 0.18, offset: 0.24 },
+                { freq: 880, type: 'square', gain: 0.32, dur: 0.22, offset: 0.46 },
+                { freq: 1318, type: 'square', gain: 0.35, dur: 0.28, offset: 0.72 },
+            ];
+
+            pattern.forEach(({ freq, type, gain, dur, offset = 0 }) => {
+                const start = t + offset;
+                const osc = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, start);
+                g.gain.setValueAtTime(0.0001, start);
+                g.gain.exponentialRampToValueAtTime(gain, start + 0.02);
+                g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+                osc.connect(g);
+                g.connect(audioCtx.destination);
+                osc.start(start);
+                osc.stop(start + dur + 0.02);
+            });
+        } catch {
+            // autoplay / audio blocked
+        }
+
+        try {
+            if (navigator.vibrate) {
+                navigator.vibrate([200, 80, 200, 80, 320]);
+            }
+        } catch {
+            // no-op
+        }
+    }
+
+    function initAudioUnlock() {
+        if (soundEnabled) {
+            initAudioContext();
+        }
     }
 
     function playBip() {
@@ -353,7 +455,7 @@ function initWaiterDashboard() {
             if (!call?.id) return;
             knownCallIds.add(Number(call.id));
             prependRealtimeCall(call);
-            playReadyRing();
+            playCallBell();
             const isBill = ['bill_cash', 'bill_card', 'bill'].includes(String(call.type));
             showAdminToast({
                 title: isBill ? 'Hesap İstendi · Masaya Git' : 'Garson çağrısı',
@@ -381,7 +483,7 @@ function initWaiterDashboard() {
         echoClient.channel(ordersChannelName).listen('.TableCallUpdated', (payload) => {
             const call = payload?.call;
             if (!call?.id) return;
-            if (call.status === 'resolved') {
+            if (isCallClosed(call)) {
                 knownCallIds.delete(Number(call.id));
                 updateCallCardInFeed(call);
                 if (!feedEl?.querySelector('[data-feed-kind]')) {
@@ -546,7 +648,7 @@ function initWaiterDashboard() {
             if (hasBootstrappedCalls) {
                 const newCalls = calls.filter((c) => !knownCallIds.has(Number(c.id)));
                 if (newCalls.length) {
-                    playReadyRing();
+                    playCallBell();
                     const first = newCalls[0];
                     showAdminToast({
                         title: 'Masa çağrısı',
@@ -717,6 +819,7 @@ function initWaiterDashboard() {
 
     poll();
     pollTimer = setInterval(poll, cfg.pollMs || 4000);
+    initSoundGate();
     initAudioUnlock();
     initRealtimeOrders();
     initInstallPrompt();
