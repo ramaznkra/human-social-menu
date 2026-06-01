@@ -210,6 +210,20 @@ function initMenuCart() {
     });
 
     /* ── Sepet ── */
+    let orderSubmitting = false;
+
+    function setOrderFormLocked(locked) {
+        const submitBtn = document.getElementById('submitOrder');
+        const closeBtn = document.getElementById('closeCart');
+        const notes = document.getElementById('orderNotes');
+        if (submitBtn) submitBtn.disabled = locked;
+        if (closeBtn) closeBtn.disabled = locked;
+        if (notes) notes.disabled = locked;
+        document.querySelectorAll('.cart-qty-btn, .cart-remove-btn, .add-btn, #openCart').forEach((el) => {
+            el.disabled = locked;
+        });
+    }
+
     function escapeHtml(text) {
         return String(text)
             .replace(/&/g, '&amp;')
@@ -362,6 +376,8 @@ function initMenuCart() {
     });
 
     document.getElementById('submitOrder')?.addEventListener('click', async () => {
+        if (orderSubmitting) return;
+
         const items = Object.values(cart).map((i) => ({
             product_id: parseInt(i.id, 10),
             quantity: i.qty,
@@ -369,8 +385,8 @@ function initMenuCart() {
         if (!items.length) return;
 
         const btn = document.getElementById('submitOrder');
-        const modal = document.getElementById('cartModal');
-        btn.disabled = true;
+        orderSubmitting = true;
+        setOrderFormLocked(true);
         btn.textContent = t.sending || '...';
 
         try {
@@ -410,7 +426,8 @@ function initMenuCart() {
             alert(t.connection || '');
         }
 
-        btn.disabled = false;
+        orderSubmitting = false;
+        setOrderFormLocked(false);
         btn.textContent = t.send || 'Send';
     });
 }

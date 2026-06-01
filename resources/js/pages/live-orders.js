@@ -54,6 +54,31 @@ function playCallAlert() {
     }
 }
 
+const OVERDUE_MINUTES = 15;
+
+function parseIso(iso) {
+    if (!iso) return null;
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function formatRelativeAge(iso) {
+    const d = parseIso(iso);
+    if (!d) return '';
+    const mins = Math.floor((Date.now() - d.getTime()) / 60000);
+    if (mins < 1) return 'Az önce';
+    if (mins < 60) return `${mins} dk önce`;
+    const hrs = Math.floor(mins / 60);
+    return `${hrs} sa önce`;
+}
+
+function isOverdueOrder(order) {
+    if (!['pending', 'preparing'].includes(order.status)) return false;
+    const d = parseIso(order.created_at_iso || order.updated_at);
+    if (!d) return false;
+    return (Date.now() - d.getTime()) / 60000 >= OVERDUE_MINUTES;
+}
+
 function filterOrders(orders, tab) {
     if (tab === 'all' || tab === 'calls') return orders;
     if (tab === 'kitchen') return orders.filter((o) => o.has_kitchen);
@@ -133,7 +158,9 @@ function buildOrdersFingerprint(orders, tab) {
 }
 
 function buildCallsFingerprint(calls) {
-    return JSON.stringify(calls.map((c) => [c.id, c.updated_at, c.type, c.forwarded_to_waiter]));
+    return JSON.stringify(
+        calls.map((c) => [c.id, c.updated_at, c.type, c.forwarded_to_waiter, c.status, c.assigned_user_id]),
+    );
 }
 
 function buildViewFingerprint(orders, calls, completedOrders, tab) {
@@ -191,8 +218,11 @@ function renderOrderCard(order, tab) {
         ? '<span class="live-ops-waiter-badge">🤵 Garson Siparişi</span>'
         : '';
 
+    const overdueClass = isOverdueOrder(order) ? ' live-ops-order-card--overdue' : '';
+    const createdIso = order.created_at_iso || order.updated_at || '';
+
     return `
-    <article class="live-ops-order-card rounded-2xl border border-white/5 bg-[#262220]/80 p-4 backdrop-blur-md ${order.is_waiter_order ? 'live-ops-order-card--waiter' : ''}" data-order-id="${order.id}">
+    <article class="live-ops-order-card rounded-2xl border border-white/5 bg-[#262220]/80 p-4 backdrop-blur-md ${order.is_waiter_order ? 'live-ops-order-card--waiter' : ''}${overdueClass}" data-order-id="${order.id}" data-created-at="${escapeHtml(createdIso)}" data-status="${order.status}">
         <div class="mb-3 flex items-start justify-between gap-2">
             <div>
                 <span class="text-xl font-bold text-[#E67E22]">#${order.order_number}</span>
@@ -200,7 +230,7 @@ function renderOrderCard(order, tab) {
                 ${waiterBadge}
             </div>
             <div class="text-right">
-                <span class="block text-xs text-[#D4C5B9]">${order.created_at}</span>
+                <span class="live-ops-age block text-xs text-[#D4C5B9]">${formatRelativeAge(createdIso) || order.created_at}</span>
                 <span class="mt-0.5 inline-block rounded-md bg-white/5 px-2 py-0.5 text-[10px] text-gray-300">${order.status_label}</span>
             </div>
         </div>
@@ -214,12 +244,20 @@ function isBillCall(call) {
     return call.is_bill || call.type === 'bill_cash' || call.type === 'bill_card';
 }
 
+function callAssigneeHtml(call) {
+    if (call.status === 'in_progress' && call.assigned_user_name) {
+        return `<span class="live-ops-call-assignee">👤 ${escapeHtml(call.assigned_user_name)} ilgileniyor</span>`;
+    }
+    return '';
+}
+
 function callActionsHtml(call) {
     const id = call.id;
+    const assignee = callAssigneeHtml(call);
 
     // Garson çağrısı: doğrudan tamamla
     if (!isBillCall(call)) {
-        return `<button type="button" class="live-ops-resolve-call shrink-0 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-md transition hover:bg-emerald-500" data-call-id="${id}">🛎️ Garsonu Gönder</button>`;
+        return `<div class="flex flex-wrap items-center justify-end gap-2">${assignee}<button type="button" class="live-ops-resolve-call shrink-0 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-md transition hover:bg-emerald-500" data-call-id="${id}">🛎️ Garsonu Gönder</button></div>`;
     }
 
     // Hesap (POS) çağrısı
@@ -231,7 +269,7 @@ function callActionsHtml(call) {
         <button type="button" class="live-ops-close-call rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-500" data-call-id="${id}" data-payment-method="cash">💵 Nakit · Kapat</button>
         <button type="button" class="live-ops-close-call rounded-xl bg-sky-600 px-3 py-2.5 text-sm font-bold text-white transition hover:bg-sky-500" data-call-id="${id}" data-payment-method="card">💳 Kart · Kapat</button>`;
 
-    return `<div class="flex flex-wrap items-center justify-end gap-2">${forwardBtn}${closeBtns}</div>`;
+    return `<div class="flex flex-wrap items-center justify-end gap-2">${assignee}${forwardBtn}${closeBtns}</div>`;
 }
 
 function renderCallCard(call) {
@@ -242,7 +280,7 @@ function renderCallCard(call) {
         <div class="flex flex-col gap-3">
             <div class="min-w-0 flex-1">
                 <p class="text-2xl font-black leading-tight tracking-wide text-[#E67E22] sm:text-3xl">${call.headline || `MASA ${call.table ?? '?'}`}</p>
-                <p class="mt-2 text-xs text-[#D4C5B9]">Masa ${call.table ?? '—'} · ${call.type_label} · ${call.created_at}${forwarded ? ' · Garson yolda' : ''}</p>
+                <p class="mt-2 text-xs text-[#D4C5B9]">Masa ${call.table ?? '—'} · ${call.type_label} · ${call.created_at}${forwarded ? ' · Garson yolda' : ''}${call.status === 'in_progress' && call.assigned_user_name ? ` · ${escapeHtml(call.assigned_user_name)}` : ''}</p>
             </div>
             ${callActionsHtml(call)}
         </div>
@@ -323,7 +361,7 @@ if (root) {
         calls: document.querySelector('[data-badge="calls"]'),
     };
 
-    let activeTab = 'all';
+    let activeTab = root.dataset.defaultTab || 'all';
     let ordersState = [];
     let completedOrdersState = [];
     let callsState = [];
@@ -375,6 +413,7 @@ if (root) {
             notes: raw.notes ?? null,
             total: raw.total,
             created_at: raw.created_at,
+            created_at_iso: raw.created_at_iso ?? raw.updated_at,
             updated_at: raw.updated_at ?? new Date().toISOString(),
             has_kitchen: raw.has_kitchen ?? types.has('kitchen'),
             has_bar: raw.has_bar ?? types.has('bar'),
@@ -674,15 +713,63 @@ if (root) {
         statusEl.textContent = line;
     }
 
+    function refreshOrderAgeLabels() {
+        if (!grid) return;
+        grid.querySelectorAll('.live-ops-order-card[data-created-at]').forEach((card) => {
+            const iso = card.dataset.createdAt;
+            const status = card.dataset.status;
+            const ageEl = card.querySelector('.live-ops-age');
+            if (ageEl) {
+                ageEl.textContent = formatRelativeAge(iso) || ageEl.textContent;
+            }
+            const overdue =
+                ['pending', 'preparing'].includes(status) &&
+                parseIso(iso) &&
+                (Date.now() - parseIso(iso).getTime()) / 60000 >= OVERDUE_MINUTES;
+            card.classList.toggle('live-ops-order-card--overdue', !!overdue);
+        });
+    }
+
+    function handleCallUpdated(payload) {
+        const call = payload?.call;
+        if (!call?.id) {
+            poll(true);
+            return;
+        }
+
+        if (call.status === 'resolved') {
+            callsState = callsState.filter((c) => c.id !== call.id);
+            callNotifications.delete(Number(call.id));
+        } else {
+            const idx = callsState.findIndex((c) => c.id === call.id);
+            if (idx >= 0) {
+                callsState[idx] = { ...callsState[idx], ...call };
+            } else {
+                callsState.unshift(call);
+                if (initialized) {
+                    playCallAlert();
+                }
+                callNotifications.add(Number(call.id));
+            }
+        }
+
+        syncNotificationBadges();
+        dataFingerprint = '';
+        paint();
+        updateStatusLine();
+    }
+
     function paint() {
         const fp = buildViewFingerprint(ordersState, callsState, completedOrdersState, activeTab);
         if (fp === dataFingerprint) {
+            refreshOrderAgeLabels();
             return false;
         }
 
         dataFingerprint = fp;
         grid.innerHTML = renderGrid(ordersState, callsState, completedOrdersState, activeTab);
         bindButtons();
+        refreshOrderAgeLabels();
         return true;
     }
 
@@ -926,9 +1013,14 @@ if (root) {
         echoClient.channel(ordersChannelName).listen('.TableCallForwarded', () => {
             poll(true);
         });
+
+        echoClient.channel(ordersChannelName).listen('.TableCallUpdated', (payload) => {
+            handleCallUpdated(payload);
+        });
     }
 
     tabs.forEach((tab) => {
+        tab.classList.toggle('is-active', tab.dataset.tab === activeTab);
         tab.addEventListener('click', () => {
             activeTab = tab.dataset.tab;
             tabs.forEach((t) => t.classList.toggle('is-active', t === tab));
@@ -937,6 +1029,8 @@ if (root) {
             paint();
         });
     });
+
+    setInterval(refreshOrderAgeLabels, 30000);
 
     async function poll(forcePaint = false) {
         try {

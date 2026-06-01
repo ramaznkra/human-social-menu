@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Events\TableCallReceived;
 use App\Models\Table;
 use App\Models\TableCall;
+use App\Services\TableStatusService;
 use App\Support\MenuLocale;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -31,7 +32,7 @@ class TableCallController extends Controller
 
         $hasActive = TableCall::query()
             ->where('table_id', $table->id)
-            ->active()
+            ->open()
             ->exists();
 
         if ($hasActive) {
@@ -51,6 +52,8 @@ class TableCallController extends Controller
         ]);
 
         event(new TableCallReceived($call));
+
+        app(TableStatusService::class)->markOccupied($table->id);
 
         $message = match ($validated['type']) {
             'waiter' => __('menu.table_call.waiter'),
@@ -79,7 +82,7 @@ class TableCallController extends Controller
 
         $call = TableCall::query()
             ->where('table_id', $table->id)
-            ->active()
+            ->open()
             ->first();
 
         return response()->json([

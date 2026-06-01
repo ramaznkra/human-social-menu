@@ -62,6 +62,7 @@ Route::middleware([AdminMiddleware::class, SetStaffRestaurantContext::class])->g
     Route::post('/admin/cikis', [AuthController::class, 'logout'])->name('admin.logout');
 
     Route::post('/api/waiter/complete', [WaiterDashboardController::class, 'complete'])->name('waiter.complete');
+    Route::patch('/api/waiter/call/{call}/claim', [WaiterDashboardController::class, 'claimCall'])->name('waiter.call.claim');
 
     Route::get('/admin/api/admin/manual-order/bootstrap', [ManualOrderController::class, 'bootstrap'])->name('admin.manual-order.bootstrap');
     Route::get('/admin/api/admin/manual-order/products', [ManualOrderController::class, 'searchProducts'])->name('admin.manual-order.products');

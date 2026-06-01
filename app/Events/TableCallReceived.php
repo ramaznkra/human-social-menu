@@ -29,22 +29,8 @@ class TableCallReceived implements ShouldBroadcast
 
     public function broadcastWith(): array
     {
-        $call = $this->call->loadMissing('linkedTable:id,number');
-
         return [
-            'call' => [
-                'id' => $call->id,
-                'kind' => 'call',
-                'type' => $call->type,
-                'type_label' => $call->type_label,
-                'headline' => $call->headline,
-                'table' => $call->tableNumber(),
-                'status' => $call->status,
-                'forwarded_to_waiter' => (bool) $call->forwarded_to_waiter,
-                'created_at' => $call->created_at?->format('H:i'),
-                'updated_at' => $call->updated_at?->toIso8601String(),
-                'sort_at' => $call->created_at?->toIso8601String(),
-            ],
+            'call' => TableCallUpdated::callPayload($this->call),
         ];
     }
 }

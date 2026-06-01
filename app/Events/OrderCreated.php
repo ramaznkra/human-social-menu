@@ -59,6 +59,7 @@ class OrderCreated implements ShouldBroadcast
                 'notes' => $order->notes,
                 'total' => (float) $order->total,
                 'created_at' => $order->created_at?->format('H:i'),
+                'created_at_iso' => $order->created_at?->toIso8601String(),
                 'updated_at' => $order->updated_at?->toIso8601String(),
                 'has_kitchen' => $types->contains('kitchen'),
                 'has_bar' => $types->contains('bar'),

@@ -384,6 +384,18 @@
         @apply border-violet-400/40 ring-1 ring-violet-400/25;
     }
 
+    .live-ops-order-card--overdue {
+        @apply border-red-500/60 bg-red-950/35 ring-1 ring-red-500/35;
+    }
+
+    .live-ops-order-card--overdue .live-ops-age {
+        @apply font-semibold text-red-400;
+    }
+
+    .live-ops-call-assignee {
+        @apply inline-flex items-center gap-1 rounded-lg bg-emerald-500/15 px-3 py-2 text-xs font-semibold text-emerald-300;
+    }
+
     .live-ops-waiter-badge {
         @apply mt-1 inline-flex rounded-full bg-violet-500/25 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-200;
     }
@@ -870,6 +882,18 @@
 
     .waiter-feed-card__wait {
         @apply mt-4 rounded-xl border border-dashed border-white/10 py-3 text-center text-xs text-[#D4C5B9]/55;
+    }
+
+    .waiter-feed-card__assigned {
+        @apply mb-2 text-sm font-semibold text-amber-300/90;
+    }
+
+    .waiter-feed-card__assigned--mine {
+        @apply text-emerald-300;
+    }
+
+    .waiter-feed-card__action--claim {
+        @apply bg-amber-600 text-white hover:bg-amber-500;
     }
 
     @keyframes waiterReadyPulse {

@@ -6,6 +6,7 @@ use App\Events\OrderCreated;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Table;
+use App\Services\TableStatusService;
 use App\Support\CurrentRestaurant;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -34,7 +35,9 @@ class OrderPlacementService
             ]);
         }
 
-        return DB::transaction(function () use ($tableId, $items, $source, $notes) {
+        $tableStatus = app(TableStatusService::class);
+
+        return DB::transaction(function () use ($tableId, $items, $source, $notes, $tableStatus) {
             $restaurantId = CurrentRestaurant::id();
 
             if ($tableId !== null) {
@@ -93,6 +96,10 @@ class OrderPlacementService
             $order->update(['total' => $total]);
 
             $order = $order->load(['items.product:id,type', 'table:id,number']);
+
+            if ($tableId !== null) {
+                $tableStatus->markOccupied($tableId);
+            }
 
             event(new OrderCreated($order));
 

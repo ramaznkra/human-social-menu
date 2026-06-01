@@ -12,6 +12,7 @@
         'fullscreen' => true,
         'tables' => $tables,
         'busyTableIds' => $busyTableIds,
+        'defaultStation' => $defaultStation ?? 'all',
     ])
 </body>
 </html>

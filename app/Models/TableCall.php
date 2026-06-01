@@ -12,25 +12,42 @@ class TableCall extends Model
 
     public const STATUS_ACTIVE = 'active';
 
+    public const STATUS_IN_PROGRESS = 'in_progress';
+
     public const STATUS_RESOLVED = 'resolved';
 
-    protected $fillable = ['restaurant_id', 'table_id', 'type', 'status', 'forwarded_to_waiter'];
+    protected $fillable = [
+        'restaurant_id',
+        'table_id',
+        'type',
+        'status',
+        'forwarded_to_waiter',
+        'assigned_user_id',
+    ];
 
     protected function casts(): array
     {
         return ['forwarded_to_waiter' => 'boolean'];
     }
 
-    /** Hesap (POS) tipli çağrı mı? */
     public function isBill(): bool
     {
         return in_array($this->type, ['bill_cash', 'bill_card', 'bill'], true);
     }
 
-    /** @deprecated linkedTable() kullanın — table adı Model::$table ile çakışır */
     public function table(): BelongsTo
     {
         return $this->linkedTable();
+    }
+
+    public function linkedTable(): BelongsTo
+    {
+        return $this->belongsTo(Table::class, 'table_id');
+    }
+
+    public function assignedUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_user_id');
     }
 
     public function getTypeLabelAttribute(): string
@@ -42,12 +59,6 @@ class TableCall extends Model
             'bill' => 'Hesap İsteme',
             default => $this->type,
         };
-    }
-
-    /** Masa modeli — $this->table Laravel'de DB tablo adıdır, ilişki için getRelation kullanılır. */
-    public function linkedTable(): BelongsTo
-    {
-        return $this->belongsTo(Table::class, 'table_id');
     }
 
     public function tableNumber(): ?string
@@ -79,6 +90,17 @@ class TableCall extends Model
     public function scopeActive($query)
     {
         return $query->where('status', self::STATUS_ACTIVE);
+    }
+
+    /** Aktif veya garson ilgileniyor — henüz kapanmamış çağrılar. */
+    public function scopeOpen($query)
+    {
+        return $query->whereIn('status', [self::STATUS_ACTIVE, self::STATUS_IN_PROGRESS]);
+    }
+
+    public function isOpen(): bool
+    {
+        return in_array($this->status, [self::STATUS_ACTIVE, self::STATUS_IN_PROGRESS], true);
     }
 
     /** @deprecated use scopeActive */

@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Waiter;
 
 use App\Events\OrderStatusUpdated;
+use App\Events\TableCallUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Setting;
 use App\Models\TableCall;
+use App\Services\TableStatusService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -23,6 +25,39 @@ class WaiterDashboardController extends Controller
         ]);
     }
 
+    /** Garson çağrısını üstlenir — diğer garsonlar anında görür. */
+    public function claimCall(TableCall $call): JsonResponse
+    {
+        if ($call->status === TableCall::STATUS_RESOLVED) {
+            return response()->json(['success' => false, 'message' => 'Çağrı zaten kapatılmış.'], 422);
+        }
+
+        $userId = (int) session('admin_user_id');
+
+        if ($call->status === TableCall::STATUS_IN_PROGRESS && (int) $call->assigned_user_id !== $userId) {
+            return response()->json([
+                'success' => false,
+                'message' => ($call->assignedUser?->name ?? 'Başka bir garson').' ilgileniyor.',
+                'call' => TableCallUpdated::callPayload($call->loadMissing(['linkedTable:id,number', 'assignedUser:id,name'])),
+            ], 422);
+        }
+
+        if ($call->status === TableCall::STATUS_ACTIVE) {
+            $call->update([
+                'status' => TableCall::STATUS_IN_PROGRESS,
+                'assigned_user_id' => $userId,
+            ]);
+            $call->refresh();
+            event(new TableCallUpdated($call));
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Çağrı size atandı.',
+            'call' => TableCallUpdated::callPayload($call->loadMissing(['linkedTable:id,number', 'assignedUser:id,name'])),
+        ]);
+    }
+
     /**
      * Garson: çağrı veya siparişi tek dokunuşla kapat (kasa ekranıyla senkron).
      */
@@ -34,6 +69,8 @@ class WaiterDashboardController extends Controller
             'payment_method' => 'nullable|in:cash,card',
         ]);
 
+        $tableStatus = app(TableStatusService::class);
+
         if ($validated['type'] === 'call') {
             $call = TableCall::query()->findOrFail($validated['id']);
 
@@ -42,9 +79,11 @@ class WaiterDashboardController extends Controller
             }
 
             $call->update(['status' => TableCall::STATUS_RESOLVED]);
+            $tableStatus->sync($call->table_id);
+            $call->refresh();
+            event(new TableCallUpdated($call));
 
             if (in_array($call->type, ['bill_cash', 'bill_card', 'bill'], true)) {
-                // Garson nakit/kart seçtiyse onu kullan, yoksa çağrı tipinden türet.
                 $paymentMethod = match ($validated['payment_method'] ?? null) {
                     'card' => Order::PAYMENT_CARD,
                     'cash' => Order::PAYMENT_CASH,
@@ -61,6 +100,7 @@ class WaiterDashboardController extends Controller
                     $orderForPayment->update(['payment_method' => $paymentMethod]);
                     $orderForPayment->refresh();
                     event(OrderStatusUpdated::fromOrder($orderForPayment));
+                    $tableStatus->sync($call->table_id);
 
                     return response()->json([
                         'success' => true,

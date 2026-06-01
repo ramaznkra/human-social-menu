@@ -12,7 +12,11 @@ class Table extends Model
 {
     use BelongsToRestaurant;
 
-    protected $fillable = ['restaurant_id', 'number', 'uuid', 'qr_token', 'qr_image_path', 'is_active'];
+    public const STATUS_AVAILABLE = 'available';
+
+    public const STATUS_OCCUPIED = 'occupied';
+
+    protected $fillable = ['restaurant_id', 'number', 'uuid', 'qr_token', 'qr_image_path', 'is_active', 'status'];
 
     protected function casts(): array
     {
@@ -52,7 +56,7 @@ class Table extends Model
             ->live()
             ->pluck('table_id');
 
-        $callTables = TableCall::query()->active()->pluck('table_id');
+        $callTables = TableCall::query()->open()->pluck('table_id');
 
         return $orderTables->merge($callTables)->unique()->values();
     }

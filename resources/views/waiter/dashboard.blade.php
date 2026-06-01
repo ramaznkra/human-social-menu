@@ -56,6 +56,8 @@
 window.HSP_WAITER = {
     feedUrl: @json(route('live-orders.api')),
     completeUrl: @json(route('waiter.complete')),
+    claimCallUrl: @json(url('/api/waiter/call')),
+    userId: @json(session('admin_user_id')),
     pollMs: 3000,
     restaurantId: @json(session('admin_restaurant_id')),
     reverb: {

@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Events\OrderStatusUpdated;
 use App\Events\TableCallForwarded;
+use App\Events\TableCallUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Table;
 use App\Models\TableCall;
+use App\Services\TableStatusService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -19,10 +21,17 @@ class LiveOrdersController extends Controller
         return view('admin.live-orders.index', $this->liveOrdersViewData());
     }
 
-    /** Mutfak / operasyon tableti (tam ekran, giriş gerektirmez). */
-    public function screen(): View
+    /** Mutfak / operasyon tableti (tam ekran). ?station=kitchen|bar ile filtre. */
+    public function screen(Request $request): View
     {
-        return view('admin.live-orders.screen', $this->liveOrdersViewData());
+        $station = in_array($request->query('station'), ['kitchen', 'bar'], true)
+            ? $request->query('station')
+            : 'all';
+
+        return view('admin.live-orders.screen', array_merge(
+            $this->liveOrdersViewData(),
+            ['defaultStation' => $station],
+        ));
     }
 
     /**
@@ -31,8 +40,9 @@ class LiveOrdersController extends Controller
     private function liveOrdersViewData(): array
     {
         return [
-            'tables' => Table::orderBy('number')->get(['id', 'number', 'is_active']),
+            'tables' => Table::orderBy('number')->get(['id', 'number', 'is_active', 'status']),
             'busyTableIds' => Table::busyTableIds(),
+            'defaultStation' => 'all',
         ];
     }
 
@@ -69,6 +79,7 @@ class LiveOrdersController extends Controller
                 'notes' => $order->notes,
                 'total' => (float) $order->total,
                 'created_at' => $order->created_at->format('H:i'),
+                'created_at_iso' => $order->created_at->toIso8601String(),
                 'updated_at' => $order->updated_at->toIso8601String(),
                 'has_kitchen' => $types->contains('kitchen'),
                 'has_bar' => $types->contains('bar'),
@@ -108,25 +119,12 @@ class LiveOrdersController extends Controller
             ->map($mapOrder);
 
         $calls = TableCall::query()
-            ->with(['linkedTable'])
-            ->active()
+            ->with(['linkedTable', 'assignedUser:id,name'])
+            ->open()
             ->orderByDesc('created_at')
             ->limit(50)
             ->get()
-            ->map(fn (TableCall $call) => [
-                'id' => $call->id,
-                'kind' => 'call',
-                'type' => $call->type,
-                'type_label' => $call->type_label,
-                'headline' => $call->headline,
-                'table' => $call->tableNumber(),
-                'status' => $call->status,
-                'is_bill' => $call->isBill(),
-                'forwarded_to_waiter' => (bool) $call->forwarded_to_waiter,
-                'created_at' => $call->created_at->format('H:i'),
-                'updated_at' => $call->updated_at->toIso8601String(),
-                'sort_at' => $call->created_at->toIso8601String(),
-            ]);
+            ->map(fn (TableCall $call) => TableCallUpdated::callPayload($call));
 
         $busyTableIds = Table::busyTableIds();
 
@@ -179,6 +177,8 @@ class LiveOrdersController extends Controller
 
         $call->update(['status' => TableCall::STATUS_RESOLVED]);
 
+        $this->syncTable($call->table_id);
+
         // Hesap çağrısı kapatılıyorsa, ilgili teslim edilmiş siparişin ödemesini de kapat.
         if ($call->isBill()) {
             $paymentMethod = match ($request->input('payment_method')) {
@@ -198,6 +198,8 @@ class LiveOrdersController extends Controller
                 $orderForPayment->update(['payment_method' => $paymentMethod]);
                 $orderForPayment->refresh();
                 event(OrderStatusUpdated::fromOrder($orderForPayment));
+                $this->syncTable($call->table_id);
+                event(new TableCallUpdated($call->fresh()));
 
                 return response()->json([
                     'success' => true,
@@ -207,6 +209,8 @@ class LiveOrdersController extends Controller
                 ]);
             }
         }
+
+        event(new TableCallUpdated($call->fresh()));
 
         return response()->json(['success' => true, 'message' => 'Çağrı tamamlandı.']);
     }
@@ -238,6 +242,7 @@ class LiveOrdersController extends Controller
 
             $order->refresh();
             event(OrderStatusUpdated::fromOrder($order));
+            $this->syncTable($order->table_id);
 
             return response()->json([
                 'success' => true,
@@ -261,10 +266,21 @@ class LiveOrdersController extends Controller
         $order->refresh();
         event(OrderStatusUpdated::fromOrder($order));
 
+        if (in_array($newStatus, [Order::STATUS_CANCELLED], true) || $order->isClosed()) {
+            $this->syncTable($order->table_id);
+        }
+
         return response()->json([
             'success' => true,
             'status' => $order->status,
             'status_label' => $order->status_label,
         ]);
+    }
+
+    private function syncTable(?int $tableId): void
+    {
+        if ($tableId !== null) {
+            app(TableStatusService::class)->sync($tableId);
+        }
     }
 }
