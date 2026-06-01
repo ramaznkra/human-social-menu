@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToRestaurant;
 use App\Models\Concerns\HasMenuTranslations;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,9 +10,9 @@ use Illuminate\Support\Facades\Storage;
 
 class Category extends Model
 {
-    use HasMenuTranslations;
+    use BelongsToRestaurant, HasMenuTranslations;
 
-    protected $fillable = ['name', 'name_en', 'name_ru', 'slug', 'icon', 'image', 'sort_order', 'is_active'];
+    protected $fillable = ['restaurant_id', 'name', 'name_en', 'name_ru', 'slug', 'icon', 'image', 'sort_order', 'is_active'];
 
     protected function casts(): array
     {

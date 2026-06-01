@@ -15,8 +15,8 @@ function initMenuCart() {
 
     function callQueryParams() {
         const params = new URLSearchParams();
+        // Masa yalnızca UUID token ile gönderilir; sıralı numara (masa) artık kullanılmaz.
         if (cfg.tableToken) params.set('table_token', cfg.tableToken);
-        if (cfg.tableMasa) params.set('masa', cfg.tableMasa);
         if (cfg.locale) params.set('lang', cfg.locale);
         return params;
     }
@@ -52,7 +52,7 @@ function initMenuCart() {
     }
 
     async function checkCallStatus() {
-        if (!callStatusUrl || (!cfg.tableToken && !cfg.tableMasa)) return;
+        if (!callStatusUrl || !cfg.tableToken) return;
         try {
             const res = await fetch(`${callStatusUrl}?${callQueryParams()}`, { headers: { Accept: 'application/json' } });
             if (!res.ok) return;
@@ -79,10 +79,9 @@ function initMenuCart() {
     }
 
     async function sendTableCall(type) {
-        if (!cfg.tableToken && !cfg.tableMasa) return false;
+        if (!cfg.tableToken) return false;
         const payload = { type };
         if (cfg.tableToken) payload.table_token = cfg.tableToken;
-        if (cfg.tableMasa) payload.masa = cfg.tableMasa;
         if (cfg.locale) payload.lang = cfg.locale;
         try {
             const res = await fetch(cfg.callApiUrl, {
@@ -107,7 +106,7 @@ function initMenuCart() {
     }
 
     async function syncCallBarOnLoad() {
-        if (!callStatusUrl || (!cfg.tableToken && !cfg.tableMasa)) return;
+        if (!callStatusUrl || !cfg.tableToken) return;
         try {
             const res = await fetch(`${callStatusUrl}?${callQueryParams()}`, { headers: { Accept: 'application/json' } });
             if (!res.ok) return;
@@ -384,7 +383,6 @@ function initMenuCart() {
                 },
                 body: JSON.stringify({
                     table_token: cfg.tableToken,
-                    masa: cfg.tableMasa,
                     lang: cfg.locale || 'tr',
                     notes: document.getElementById('orderNotes')?.value ?? '',
                     items,

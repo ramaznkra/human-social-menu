@@ -8,7 +8,9 @@ use App\Services\TableQrCodeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
+use App\Support\CurrentRestaurant;
+use App\Support\TenantRules;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 class TableController extends Controller
 {
@@ -29,7 +31,14 @@ class TableController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'number' => 'required|string|max:20|unique:tables,number',
+            'number' => [
+                'required',
+                'string',
+                'max:20',
+                Rule::unique('tables', 'number')->where(
+                    fn ($query) => $query->where('restaurant_id', CurrentRestaurant::id()),
+                ),
+            ],
         ]);
         $data['qr_token'] = Table::generateToken();
         $data['is_active'] = true;
@@ -48,7 +57,14 @@ class TableController extends Controller
     public function update(Request $request, Table $table): RedirectResponse
     {
         $data = $request->validate([
-            'number' => 'required|string|max:20|unique:tables,number,'.$table->id,
+            'number' => [
+                'required',
+                'string',
+                'max:20',
+                Rule::unique('tables', 'number')
+                    ->where(fn ($query) => $query->where('restaurant_id', CurrentRestaurant::id()))
+                    ->ignore($table->id),
+            ],
         ]);
 
         $numberChanged = $table->number !== $data['number'];

@@ -8,7 +8,7 @@ use App\Models\Product;
 use App\Models\Setting;
 use App\Models\Table;
 use App\Services\OrderPlacementService;
-use Illuminate\Http\JsonResponse;
+use App\Support\TenantRules;
 use Illuminate\Http\Request;
 
 class ManualOrderController extends Controller
@@ -83,10 +83,10 @@ class ManualOrderController extends Controller
         }
 
         $validated = $request->validate([
-            'table_id' => 'required|exists:tables,id',
+            'table_id' => ['required', TenantRules::existsInCurrentRestaurant('tables', 'id')],
             'notes' => 'nullable|string|max:500',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.product_id' => ['required', TenantRules::existsInCurrentRestaurant('products', 'id')],
             'items.*.quantity' => 'required|integer|min:1|max:20',
         ]);
 

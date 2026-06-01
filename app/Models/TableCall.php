@@ -2,16 +2,19 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToRestaurant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TableCall extends Model
 {
+    use BelongsToRestaurant;
+
     public const STATUS_ACTIVE = 'active';
 
     public const STATUS_RESOLVED = 'resolved';
 
-    protected $fillable = ['table_id', 'type', 'status', 'forwarded_to_waiter'];
+    protected $fillable = ['restaurant_id', 'table_id', 'type', 'status', 'forwarded_to_waiter'];
 
     protected function casts(): array
     {

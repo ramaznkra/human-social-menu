@@ -11,6 +11,7 @@
         data-reverb-host="{{ env('REVERB_HOST', '127.0.0.1') }}"
         data-reverb-port="{{ (int) env('REVERB_PORT', 8080) }}"
         data-reverb-scheme="{{ env('REVERB_SCHEME', 'http') }}"
+        data-restaurant-id="{{ \App\Support\CurrentRestaurant::id() ?? session('admin_restaurant_id') ?? session('kiosk_restaurant_id') }}"
     >
         <header class="sticky top-0 z-40 border-b border-white/5 bg-[#121110]/95 px-4 py-4 backdrop-blur-md md:px-6">
             <div class="flex flex-wrap items-center justify-between gap-3">

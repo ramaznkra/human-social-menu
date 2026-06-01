@@ -20,35 +20,45 @@ use App\Http\Controllers\KitchenController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\Waiter\WaiterDashboardController;
+use App\Http\Controllers\Admin\WaiterController;
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\AdminOnlyMiddleware;
+use App\Http\Middleware\AuthenticateKitchenScreen;
+use App\Http\Middleware\ResolveRestaurantFromTable;
+use App\Http\Middleware\SetStaffRestaurantContext;
 use App\Http\Middleware\WaiterOnlyMiddleware;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect()->route('menu.index'));
 
-Route::get('/menu/{token?}', [MenuController::class, 'index'])->name('menu.index');
-Route::post('/siparis', [OrderController::class, 'store'])->name('order.store');
-Route::get('/siparis/{order}/durum', [OrderController::class, 'status'])->name('order.status');
-Route::get('/api/siparis/{order}/durum', [OrderController::class, 'statusApi'])->name('order.status.api');
-Route::post('/api/table/call', [TableCallController::class, 'store'])->name('table.call.api');
-Route::get('/api/table/call/status', [TableCallController::class, 'status'])->name('table.call.status');
-Route::post('/api/masa/cagri', [TableCallController::class, 'store'])->name('table.call.store');
+Route::middleware(ResolveRestaurantFromTable::class)->group(function () {
+    Route::get('/menu/{token?}', [MenuController::class, 'index'])->name('menu.index');
+    Route::get('/r/{restaurant}/menu/{token?}', [MenuController::class, 'index'])->name('menu.restaurant');
+    Route::post('/siparis', [OrderController::class, 'store'])->name('order.store');
+    Route::get('/siparis/{orderToken}/durum', [OrderController::class, 'status'])->name('order.status');
+    Route::get('/api/siparis/{orderToken}/durum', [OrderController::class, 'statusApi'])->name('order.status.api');
+    Route::post('/api/table/call', [TableCallController::class, 'store'])->name('table.call.api');
+    Route::get('/api/table/call/status', [TableCallController::class, 'status'])->name('table.call.status');
+    Route::post('/api/masa/cagri', [TableCallController::class, 'store'])->name('table.call.store');
+});
 
-Route::get('/ekran', [DisplayController::class, 'index'])->name('display.index');
-Route::get('/api/ekran', [DisplayController::class, 'api'])->name('display.api');
+Route::middleware(AuthenticateKitchenScreen::class)->group(function () {
+    Route::get('/ekran', [DisplayController::class, 'index'])->name('display.index');
+    Route::get('/api/ekran', [DisplayController::class, 'api'])->name('display.api');
 
-Route::get('/mutfak', [LiveOrdersController::class, 'screen'])->name('kitchen.index');
-Route::get('/api/admin/live-orders', [LiveOrdersController::class, 'liveOrders'])->name('live-orders.api');
-Route::patch('/api/admin/live-orders/{order}/status', [LiveOrdersController::class, 'updateStatus'])->name('live-orders.status');
-Route::patch('/api/admin/call/{call}/resolve', [LiveOrdersController::class, 'resolveCall'])->name('admin.call.resolve');
-Route::patch('/api/admin/call/{call}/forward', [LiveOrdersController::class, 'forwardCall'])->name('admin.call.forward');
+    Route::get('/mutfak', [LiveOrdersController::class, 'screen'])->name('kitchen.index');
+    Route::get('/api/admin/live-orders', [LiveOrdersController::class, 'liveOrders'])->name('live-orders.api');
+    Route::patch('/api/admin/live-orders/{order}/status', [LiveOrdersController::class, 'updateStatus'])->name('live-orders.status');
+    Route::patch('/api/admin/call/{call}/resolve', [LiveOrdersController::class, 'resolveCall'])->name('admin.call.resolve');
+    Route::patch('/api/admin/call/{call}/forward', [LiveOrdersController::class, 'forwardCall'])->name('admin.call.forward');
+});
 
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/giris', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/giris', [AuthController::class, 'login']);
 });
 
-Route::middleware(AdminMiddleware::class)->group(function () {
+Route::middleware([AdminMiddleware::class, SetStaffRestaurantContext::class])->group(function () {
     Route::post('/admin/cikis', [AuthController::class, 'logout'])->name('admin.logout');
 
     Route::post('/api/waiter/complete', [WaiterDashboardController::class, 'complete'])->name('waiter.complete');
@@ -98,5 +108,11 @@ Route::middleware(AdminMiddleware::class)->group(function () {
         Route::resource('cafe-galleries', CafeGalleryController::class)->except(['show']);
         Route::get('settings', [SettingController::class, 'edit'])->name('settings.edit');
         Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
+
+        Route::middleware(AdminOnlyMiddleware::class)->group(function () {
+            Route::resource('waiters', WaiterController::class)->except(['show']);
+            Route::patch('api/admin/waiters/{waiter}/toggle-active', [WaiterController::class, 'toggleActive'])
+                ->name('waiters.toggle-active');
+        });
     });
 });

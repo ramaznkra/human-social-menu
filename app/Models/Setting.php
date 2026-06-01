@@ -2,17 +2,28 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToRestaurant;
+use App\Support\CurrentRestaurant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
 class Setting extends Model
 {
-    protected $fillable = ['key', 'value'];
+    use BelongsToRestaurant;
+
+    protected $fillable = ['restaurant_id', 'key', 'value'];
 
     public static function get(string $key, ?string $default = null): ?string
     {
-        return Cache::remember("setting.{$key}", 3600, function () use ($key, $default) {
-            $setting = static::where('key', $key)->first();
+        $restaurantId = CurrentRestaurant::id() ?? 0;
+        $cacheKey = "setting.{$restaurantId}.{$key}";
+
+        return Cache::remember($cacheKey, 3600, function () use ($key, $default, $restaurantId) {
+            $query = static::query()->where('key', $key);
+            if ($restaurantId > 0) {
+                $query->where('restaurant_id', $restaurantId);
+            }
+            $setting = $query->first();
 
             return $setting?->value ?? $default;
         });
@@ -20,22 +31,38 @@ class Setting extends Model
 
     public static function set(string $key, ?string $value): void
     {
-        static::updateOrCreate(['key' => $key], ['value' => $value]);
-        Cache::forget("setting.{$key}");
+        $restaurantId = CurrentRestaurant::id();
+        if ($restaurantId === null) {
+            throw new \RuntimeException('Setting yazmak için restoran bağlamı gerekli.');
+        }
+
+        static::updateOrCreate(
+            ['restaurant_id' => $restaurantId, 'key' => $key],
+            ['value' => $value],
+        );
+        static::clearCache();
     }
 
     public static function allCached(): array
     {
-        return Cache::remember('settings.all', 3600, function () {
-            return static::pluck('value', 'key')->toArray();
+        $restaurantId = CurrentRestaurant::id() ?? 0;
+
+        return Cache::remember("settings.all.{$restaurantId}", 3600, function () {
+            $query = static::query();
+            if ($restaurantId = CurrentRestaurant::id()) {
+                $query->where('restaurant_id', $restaurantId);
+            }
+
+            return $query->pluck('value', 'key')->toArray();
         });
     }
 
     public static function clearCache(): void
     {
-        Cache::forget('settings.all');
-        foreach (static::pluck('key') as $key) {
-            Cache::forget("setting.{$key}");
+        $restaurantId = CurrentRestaurant::id() ?? 0;
+        Cache::forget("settings.all.{$restaurantId}");
+        foreach (static::query()->where('restaurant_id', $restaurantId ?: null)->pluck('key') as $key) {
+            Cache::forget("setting.{$restaurantId}.{$key}");
         }
     }
 }

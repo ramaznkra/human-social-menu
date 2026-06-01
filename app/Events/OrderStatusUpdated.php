@@ -15,6 +15,7 @@ class OrderStatusUpdated implements ShouldBroadcast
 
     public function __construct(
         public int $orderId,
+        public int $restaurantId,
         public string $status,
         public ?int $tableNumber = null,
         public ?string $orderNumber = null,
@@ -29,6 +30,7 @@ class OrderStatusUpdated implements ShouldBroadcast
 
         return new self(
             orderId: (int) $order->id,
+            restaurantId: (int) $order->restaurant_id,
             status: (string) $order->status,
             tableNumber: $order->table?->number ? (int) $order->table->number : null,
             orderNumber: $order->order_number,
@@ -45,7 +47,7 @@ class OrderStatusUpdated implements ShouldBroadcast
 
     public function broadcastOn(): array
     {
-        return [new Channel('orders')];
+        return [new Channel('orders.'.$this->restaurantId)];
     }
 
     public function broadcastAs(): string

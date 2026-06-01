@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\OrderPlaced;
 use App\Models\Order;
 use App\Models\Table;
 use App\Services\OrderPlacementService;
+use App\Support\CurrentRestaurant;
 use App\Support\MenuLocale;
+use App\Support\TenantRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -25,14 +26,17 @@ class OrderController extends Controller
             'lang' => 'nullable|string|in:tr,en,ru',
             'notes' => 'nullable|string|max:500',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.product_id' => ['required', TenantRules::existsInCurrentRestaurant('products', 'id')],
             'items.*.quantity' => 'required|integer|min:1|max:20',
             'items.*.notes' => 'nullable|string|max:200',
         ]);
 
         $tableId = null;
         if (! empty($validated['table_token'])) {
-            $tableId = Table::where('qr_token', $validated['table_token'])->value('id');
+            $tableId = Table::query()
+                ->where('uuid', $validated['table_token'])
+                ->orWhere('qr_token', $validated['table_token'])
+                ->value('id');
         }
 
         $order = $placement->createOrder(
@@ -42,44 +46,32 @@ class OrderController extends Controller
             $validated['notes'] ?? null,
         );
 
-        event(new OrderPlaced($order));
-
         return response()->json([
             'success' => true,
             'order_id' => $order->id,
             'order_number' => $order->order_number,
             'total' => $order->total,
-            'redirect' => route('order.status', $order->id).'?lang='.$locale,
+            'redirect' => route('order.status', $order->public_token).'?lang='.$locale,
         ]);
     }
 
-    public function status(Request $request, Order $order): View
+    public function status(Request $request, string $orderToken): View
     {
         $locale = MenuLocale::resolve($request);
         MenuLocale::apply($request, $locale);
 
-        $order = Order::query()
-            ->select(['id', 'order_number', 'status', 'total', 'table_id', 'updated_at', 'payment_method'])
-            ->with([
-                'items:id,order_id,product_name,quantity,unit_price',
-                'table:id,number,qr_token',
-            ])
-            ->findOrFail($order->id);
+        $order = $this->findPublicOrder($orderToken);
 
         $settings = \App\Models\Setting::allCached();
 
         return view('menu.status', compact('order', 'settings', 'locale'));
     }
 
-    public function statusApi(Request $request, Order $order): JsonResponse
+    public function statusApi(Request $request, string $orderToken): JsonResponse
     {
-        $locale = MenuLocale::resolve($request);
-        MenuLocale::apply($request, $locale);
+        MenuLocale::apply($request, MenuLocale::resolve($request));
 
-        $order = Order::query()
-            ->select(['id', 'order_number', 'status', 'total', 'updated_at', 'table_id', 'payment_method'])
-            ->with(['table:id,number'])
-            ->findOrFail($order->id);
+        $order = $this->findPublicOrder($orderToken);
 
         return response()->json([
             'id' => $order->id,
@@ -97,5 +89,23 @@ class OrderController extends Controller
             'is_final' => in_array($order->status, self::FINAL_STATUSES, true)
                 || $order->isClosed(),
         ]);
+    }
+
+    private function findPublicOrder(string $orderToken): Order
+    {
+        $order = Order::withoutGlobalScopes()
+            ->where('public_token', $orderToken)
+            ->with([
+                'restaurant',
+                'items:id,order_id,product_name,quantity,unit_price',
+                'table:id,number,qr_token,restaurant_id',
+            ])
+            ->firstOrFail();
+
+        if ($order->restaurant?->is_active) {
+            CurrentRestaurant::set($order->restaurant);
+        }
+
+        return $order;
     }
 }

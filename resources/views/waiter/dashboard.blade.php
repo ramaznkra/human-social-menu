@@ -57,6 +57,7 @@ window.HSP_WAITER = {
     feedUrl: @json(route('live-orders.api')),
     completeUrl: @json(route('waiter.complete')),
     pollMs: 3000,
+    restaurantId: @json(session('admin_restaurant_id')),
     reverb: {
         key: @json(env('REVERB_APP_KEY')),
         host: @json(env('REVERB_HOST', '127.0.0.1')),

@@ -33,11 +33,20 @@ class AuthController extends Controller
             return back()->with('error', 'E-posta veya şifre hatalı.');
         }
 
+        if ($user->is_active === false) {
+            return back()->with('error', 'Hesabınız pasif. Yöneticinizle iletişime geçin.');
+        }
+
+        if (! $user->restaurant_id) {
+            return back()->with('error', 'Kullanıcıya restoran atanmamış.');
+        }
+
         session([
             'admin_logged_in' => true,
             'admin_user_id' => $user->id,
             'admin_name' => $user->name,
             'admin_role' => $user->role ?? User::ROLE_ADMIN,
+            'admin_restaurant_id' => $user->restaurant_id,
         ]);
 
         return redirect()->to($this->homeForRole($user->role ?? User::ROLE_ADMIN));
@@ -45,7 +54,7 @@ class AuthController extends Controller
 
     public function logout(): RedirectResponse
     {
-        session()->forget(['admin_logged_in', 'admin_user_id', 'admin_name', 'admin_role']);
+        session()->forget(['admin_logged_in', 'admin_user_id', 'admin_name', 'admin_role', 'admin_restaurant_id']);
 
         return redirect()->route('admin.login');
     }

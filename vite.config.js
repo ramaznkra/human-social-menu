@@ -17,6 +17,7 @@ export default defineConfig({
                 'resources/js/pages/admin-products.js',
                 'resources/js/pages/admin-product-form.js',
                 'resources/js/pages/admin-tables.js',
+                'resources/js/pages/admin-waiters.js',
                 'resources/js/pages/admin-categories.js',
                 'resources/js/pages/admin-catalog-view.js',
                 'resources/js/pages/waiter-dashboard.js',

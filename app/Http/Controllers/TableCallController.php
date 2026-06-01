@@ -17,7 +17,6 @@ class TableCallController extends Controller
 
         $validated = $request->validate([
             'table_token' => 'nullable|string',
-            'masa' => 'nullable|string',
             'type' => 'required|in:waiter,bill_cash,bill_card,bill',
         ]);
 
@@ -45,6 +44,7 @@ class TableCallController extends Controller
         }
 
         $call = TableCall::create([
+            'restaurant_id' => $table->restaurant_id,
             'table_id' => $table->id,
             'type' => $validated['type'],
             'status' => TableCall::STATUS_ACTIVE,
@@ -71,7 +71,6 @@ class TableCallController extends Controller
     {
         $table = $this->resolveTable([
             'table_token' => $request->query('table_token'),
-            'masa' => $request->query('masa'),
         ]);
 
         if (! $table) {
@@ -91,17 +90,12 @@ class TableCallController extends Controller
 
     private function resolveTable(array $validated): ?Table
     {
+        // Masa yalnızca UUID (geriye dönük: qr_token) ile çözülür; sıralı numara kabul edilmez.
         if (! empty($validated['table_token'])) {
             return Table::query()
-                ->where('qr_token', $validated['table_token'])
                 ->where('is_active', true)
-                ->first();
-        }
-
-        if (! empty($validated['masa'])) {
-            return Table::query()
-                ->where('number', (string) $validated['masa'])
-                ->where('is_active', true)
+                ->where(fn ($q) => $q->where('uuid', $validated['table_token'])
+                    ->orWhere('qr_token', $validated['table_token']))
                 ->first();
         }
 

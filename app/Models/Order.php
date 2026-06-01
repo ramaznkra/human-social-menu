@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToRestaurant;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Order extends Model
 {
+    use BelongsToRestaurant;
+
     public const STATUS_PENDING = 'pending';
 
     public const STATUS_PREPARING = 'preparing';
@@ -48,7 +51,9 @@ class Order extends Model
     }
 
     protected $fillable = [
+        'restaurant_id',
         'table_id',
+        'public_token',
         'order_number',
         'status',
         'notes',
@@ -60,6 +65,15 @@ class Order extends Model
     protected function casts(): array
     {
         return ['total' => 'decimal:2'];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (Order $order) {
+            if (empty($order->public_token)) {
+                $order->public_token = (string) \Illuminate\Support\Str::uuid();
+            }
+        });
     }
 
     public function table(): BelongsTo

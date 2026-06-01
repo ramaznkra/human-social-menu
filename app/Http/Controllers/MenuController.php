@@ -7,6 +7,7 @@ use App\Models\CafeGallery;
 use App\Models\OrderItem;
 use App\Models\Setting;
 use App\Models\Table;
+use App\Support\CurrentRestaurant;
 use App\Support\MenuLocale;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
@@ -19,15 +20,15 @@ class MenuController extends Controller
         $locale = MenuLocale::resolveForMenuPage($request);
         MenuLocale::apply($request, $locale);
 
+        // Masa yalnızca tahmin edilemez UUID (geriye dönük: qr_token) ile çözülür.
+        // Sıralı numara (?masa=) ile erişim güvenlik gereği desteklenmez.
         $table = null;
 
-        if ($request->filled('masa')) {
+        if ($token) {
             $table = Table::query()
-                ->where('number', (string) $request->query('masa'))
                 ->where('is_active', true)
+                ->where(fn ($q) => $q->where('uuid', $token)->orWhere('qr_token', $token))
                 ->first();
-        } elseif ($token) {
-            $table = Table::where('qr_token', $token)->where('is_active', true)->first();
         }
 
         $categories = Category::active()
@@ -40,6 +41,7 @@ class MenuController extends Controller
 
         $productPopularity = OrderItem::query()
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->when(CurrentRestaurant::id(), fn ($q) => $q->where('orders.restaurant_id', CurrentRestaurant::id()))
             ->whereDate('orders.created_at', today())
             ->whereNotNull('order_items.product_id')
             ->select('order_items.product_id', DB::raw('SUM(order_items.quantity) as total_qty'))

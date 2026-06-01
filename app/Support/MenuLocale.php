@@ -59,13 +59,12 @@ class MenuLocale
         $locale = $locale ?? app()->getLocale();
         $query = array_merge(['lang' => $locale], $extraQuery);
 
-        if ($table?->qr_token) {
+        if ($table?->uuid) {
+            $base = route('menu.index', $table->uuid);
+        } elseif ($table?->qr_token) {
             $base = route('menu.index', $table->qr_token);
         } else {
             $base = route('menu.index');
-            if ($table?->number) {
-                $query['masa'] = $table->number;
-            }
         }
 
         return $base.(str_contains($base, '?') ? '&' : '?').http_build_query($query);

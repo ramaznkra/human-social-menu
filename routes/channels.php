@@ -2,4 +2,4 @@
 
 use Illuminate\Support\Facades\Broadcast;
 
-Broadcast::channel('orders', fn () => true);
+Broadcast::channel('orders.{restaurantId}', fn () => true);

@@ -261,8 +261,7 @@
 @push('scripts')
 <script>
 window.HSP_MENU = {
-    tableToken: @json($table?->qr_token),
-    tableMasa: @json($table?->number),
+    tableToken: @json($table?->uuid),
     currency: @json($settings['currency'] ?? '₺'),
     locale: @json($locale),
     orderStoreUrl: @json(route('order.store')),

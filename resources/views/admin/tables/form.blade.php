@@ -10,7 +10,7 @@
             <div>
                 <label class="form-label">Masa No *</label>
                 <input type="text" name="number" value="{{ old('number', $table->number) }}" required class="form-input" placeholder="15">
-                <p class="mt-1 text-xs text-gray-500">QR linki: {{ url('/menu') }}?masa=<strong>NUMARA</strong></p>
+                <p class="mt-1 text-xs text-gray-500">QR linki masaya özel güvenli kimlik (UUID) ile oluşturulur:<br><code class="break-all">{{ url('/menu') }}/<strong>{{ $table->exists ? $table->uuid : 'otomatik-uuid' }}</strong></code></p>
             </div>
             @if($table->exists)
             <p class="text-xs text-gray-500">Masanın aktif/pasif durumunu <a href="{{ route('admin.tables.index') }}" class="font-medium text-[#E67E22] hover:underline">Masalar</a> listesindeki anahtardan değiştirebilirsiniz.</p>

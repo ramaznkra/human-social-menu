@@ -12,7 +12,10 @@ class OrderAdminController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = Order::with(['items', 'table'])->orderByDesc('created_at');
+        // Liste yalnızca masa + sipariş başlık bilgisini gösterir; ürün satırları
+        // detay sayfasında yüklenir. Gereksiz item hidrasyonunu önlemek için yalnızca
+        // ihtiyaç duyulan ilişki (table) eager-load edilir.
+        $query = Order::with(['table:id,number'])->orderByDesc('created_at');
 
         if ($request->status) {
             $query->where('status', $request->status);

@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Events\OrderCreated;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Table;
+use App\Support\CurrentRestaurant;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -33,7 +35,26 @@ class OrderPlacementService
         }
 
         return DB::transaction(function () use ($tableId, $items, $source, $notes) {
+            $restaurantId = CurrentRestaurant::id();
+
+            if ($tableId !== null) {
+                $table = Table::query()->find($tableId);
+                if (! $table) {
+                    throw ValidationException::withMessages([
+                        'table_id' => 'Geçerli ve aktif bir masa seçin.',
+                    ]);
+                }
+                $restaurantId = $table->restaurant_id;
+            }
+
+            if ($restaurantId === null) {
+                throw ValidationException::withMessages([
+                    'restaurant' => 'Sipariş için restoran bağlamı bulunamadı.',
+                ]);
+            }
+
             $order = Order::create([
+                'restaurant_id' => $restaurantId,
                 'table_id' => $tableId,
                 'order_number' => $this->generateOrderNumber(),
                 'status' => Order::STATUS_PENDING,
@@ -71,7 +92,11 @@ class OrderPlacementService
 
             $order->update(['total' => $total]);
 
-            return $order->load(['items', 'table:id,number']);
+            $order = $order->load(['items.product:id,type', 'table:id,number']);
+
+            event(new OrderCreated($order));
+
+            return $order;
         });
     }
 }

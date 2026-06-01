@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToRestaurant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
@@ -9,11 +10,23 @@ use Illuminate\Support\Str;
 
 class Table extends Model
 {
-    protected $fillable = ['number', 'qr_token', 'qr_image_path', 'is_active'];
+    use BelongsToRestaurant;
+
+    protected $fillable = ['restaurant_id', 'number', 'uuid', 'qr_token', 'qr_image_path', 'is_active'];
 
     protected function casts(): array
     {
         return ['is_active' => 'boolean'];
+    }
+
+    protected static function booted(): void
+    {
+        // Her yeni masaya tahmin edilemez bir UUID atanır (sıralı id'yi gizlemek için).
+        static::creating(function (Table $table) {
+            if (empty($table->uuid)) {
+                $table->uuid = (string) Str::uuid();
+            }
+        });
     }
 
     public function orders(): HasMany
@@ -46,7 +59,7 @@ class Table extends Model
 
     public function getMenuUrlAttribute(): string
     {
-        return route('menu.index', ['masa' => $this->number]);
+        return route('menu.index', ['token' => $this->uuid]);
     }
 
     /** @deprecated Use menu_url — kept for compatibility */

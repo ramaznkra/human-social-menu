@@ -121,7 +121,7 @@ class ProductController extends Controller
     private function validated(Request $request): array
     {
         $data = $request->validate([
-            'category_id' => 'required|exists:categories,id',
+            'category_id' => ['required', TenantRules::existsInCurrentRestaurant('categories', 'id')],
             'type' => 'required|in:kitchen,bar',
             'name' => 'required|string|max:150',
             'name_en' => 'nullable|string|max:150',

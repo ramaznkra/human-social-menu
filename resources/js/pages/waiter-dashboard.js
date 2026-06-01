@@ -302,8 +302,10 @@ function initWaiterDashboard() {
         echoClient = createEchoClient(cfg.reverb || {});
         if (!echoClient) return;
 
+        const ordersChannelName = cfg.restaurantId ? `orders.${cfg.restaurantId}` : 'orders';
+
         // Hem garson çağrısı hem hesap (POS) çağrısı garsona anında düşer (kasayla eş zamanlı).
-        echoClient.channel('orders').listen('.TableCallReceived', (payload) => {
+        echoClient.channel(ordersChannelName).listen('.TableCallReceived', (payload) => {
             const call = payload?.call;
             if (!call?.id) return;
             knownCallIds.add(Number(call.id));
@@ -319,7 +321,7 @@ function initWaiterDashboard() {
         });
 
         // Kasa hesap çağrısını ayrıca yönlendirdiğinde POS hatırlatması.
-        echoClient.channel('orders').listen('.TableCallForwarded', (payload) => {
+        echoClient.channel(ordersChannelName).listen('.TableCallForwarded', (payload) => {
             const call = payload?.call;
             if (!call?.id) return;
             knownCallIds.add(Number(call.id));
@@ -333,7 +335,7 @@ function initWaiterDashboard() {
             });
         });
 
-        echoClient.channel('orders').listen('.OrderPlaced', (payload) => {
+        echoClient.channel(ordersChannelName).listen('.OrderCreated', (payload) => {
             const order = payload?.order;
             if (!order) return;
             prependRealtimeOrder(order);
@@ -346,7 +348,7 @@ function initWaiterDashboard() {
             });
         });
 
-        echoClient.channel('orders').listen('.OrderStatusUpdated', (payload) => {
+        echoClient.channel(ordersChannelName).listen('.OrderStatusUpdated', (payload) => {
             const orderId = Number(payload?.order_id);
             const status = String(payload?.status || '');
             if (!Number.isFinite(orderId)) return;

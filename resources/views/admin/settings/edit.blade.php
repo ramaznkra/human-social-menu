@@ -76,5 +76,17 @@
         </form>
         <p class="mt-4 text-xs text-gray-500">Kartlar menünün altında, garson çağır çubuğunun üstünde listelenir.</p>
     </div>
+    @isset($restaurant)
+    <div class="admin-card lg:col-span-2">
+        <h3 class="mb-2 font-semibold text-gray-800">Kiosk / Mutfak Ekranı Güvenliği</h3>
+        <p class="mb-3 text-sm text-gray-600">Mutfak ve TV ekranı artık restoran token'ı olmadan açılmaz. Token yalnızca bu restorana aittir.</p>
+        <div class="rounded-lg bg-gray-50 p-4 text-sm">
+            <p class="font-medium text-gray-700">Mutfak URL</p>
+            <code class="mt-1 block break-all text-xs">{{ url('/mutfak') }}?kiosk={{ $restaurant->kitchen_token }}</code>
+            <p class="mt-3 font-medium text-gray-700">TV Ekran URL</p>
+            <code class="mt-1 block break-all text-xs">{{ url('/ekran') }}?kiosk={{ $restaurant->kitchen_token }}</code>
+        </div>
+    </div>
+    @endisset
 </div>
 @endsection

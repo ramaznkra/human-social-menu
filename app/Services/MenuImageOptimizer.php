@@ -7,8 +7,22 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
- * Menü / slider görsellerini yüklemeden önce küçültür (GD).
- * ext-gd yoksa dosyayı olduğu gibi kaydeder.
+ * Menü / slider / ürün görsellerini yüklemeden önce küçültür ve .webp olarak saklar.
+ *
+ * Bu sınıf yerel PHP GD eklentisini kullanır (ek paket gerektirmez):
+ *  - Yeniden boyutlandırma için `imagescale`
+ *  - .webp çıktısı için `imagewebp` (GD, libwebp desteğiyle derlenmiş olmalı — `gd_info()` → "WebP Support")
+ *
+ * GD veya webp desteği yoksa otomatik olarak .jpg'e, o da olmazsa orijinal dosyaya düşülür.
+ *
+ * Daha gelişmiş ihtiyaçlar (Imagick, akıllı kırpma, otomatik format, sorumluluk ayrımı) için
+ * standart kütüphaneler önerilir:
+ *  - Intervention Image:  composer require intervention/image
+ *      $img = (new \Intervention\Image\ImageManager(\Intervention\Image\Drivers\Gd\Driver::class))
+ *                  ->read($file)->scaleDown(width: 800);
+ *      Storage::disk('public')->put($path, (string) $img->toWebp(82));
+ *  - Spatie Media Library: composer require spatie/laravel-medialibrary
+ *      (model'e attachMedia + otomatik conversion: ->fit(Manipulations::FIT_MAX, 800, 800)->format('webp'))
  */
 class MenuImageOptimizer
 {
@@ -19,6 +33,7 @@ class MenuImageOptimizer
 
     public function storeProduct(UploadedFile $file): string
     {
+        // Ürün görseli: maksimum 800x800, .webp.
         return $this->store($file, 'products', 800, 800, 82);
     }
 
@@ -32,7 +47,7 @@ class MenuImageOptimizer
         string $directory,
         int $maxWidth = 1200,
         int $maxHeight = 1200,
-        int $jpegQuality = 82,
+        int $quality = 82,
     ): string {
         if (! extension_loaded('gd')) {
             return $file->store($directory, 'public');
@@ -57,11 +72,23 @@ class MenuImageOptimizer
             return $file->store($directory, 'public');
         }
 
+        // webp tercih edilir; GD'de webp desteği yoksa .jpg'e düşülür.
+        $useWebp = function_exists('imagewebp');
+        $extension = $useWebp ? 'webp' : 'jpg';
+
         Storage::disk('public')->makeDirectory($directory);
-        $relativePath = $directory.'/'.Str::uuid().'.jpg';
+        $relativePath = $directory.'/'.Str::uuid().'.'.$extension;
         $fullPath = Storage::disk('public')->path($relativePath);
 
-        $saved = imagejpeg($canvas, $fullPath, $jpegQuality);
+        if ($useWebp) {
+            // PNG → webp şeffaflığını koru.
+            imagepalettetotruecolor($canvas);
+            imagealphablending($canvas, false);
+            imagesavealpha($canvas, true);
+            $saved = imagewebp($canvas, $fullPath, $quality);
+        } else {
+            $saved = imagejpeg($canvas, $fullPath, $quality);
+        }
 
         if ($canvas !== $source) {
             imagedestroy($canvas);

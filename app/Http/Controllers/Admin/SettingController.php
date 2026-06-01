@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Support\CurrentRestaurant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -13,8 +14,9 @@ class SettingController extends Controller
     public function edit(): View
     {
         $settings = Setting::allCached();
+        $restaurant = CurrentRestaurant::get();
 
-        return view('admin.settings.edit', compact('settings'));
+        return view('admin.settings.edit', compact('settings', 'restaurant'));
     }
 
     public function update(Request $request): RedirectResponse

@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToRestaurant;
 use Illuminate\Database\Eloquent\Model;
 
 class DisplaySlide extends Model
 {
+    use BelongsToRestaurant;
+
     protected $fillable = [
-        'title', 'subtitle', 'image', 'duration', 'sort_order', 'is_active',
+        'restaurant_id', 'title', 'subtitle', 'image', 'duration', 'sort_order', 'is_active',
     ];
 
     protected function casts(): array

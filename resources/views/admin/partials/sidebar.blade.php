@@ -58,6 +58,11 @@
             <a href="{{ route('admin.tables.index') }}" class="sidebar-link {{ request()->routeIs('admin.tables.*') ? 'active' : '' }}">
                 Masalar
             </a>
+            @if(session('admin_role') !== 'waiter')
+            <a href="{{ route('admin.waiters.index') }}" class="sidebar-link {{ request()->routeIs('admin.waiters.*') ? 'active' : '' }}">
+                Garsonlar
+            </a>
+            @endif
         </div>
 
         <div class="admin-sidebar__divider" role="separator"></div>

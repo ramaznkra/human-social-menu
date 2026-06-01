@@ -304,6 +304,8 @@ if (root) {
     const resolveCallUrlBase = root.dataset.resolveCallUrl;
     const csrf = root.dataset.csrf;
     const baseTitle = root.dataset.pageTitle || document.title;
+    const restaurantId = root.dataset.restaurantId || '';
+    const ordersChannelName = restaurantId ? `orders.${restaurantId}` : 'orders';
     const reverbCfg = {
         key: root.dataset.reverbKey || '',
         host: root.dataset.reverbHost || '127.0.0.1',
@@ -345,6 +347,112 @@ if (root) {
     let tablesFingerprint = '';
     let knownBusyTableIds = new Set();
     let echoClient = null;
+    let realtimeConnected = false;
+    const fallbackIntervalMs = 30000;
+
+    function normalizeRealtimeOrder(raw) {
+        if (!raw?.id) return null;
+
+        const items = (raw.items || []).map((i) => ({
+            id: i.id,
+            name: i.name,
+            quantity: i.quantity,
+            notes: i.notes ?? null,
+            type: i.type ?? 'kitchen',
+        }));
+        const types = new Set(items.map((i) => i.type));
+
+        return {
+            id: raw.id,
+            order_number: raw.order_number,
+            status: raw.status,
+            status_label: raw.status_label,
+            source: raw.source,
+            source_label: raw.source_label,
+            is_waiter_order: !!raw.is_waiter_order,
+            payment_method: raw.payment_method ?? null,
+            table: raw.table ?? null,
+            notes: raw.notes ?? null,
+            total: raw.total,
+            created_at: raw.created_at,
+            updated_at: raw.updated_at ?? new Date().toISOString(),
+            has_kitchen: raw.has_kitchen ?? types.has('kitchen'),
+            has_bar: raw.has_bar ?? types.has('bar'),
+            items,
+        };
+    }
+
+    function upsertOrder(order) {
+        const idx = ordersState.findIndex((o) => o.id === order.id);
+        if (idx >= 0) {
+            ordersState[idx] = { ...ordersState[idx], ...order };
+        } else {
+            ordersState.unshift(order);
+        }
+        ordersState.sort((a, b) => String(b.updated_at).localeCompare(String(a.updated_at)));
+    }
+
+    function applyOrderStatusUpdate(payload) {
+        const orderId = Number(payload?.order_id);
+        const status = String(payload?.status || '');
+        if (!Number.isFinite(orderId) || !status) return false;
+
+        const order = ordersState.find((o) => o.id === orderId);
+        if (!order) return false;
+
+        order.status = status;
+        order.updated_at = new Date().toISOString();
+        if (payload?.payment_method) {
+            order.payment_method = payload.payment_method;
+        }
+
+        if (status === 'delivered' || status === 'cancelled') {
+            ordersState = ordersState.filter((o) => o.id !== orderId);
+            orderNotifications.delete(orderId);
+        }
+
+        return true;
+    }
+
+    function handleOrderCreated(payload) {
+        const order = normalizeRealtimeOrder(payload?.order);
+        if (!order) {
+            poll(true);
+            return;
+        }
+
+        upsertOrder(order);
+        knownOrderIds.add(order.id);
+        orderNotifications.set(order.id, {
+            kitchen: !!order.has_kitchen,
+            bar: !!order.has_bar,
+            kitchenDismissed: activeTab === 'kitchen',
+            barDismissed: activeTab === 'bar',
+        });
+
+        if (initialized) {
+            playOrderDing();
+        }
+
+        syncNotificationBadges();
+        dataFingerprint = '';
+        paint();
+        updateStatusLine();
+
+        showAdminToast({
+            title: 'Yeni Sipariş',
+            message: `#${order.order_number} · Masa ${order.table ?? '—'}`,
+            type: 'success',
+            durationMs: 2500,
+        });
+    }
+
+    function setRealtimeInterval(connected) {
+        realtimeConnected = connected;
+        currentInterval = connected ? fallbackIntervalMs : intervalMs;
+        lastStatusLine = '';
+        updateStatusLine();
+    }
 
     if (tableMapGrid) {
         tableMapGrid.querySelectorAll('[data-table-id]').forEach((chip) => {
@@ -559,7 +667,8 @@ if (root) {
 
     function updateStatusLine() {
         const busyCount = tablesState.filter((t) => t.is_busy).length;
-        const line = `${busyCount} aktif masa · ${ordersState.length} canlı · ${completedOrdersState.length} tamamlanan · ${callsState.length} çağrı · ${new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`;
+        const wsPrefix = realtimeConnected ? 'WebSocket · ' : '';
+        const line = `${wsPrefix}${busyCount} aktif masa · ${ordersState.length} canlı · ${completedOrdersState.length} tamamlanan · ${callsState.length} çağrı · ${new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`;
         if (line === lastStatusLine || !statusEl) return;
         lastStatusLine = line;
         statusEl.textContent = line;
@@ -749,11 +858,23 @@ if (root) {
         echoClient = createEchoClient(reverbCfg);
         if (!echoClient) return;
 
-        echoClient.channel('orders').listen('.OrderPlaced', () => {
-            poll(true);
+        const connection = echoClient.connector?.pusher?.connection;
+        if (connection) {
+            connection.bind('connected', () => setRealtimeInterval(true));
+            connection.bind('disconnected', () => {
+                setRealtimeInterval(false);
+                poll(true);
+            });
+            if (connection.state === 'connected') {
+                setRealtimeInterval(true);
+            }
+        }
+
+        echoClient.channel(ordersChannelName).listen('.OrderCreated', (payload) => {
+            handleOrderCreated(payload);
         });
 
-        echoClient.channel('orders').listen('.OrderStatusUpdated', (payload) => {
+        echoClient.channel(ordersChannelName).listen('.OrderStatusUpdated', (payload) => {
             const status = String(payload?.status || '');
             if (status === 'ready') {
                 showAdminToast({
@@ -771,10 +892,24 @@ if (root) {
                     durationMs: 2200,
                 });
             }
-            poll(true);
+
+            if (!applyOrderStatusUpdate(payload)) {
+                poll(true);
+                return;
+            }
+
+            if (status === 'delivered' || status === 'cancelled') {
+                poll(true);
+                return;
+            }
+
+            syncNotificationBadges();
+            dataFingerprint = '';
+            paint();
+            updateStatusLine();
         });
 
-        echoClient.channel('orders').listen('.TableCallReceived', (payload) => {
+        echoClient.channel(ordersChannelName).listen('.TableCallReceived', (payload) => {
             const call = payload?.call;
             if (call && isBillCall(call)) {
                 playCallAlert();
@@ -788,7 +923,7 @@ if (root) {
             poll(true);
         });
 
-        echoClient.channel('orders').listen('.TableCallForwarded', () => {
+        echoClient.channel(ordersChannelName).listen('.TableCallForwarded', () => {
             poll(true);
         });
     }

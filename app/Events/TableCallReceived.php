@@ -19,7 +19,7 @@ class TableCallReceived implements ShouldBroadcast
 
     public function broadcastOn(): array
     {
-        return [new Channel('orders')];
+        return [new Channel('orders.'.$this->call->restaurant_id)];
     }
 
     public function broadcastAs(): string
